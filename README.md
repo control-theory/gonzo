@@ -59,7 +59,7 @@ A powerful, real-time log analysis terminal UI inspired by k9s. Analyze log stre
 
 #### Using Go
 ```bash
-go install github.com/control-theory/gonzo/cmd/gonzo@latest
+go install github.com/control-theory/gonzo/cmd@latest
 ```
 
 #### Using Homebrew (macOS/Linux)
