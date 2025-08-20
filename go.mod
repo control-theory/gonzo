@@ -1,4 +1,4 @@
-module gonzo
+module github.com/control-theory/gonzo
 
 go 1.23.0
 

@@ -5,8 +5,8 @@ import (
 	"sort"
 	"time"
 
-	"gonzo/internal/ai"
-	"gonzo/internal/memory"
+	"github.com/control-theory/gonzo/internal/ai"
+	"github.com/control-theory/gonzo/internal/memory"
 
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"

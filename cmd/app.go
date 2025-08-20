@@ -9,12 +9,12 @@ import (
 	"strings"
 	"time"
 
-	"gonzo/internal/analyzer"
-	"gonzo/internal/filereader"
-	"gonzo/internal/memory"
-	"gonzo/internal/otlplog"
-	"gonzo/internal/otlpreceiver"
-	"gonzo/internal/tui"
+	"github.com/control-theory/gonzo/internal/analyzer"
+	"github.com/control-theory/gonzo/internal/filereader"
+	"github.com/control-theory/gonzo/internal/memory"
+	"github.com/control-theory/gonzo/internal/otlplog"
+	"github.com/control-theory/gonzo/internal/otlpreceiver"
+	"github.com/control-theory/gonzo/internal/tui"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"

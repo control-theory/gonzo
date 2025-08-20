@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"gonzo/internal/memory"
+	"github.com/control-theory/gonzo/internal/memory"
 
 	"github.com/charmbracelet/lipgloss"
 )

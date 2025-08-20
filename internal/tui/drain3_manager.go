@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"gonzo/internal/drain3"
+	"github.com/control-theory/gonzo/internal/drain3"
 	"sort"
 	"strings"
 	"time"

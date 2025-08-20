@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"gonzo/internal/memory"
+	"github.com/control-theory/gonzo/internal/memory"
 
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/lipgloss"
