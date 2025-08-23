@@ -248,24 +248,102 @@ func (r *Receiver) handleHTTPLogs(w http.ResponseWriter, req *http.Request) {
 
 // convertLogRecordToJSON converts an OTLP log record to JSON string
 func (r *Receiver) convertLogRecordToJSON(record *logspb.LogRecord, resourceAttrs map[string]interface{}) (string, error) {
-	// Convert protobuf to JSON using the marshaler
-	jsonBytes, err := r.jsonMarshaler.Marshal(record)
-	if err != nil {
-		return "", err
+	// Build a simple JSON object that matches what the stdin processing expects
+	jsonMap := make(map[string]interface{})
+	
+	// Add time
+	if record.TimeUnixNano > 0 {
+		jsonMap["timeUnixNano"] = fmt.Sprintf("%d", record.TimeUnixNano)
 	}
 	
-	// Parse the JSON to add resource attributes
-	var jsonMap map[string]interface{}
-	if err := json.Unmarshal(jsonBytes, &jsonMap); err != nil {
-		return "", err
+	// Add severity
+	if record.SeverityText != "" {
+		jsonMap["severityText"] = record.SeverityText
+	}
+	if record.SeverityNumber != 0 {
+		jsonMap["severityNumber"] = int(record.SeverityNumber)
 	}
 	
-	// Add resource attributes if present
-	if len(resourceAttrs) > 0 {
-		jsonMap["resource"] = resourceAttrs
+	// Add body (message)
+	if record.Body != nil {
+		switch v := record.Body.Value.(type) {
+		case *commonpb.AnyValue_StringValue:
+			jsonMap["body"] = map[string]interface{}{
+				"stringValue": v.StringValue,
+			}
+		case *commonpb.AnyValue_IntValue:
+			jsonMap["body"] = map[string]interface{}{
+				"intValue": fmt.Sprintf("%d", v.IntValue),
+			}
+		case *commonpb.AnyValue_DoubleValue:
+			jsonMap["body"] = map[string]interface{}{
+				"doubleValue": v.DoubleValue,
+			}
+		case *commonpb.AnyValue_BoolValue:
+			jsonMap["body"] = map[string]interface{}{
+				"boolValue": v.BoolValue,
+			}
+		}
 	}
 	
-	// Convert back to JSON string
+	// Merge resource and record attributes
+	// First add resource attributes
+	mergedAttrs := make([]map[string]interface{}, 0)
+	for key, value := range resourceAttrs {
+		attr := map[string]interface{}{
+			"key": key,
+			"value": map[string]interface{}{
+				"stringValue": fmt.Sprintf("%v", value),
+			},
+		}
+		mergedAttrs = append(mergedAttrs, attr)
+	}
+	
+	// Then add record attributes (they can override resource attributes)
+	for _, attr := range record.Attributes {
+		attrMap := map[string]interface{}{
+			"key": attr.Key,
+		}
+		
+		// Extract the value properly
+		if attr.Value != nil {
+			switch v := attr.Value.Value.(type) {
+			case *commonpb.AnyValue_StringValue:
+				attrMap["value"] = map[string]interface{}{
+					"stringValue": v.StringValue,
+				}
+			case *commonpb.AnyValue_IntValue:
+				attrMap["value"] = map[string]interface{}{
+					"intValue": fmt.Sprintf("%d", v.IntValue),
+				}
+			case *commonpb.AnyValue_DoubleValue:
+				attrMap["value"] = map[string]interface{}{
+					"doubleValue": v.DoubleValue,
+				}
+			case *commonpb.AnyValue_BoolValue:
+				attrMap["value"] = map[string]interface{}{
+					"boolValue": v.BoolValue,
+				}
+			}
+		}
+		
+		mergedAttrs = append(mergedAttrs, attrMap)
+	}
+	
+	// Add merged attributes to the JSON
+	if len(mergedAttrs) > 0 {
+		jsonMap["attributes"] = mergedAttrs
+	}
+	
+	// Add trace and span IDs if present
+	if len(record.TraceId) > 0 {
+		jsonMap["traceId"] = fmt.Sprintf("%x", record.TraceId)
+	}
+	if len(record.SpanId) > 0 {
+		jsonMap["spanId"] = fmt.Sprintf("%x", record.SpanId)
+	}
+	
+	// Convert to JSON string
 	finalJSON, err := json.Marshal(jsonMap)
 	if err != nil {
 		return "", err
