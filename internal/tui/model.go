@@ -209,11 +209,11 @@ func initializeDrain3BySeverity() map[string]*Drain3Manager {
 func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiModel string) *DashboardModel {
 	filterInput := textinput.New()
 	filterInput.Placeholder = "Filter logs (regex supported)..."
-	filterInput.CharLimit = 100
+	filterInput.CharLimit = 200
 
 	searchInput := textinput.New()
 	searchInput.Placeholder = "Search and highlight text..."
-	searchInput.CharLimit = 100
+	searchInput.CharLimit = 200
 
 	chatInput := textarea.New()
 	chatInput.Prompt = "> "
