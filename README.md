@@ -493,7 +493,7 @@ Add this plugin to your `$XDG_CONFIG_HOME/k9s/plugins.yaml` file:
 ```yaml
 plugins:
   gonzo:
-    shortCut: g
+    shortCut: Ctrl-L
     description: "Gonzo log analysis"
     scopes:
     - po
@@ -504,9 +504,12 @@ plugins:
     - "kubectl logs -f $NAME -n $NAMESPACE --context $CONTEXT | gonzo"
 ```
 
+> ⚠️ NOTE: on `macOS` although it is not required, defining `XDG_CONFIG_HOME=~/.config` is recommended in order to maintain consistency with Linux configuration practices.
+
+
 #### Usage
 1. Launch k9s and navigate to pods
-2. Select a pod and press g
+2. Select a pod and press `ctrl-l`
 3. Gonzo opens with live log streaming and analysis
 
 ## 🏗️ Architecture
