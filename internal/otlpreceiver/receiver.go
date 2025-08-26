@@ -68,8 +68,11 @@ func (r *Receiver) Start() error {
 		}
 		r.grpcListener = grpcListener
 
-		// Create gRPC server
-		r.grpcServer = grpc.NewServer()
+		// Create gRPC server with increased message size limits
+		r.grpcServer = grpc.NewServer(
+			grpc.MaxRecvMsgSize(4*1024*1024), // 4MB max receive message size
+			grpc.MaxSendMsgSize(4*1024*1024), // 4MB max send message size
+		)
 		
 		// Register the OTLP logs service
 		otlpgrpc.RegisterLogsServiceServer(r.grpcServer, r)
