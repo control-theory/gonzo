@@ -242,26 +242,8 @@ func (m *DashboardModel) renderFilter() string {
 	return minimalFilterStyle.Render(title + " " + content)
 }
 
-// renderLogScroll renders the scrolling log section
-func (m *DashboardModel) renderLogScroll(height int) string {
-	// Use most of terminal width for logs
-	logWidth := m.width - 2 // Account for borders and minimal padding
-	if logWidth < 40 {
-		logWidth = 40 // Higher minimum for readability
-	}
-
-	// Highlight border when log section is active
-	borderColor := ColorNavy
-	if m.activeSection == SectionLogs {
-		borderColor = ColorBlue
-	}
-
-	style := sectionStyle.
-		Width(logWidth).
-		Height(height).
-		Border(lipgloss.NormalBorder()).
-		BorderForeground(borderColor)
-
+// renderLogScrollContent generates the log content without border wrapper
+func (m *DashboardModel) renderLogScrollContent(height int, logWidth int) []string {
 	var logLines []string
 
 	// Add paused indicator and help text when log section is active
@@ -295,10 +277,10 @@ func (m *DashboardModel) renderLogScroll(height int) string {
 		maxLines = 1
 	}
 
-	// When in log section, don't auto-scroll to latest
-	if m.activeSection != SectionLogs && len(m.logEntries) > maxLines {
+	// When in log section or log viewer modal, don't auto-scroll to latest
+	if m.activeSection != SectionLogs && !m.showLogViewerModal && len(m.logEntries) > maxLines {
 		startIdx = len(m.logEntries) - maxLines
-	} else if m.activeSection == SectionLogs {
+	} else if m.activeSection == SectionLogs || m.showLogViewerModal {
 		// Keep selected log in view
 		if m.selectedLogIndex >= 0 && m.selectedLogIndex < len(m.logEntries) {
 			// Center selected log if possible
@@ -316,8 +298,8 @@ func (m *DashboardModel) renderLogScroll(height int) string {
 		entry := m.logEntries[i]
 		formatted := m.formatLogEntry(entry, logWidth)
 
-		// Highlight selected log when in log section
-		if m.activeSection == SectionLogs && i == m.selectedLogIndex {
+		// Highlight selected log when in log section or log viewer modal
+		if (m.activeSection == SectionLogs || m.showLogViewerModal) && i == m.selectedLogIndex {
 			selectedStyle := lipgloss.NewStyle().
 				Background(ColorBlue).
 				Foreground(ColorWhite)
@@ -347,6 +329,32 @@ func (m *DashboardModel) renderLogScroll(height int) string {
 
 		logLines = append(logLines, instructions...)
 	}
+
+	return logLines
+}
+
+// renderLogScroll renders the scrolling log section
+func (m *DashboardModel) renderLogScroll(height int) string {
+	// Use most of terminal width for logs
+	logWidth := m.width - 2 // Account for borders and minimal padding
+	if logWidth < 40 {
+		logWidth = 40 // Higher minimum for readability
+	}
+
+	// Highlight border when log section is active
+	borderColor := ColorNavy
+	if m.activeSection == SectionLogs {
+		borderColor = ColorBlue
+	}
+
+	style := sectionStyle.
+		Width(logWidth).
+		Height(height).
+		Border(lipgloss.NormalBorder()).
+		BorderForeground(borderColor)
+
+	// Get log content
+	logLines := m.renderLogScrollContent(height, logWidth)
 
 	return style.Render(lipgloss.JoinVertical(lipgloss.Left, logLines...))
 }

@@ -37,6 +37,11 @@ func (m *DashboardModel) View() string {
 		return m.renderCountsModal()
 	}
 	
+	// Show log viewer modal (fullscreen log viewer)
+	if m.showLogViewerModal {
+		return m.renderLogViewerModal()
+	}
+	
 	// Show model selection modal
 	if m.showModelSelectionModal {
 		return m.renderModelSelectionModal()

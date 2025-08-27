@@ -147,6 +147,11 @@ func (m *DashboardModel) handleMouseEvent(msg tea.MouseMsg) (tea.Model, tea.Cmd)
 		return m.handleCountsModalMouseEvent(msg)
 	}
 	
+	// Handle mouse events in log viewer modal
+	if m.showLogViewerModal {
+		return m.handleLogViewerModalMouseEvent(msg)
+	}
+	
 	// Skip mouse events for input modes
 	if m.filterActive || m.searchActive {
 		return m, nil
@@ -378,6 +383,31 @@ func (m *DashboardModel) handleCountsModalMouseEvent(msg tea.MouseMsg) (tea.Mode
 		}
 	}
 
+	return m, nil
+}
+
+// handleLogViewerModalMouseEvent processes mouse interactions in log viewer modal
+func (m *DashboardModel) handleLogViewerModalMouseEvent(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
+	switch msg.Action {
+	case tea.MouseActionPress:
+		switch msg.Button {
+		case tea.MouseButtonWheelUp:
+			// Navigate up in log list
+			if m.selectedLogIndex > 0 {
+				m.selectedLogIndex--
+			}
+			return m, nil
+
+		case tea.MouseButtonWheelDown:
+			// Navigate down in log list
+			if m.selectedLogIndex < len(m.logEntries)-1 {
+				m.selectedLogIndex++
+			}
+			return m, nil
+		}
+	}
+
+	// Ignore all other mouse events in the log viewer modal
 	return m, nil
 }
 

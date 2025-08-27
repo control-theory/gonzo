@@ -34,6 +34,7 @@ A powerful, real-time log analysis terminal UI inspired by k9s. Analyze log stre
 - **Real-time charts** - Word frequency, attributes, severity distribution, and time series
 - **Keyboard + mouse navigation** - Vim-style shortcuts plus click-to-navigate and scroll wheel support
 - **Smart log viewer** - Auto-scroll with intelligent pause/resume behavior
+- **Fullscreen log viewer** - Press `f` to open a dedicated fullscreen modal for log browsing with all navigation features
 - **Global pause control** - Spacebar pauses entire dashboard while buffering logs
 - **Modal details** - Deep dive into individual log entries with expandable views
 - **Log Counts analysis** - Detailed modal with heatmap visualization, pattern analysis by severity, and service distribution
@@ -233,6 +234,7 @@ cat logs.json | gonzo --ai-model="gpt-4"
 | `Space` | Pause/unpause entire dashboard |
 | `/` | Enter filter mode (regex supported) |
 | `s` | Search and highlight text in logs |
+| `f` | Open fullscreen log viewer modal |
 | `c` | Toggle Host/Service columns in log view |
 | `r` | Reset all data (manual reset) |
 | `u` / `U` | Cycle update intervals (forward/backward) |
@@ -607,6 +609,8 @@ Found a bug? Please [open an issue](https://github.com/control-theory/gonzo/issu
 ## ⭐ Star History
 
 If you find this project useful, please consider giving it a star! It helps others discover the tool.
+
+[![Star History Chart](https://api.star-history.com/svg?repos=control-theory/gonzo&type=Date)](https://www.star-history.com/#control-theory/gonzo&Date)
 
 ---
 

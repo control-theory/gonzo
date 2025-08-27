@@ -66,6 +66,7 @@ type DashboardModel struct {
 	showPatternsModal bool
 	showStatsModal    bool
 	showCountsModal   bool
+	showLogViewerModal bool
 
 	// Data
 	snapshot      *memory.FrequencySnapshot

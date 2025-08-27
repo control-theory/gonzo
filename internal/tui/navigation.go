@@ -217,6 +217,10 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.showCountsModal = false
 			return m, nil
 		}
+		if m.showLogViewerModal {
+			m.showLogViewerModal = false
+			return m, nil
+		}
 		if m.showModal {
 			m.showModal = false
 			m.modalContent = ""
@@ -342,6 +346,22 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		// Toggle statistics modal
 		if !m.showModal && !m.filterActive && !m.searchActive && !m.showHelp && !m.showPatternsModal && !m.showModelSelectionModal {
 			m.showStatsModal = !m.showStatsModal
+			return m, nil
+		}
+
+	case "f":
+		// Toggle log viewer modal (fullscreen view of logs)
+		if !m.showModal && !m.filterActive && !m.searchActive && !m.showHelp && !m.showPatternsModal && !m.showModelSelectionModal && !m.showStatsModal && !m.showCountsModal {
+			if !m.showLogViewerModal {
+				// Opening modal - initialize selected log index
+				if len(m.logEntries) > 0 {
+					// Start with the latest log (bottom of list)
+					m.selectedLogIndex = len(m.logEntries) - 1
+				} else {
+					m.selectedLogIndex = 0
+				}
+			}
+			m.showLogViewerModal = !m.showLogViewerModal
 			return m, nil
 		}
 
@@ -502,6 +522,94 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		m.infoViewport, cmd = m.infoViewport.Update(msg)
 		return m, cmd
+	}
+	
+	// Log viewer modal keyboard navigation
+	if m.showLogViewerModal {
+		// Save the previous active section and temporarily activate log section
+		previousSection := m.activeSection
+		m.activeSection = SectionLogs
+		
+		switch msg.String() {
+		case "up", "k":
+			// Navigate up in log list
+			if m.selectedLogIndex > 0 {
+				m.selectedLogIndex--
+			}
+			m.activeSection = previousSection
+			return m, nil
+		case "down", "j":
+			// Navigate down in log list
+			if m.selectedLogIndex < len(m.logEntries)-1 {
+				m.selectedLogIndex++
+			}
+			m.activeSection = previousSection
+			return m, nil
+		case "pgup":
+			// Page up
+			m.selectedLogIndex = max(0, m.selectedLogIndex-10)
+			m.activeSection = previousSection
+			return m, nil
+		case "pgdown":
+			// Page down
+			m.selectedLogIndex = min(len(m.logEntries)-1, m.selectedLogIndex+10)
+			m.activeSection = previousSection
+			return m, nil
+		case "home":
+			// Go to top
+			m.selectedLogIndex = 0
+			m.activeSection = previousSection
+			return m, nil
+		case "end":
+			// Go to bottom (latest log)
+			if len(m.logEntries) > 0 {
+				m.selectedLogIndex = len(m.logEntries) - 1
+			}
+			m.activeSection = previousSection
+			return m, nil
+		case "enter":
+			// Show details of selected log
+			if m.selectedLogIndex >= 0 && m.selectedLogIndex < len(m.logEntries) {
+				entry := m.logEntries[m.selectedLogIndex]
+				m.currentLogEntry = &entry
+				m.modalContent = m.formatLogDetails(entry, 60)
+				m.showModal = true
+				m.modalReady = false
+				m.modalActiveSection = "info"
+				// Close log viewer modal when opening details
+				m.showLogViewerModal = false
+			}
+			m.activeSection = previousSection
+			return m, nil
+		case "/":
+			// Start filter input
+			m.showLogViewerModal = false  // Close modal when starting filter
+			m.activeSection = SectionFilter
+			m.filterActive = true
+			m.filterInput.Focus()
+			return m, nil
+		case "s":
+			// Start search input
+			m.showLogViewerModal = false  // Close modal when starting search
+			m.activeSection = SectionFilter
+			m.searchActive = true
+			m.searchInput.Focus()
+			return m, nil
+		case "c":
+			// Toggle columns
+			m.showColumns = !m.showColumns
+			m.activeSection = previousSection
+			return m, nil
+		case "escape", "esc", "f":
+			// Close modal with ESC or 'f' (toggle)
+			m.showLogViewerModal = false
+			m.activeSection = previousSection
+			return m, nil
+		}
+		
+		// Restore previous section
+		m.activeSection = previousSection
+		return m, nil
 	}
 	
 	// Model selection modal shortcuts
