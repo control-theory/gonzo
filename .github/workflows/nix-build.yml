@@ -1,0 +1,50 @@
+name: Nix build (flake)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build flake default package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Install Nix and enable a fast, public cache for GitHub Actions runners
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v14
+
+      - name: Set up magic Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v7
+
+      # Quick validation that the flake is well-formed (outputs, formatting, etc.)
+      - name: nix flake show
+        run: nix flake show --all-systems
+
+      # Build your default package (defined in flake.nix)
+      - name: nix build
+        run: nix build .#default --extra-experimental-features nix-command --extra-experimental-features flakes --print-build-logs
+
+      # Smoke test the built binary
+      - name: Run gonzo --version
+        run: ./result/bin/gonzo --version
+
+  # Optional: run flake checks if you add them later (nix flake check)
+  checks:
+    if: always()
+    name: flake checks (optional)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@v14
+      - uses: DeterminateSystems/magic-nix-cache-action@v7
+      - name: nix flake check
+        run: nix flake check --print-build-logs

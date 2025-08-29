@@ -65,3 +65,4 @@ testdata/output/
 
 # Claude Code settings
 .claude/settings.local.json
+result

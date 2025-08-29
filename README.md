@@ -72,6 +72,11 @@ brew install gonzo
 #### Download Binary
 Download the latest release for your platform from the [releases page](https://github.com/control-theory/gonzo/releases).
 
+#### Using Nix package manager (beta support)
+```bash
+nix run github:control-theory/gonzo
+```
+
 #### Build from Source
 ```bash
 git clone https://github.com/control-theory/gonzo.git
