@@ -64,8 +64,8 @@ go install github.com/control-theory/gonzo/cmd/gonzo@latest
 ```
 
 #### Using Homebrew (macOS/Linux)
+
 ```bash
-brew tap control-theory/gonzo
 brew install gonzo
 ```
 
