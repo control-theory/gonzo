@@ -15,6 +15,7 @@ import (
 	"github.com/control-theory/gonzo/internal/otlplog"
 	"github.com/control-theory/gonzo/internal/otlpreceiver"
 	"github.com/control-theory/gonzo/internal/tui"
+	"github.com/control-theory/gonzo/internal/vmlogs"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
@@ -114,6 +115,10 @@ type simpleTuiModel struct {
 	otlpReceiver *otlpreceiver.Receiver // OTLP receiver for network input
 	hasOTLPInput bool                   // Whether we're receiving OTLP data
 
+	// Victoria Logs receiver support
+	vmlogsReceiver *vmlogs.Receiver // Victoria Logs receiver for streaming logs
+	hasVmlogsInput bool             // Whether we're receiving Victoria Logs data
+
 	// JSON accumulation for multi-line OTLP support
 	jsonBuffer   strings.Builder // Buffer for accumulating multi-line JSON
 	jsonDepth    int             // Track JSON object/array nesting depth
@@ -128,8 +133,28 @@ func (m *simpleTuiModel) Init() tea.Cmd {
 	// Initialize frequency reset timer
 	m.lastFreqReset = time.Now()
 
-	// Check if OTLP receiver is enabled
-	if cfg.OTLPEnabled {
+	// Check if Victoria Logs receiver is enabled
+	if cfg.VmlogsURL != "" {
+		// Victoria Logs input mode
+		m.hasVmlogsInput = true
+		m.inputChan = make(chan string, 100)
+
+		// Create and start Victoria Logs receiver
+		params := make(map[string]string)
+		// Add any default parameters here if needed
+		m.vmlogsReceiver = vmlogs.NewReceiver(cfg.VmlogsURL, cfg.VmlogsUser, cfg.VmlogsPassword, cfg.VmlogsQuery, params)
+		if err := m.vmlogsReceiver.Start(); err != nil {
+			log.Printf("Error starting Victoria Logs receiver: %v", err)
+			// Fall back to other input methods if Victoria Logs fails
+			m.hasVmlogsInput = false
+		} else {
+			// Start reading from Victoria Logs receiver in the background
+			go m.readVmlogsAsync()
+		}
+	}
+
+	// Check if OTLP receiver is enabled (only if Victoria Logs is not enabled)
+	if !m.hasVmlogsInput && cfg.OTLPEnabled {
 		// OTLP input mode
 		m.hasOTLPInput = true
 		m.inputChan = make(chan string, 100)
@@ -146,8 +171,8 @@ func (m *simpleTuiModel) Init() tea.Cmd {
 		}
 	}
 
-	// Check if we have file inputs specified (only if OTLP is not enabled)
-	if !m.hasOTLPInput && len(cfg.Files) > 0 {
+	// Check if we have file inputs specified (only if Victoria Logs and OTLP are not enabled)
+	if !m.hasVmlogsInput && !m.hasOTLPInput && len(cfg.Files) > 0 {
 		// File input mode
 		m.hasFileInput = true
 		m.inputChan = make(chan string, 100)
@@ -165,8 +190,8 @@ func (m *simpleTuiModel) Init() tea.Cmd {
 		}
 	}
 
-	// If no OTLP, no file input or file input failed, check stdin
-	if !m.hasOTLPInput && !m.hasFileInput {
+	// If no Victoria Logs, no OTLP, no file input or file input failed, check stdin
+	if !m.hasVmlogsInput && !m.hasOTLPInput && !m.hasFileInput {
 		// Check if stdin has data available (not a terminal)
 		stat, _ := os.Stdin.Stat()
 		if (stat.Mode() & os.ModeCharDevice) == 0 {
@@ -187,11 +212,44 @@ func (m *simpleTuiModel) Init() tea.Cmd {
 	cmds = append(cmds, m.periodicUpdate())
 
 	// Start checking for input data if we have any input source
-	if m.hasStdinData || m.hasFileInput || m.hasOTLPInput {
+	if m.hasStdinData || m.hasFileInput || m.hasOTLPInput || m.hasVmlogsInput {
 		cmds = append(cmds, m.checkInputChannel())
 	}
 
 	return tea.Batch(cmds...)
+}
+
+// readVmlogsAsync reads from the Victoria Logs receiver
+func (m *simpleTuiModel) readVmlogsAsync() {
+	defer close(m.inputChan)
+
+	if m.vmlogsReceiver == nil {
+		return
+	}
+
+	// Get the channel from Victoria Logs receiver
+	vmlogsLineChan := m.vmlogsReceiver.GetLineChan()
+
+	// Forward lines from Victoria Logs receiver to input channel
+	for {
+		select {
+		case <-m.ctx.Done():
+			m.vmlogsReceiver.Stop()
+			return
+		case line, ok := <-vmlogsLineChan:
+			if !ok {
+				// Victoria Logs receiver finished
+				return
+			}
+			if line != "" {
+				select {
+				case m.inputChan <- line:
+				case <-m.ctx.Done():
+					return
+				}
+			}
+		}
+	}
 }
 
 // readOTLPAsync reads from the OTLP receiver
@@ -375,7 +433,7 @@ func (m *simpleTuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.processLogLine(string(msg))
 
 		// Continue checking for more data if we have input sources
-		if (m.hasStdinData || m.hasFileInput || m.hasOTLPInput) && !m.finished {
+		if (m.hasStdinData || m.hasFileInput || m.hasOTLPInput || m.hasVmlogsInput) && !m.finished {
 			cmds = append(cmds, m.checkInputChannel())
 		}
 

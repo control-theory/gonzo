@@ -32,7 +32,7 @@ func NewLogConverter() *LogConverter {
 		// JSON detection
 		jsonRegex: regexp.MustCompile(`^\s*\{.*\}\s*$`),
 		jsonMarshaler: protojson.MarshalOptions{
-			UseProtoNames: true,
+			UseProtoNames:   true,
 			EmitUnpopulated: false,
 		},
 		jsonUnmarshaler: protojson.UnmarshalOptions{
@@ -72,12 +72,17 @@ func (lc *LogConverter) convertJSONToOTLP(line string) (*logspb.LogRecord, error
 		return nil, fmt.Errorf("failed to parse JSON: %w", err)
 	}
 
+	// Check if this is Victoria Logs format (has _msg, _stream, _time fields)
+	if lc.isVictoriaLogsFormat(jsonData) {
+		return lc.convertVictoriaLogsToOTLP(jsonData)
+	}
+
 	record := &logspb.LogRecord{
-		TimeUnixNano: lc.extractTimestamp(jsonData),
+		TimeUnixNano:   lc.extractTimestamp(jsonData),
 		SeverityNumber: lc.extractSeverityNumber(jsonData),
-		SeverityText: lc.extractSeverityText(jsonData),
-		Body: lc.extractBody(jsonData),
-		Attributes: lc.extractAttributes(jsonData),
+		SeverityText:   lc.extractSeverityText(jsonData),
+		Body:           lc.extractBody(jsonData),
+		Attributes:     lc.extractAttributes(jsonData),
 	}
 
 	return record, nil
@@ -86,9 +91,9 @@ func (lc *LogConverter) convertJSONToOTLP(line string) (*logspb.LogRecord, error
 // convertTextToOTLP converts plain text logs to OTLP format
 func (lc *LogConverter) convertTextToOTLP(line string) (*logspb.LogRecord, error) {
 	record := &logspb.LogRecord{
-		TimeUnixNano: lc.extractTimestampFromText(line),
+		TimeUnixNano:   lc.extractTimestampFromText(line),
 		SeverityNumber: lc.extractSeverityNumberFromText(line),
-		SeverityText: lc.extractSeverityTextFromText(line),
+		SeverityText:   lc.extractSeverityTextFromText(line),
 		Body: &commonpb.AnyValue{
 			Value: &commonpb.AnyValue_StringValue{
 				StringValue: strings.ReplaceAll(line, "\t", " "),
@@ -104,7 +109,7 @@ func (lc *LogConverter) convertTextToOTLP(line string) (*logspb.LogRecord, error
 func (lc *LogConverter) extractTimestamp(data map[string]interface{}) uint64 {
 	// Try common timestamp field names
 	timestampFields := []string{"timestamp", "time", "@timestamp", "ts", "date"}
-	
+
 	for _, field := range timestampFields {
 		if value, exists := data[field]; exists {
 			if timestamp := lc.parseTimestamp(value); timestamp > 0 {
@@ -125,7 +130,7 @@ func (lc *LogConverter) extractTimestampFromText(line string) uint64 {
 			return timestamp
 		}
 	}
-	
+
 	// If no timestamp found, use current time
 	return uint64(time.Now().UnixNano())
 }
@@ -144,22 +149,22 @@ func (lc *LogConverter) parseTimestamp(value interface{}) uint64 {
 			"2006-01-02T15:04:05.000Z",
 			"2006-01-02T15:04:05Z",
 		}
-		
+
 		for _, format := range formats {
 			if t, err := time.Parse(format, v); err == nil {
 				return uint64(t.UnixNano())
 			}
 		}
-		
+
 		// Try parsing Unix timestamp
 		if unixTime, err := strconv.ParseFloat(v, 64); err == nil {
 			return uint64(unixTime * 1e9) // Convert to nanoseconds
 		}
-		
+
 	case float64:
 		// Assume Unix timestamp
 		return uint64(v * 1e9) // Convert to nanoseconds
-		
+
 	case int64:
 		// Check if it's already in nanoseconds, microseconds, milliseconds, or seconds
 		if v > 1e15 { // Nanoseconds
@@ -172,20 +177,118 @@ func (lc *LogConverter) parseTimestamp(value interface{}) uint64 {
 			return uint64(v * 1e9)
 		}
 	}
-	
+
 	return 0
+}
+
+// isVictoriaLogsFormat checks if JSON has Victoria Logs specific fields
+func (lc *LogConverter) isVictoriaLogsFormat(data map[string]interface{}) bool {
+	// Victoria Logs has specific fields: _msg, _stream, _stream_id, _time
+	_, hasMsg := data["_msg"]
+	_, hasStream := data["_stream"]
+	_, hasTime := data["_time"]
+
+	// If it has at least _msg or (_stream and _time), consider it Victoria Logs format
+	return hasMsg || (hasStream && hasTime)
+}
+
+// convertVictoriaLogsToOTLP converts Victoria Logs JSON to OTLP format
+func (lc *LogConverter) convertVictoriaLogsToOTLP(data map[string]interface{}) (*logspb.LogRecord, error) {
+	record := &logspb.LogRecord{
+		TimeUnixNano:   lc.extractVictoriaLogsTimestamp(data),
+		SeverityNumber: lc.extractSeverityNumber(data),
+		SeverityText:   lc.extractSeverityText(data),
+		Body:           lc.extractVictoriaLogsBody(data),
+		Attributes:     lc.extractVictoriaLogsAttributes(data),
+	}
+
+	return record, nil
+}
+
+// extractVictoriaLogsTimestamp extracts timestamp from Victoria Logs _time field
+func (lc *LogConverter) extractVictoriaLogsTimestamp(data map[string]interface{}) uint64 {
+	if value, exists := data["_time"]; exists {
+		if timestamp := lc.parseTimestamp(value); timestamp > 0 {
+			return timestamp
+		}
+	}
+
+	// Fallback to standard timestamp extraction
+	return lc.extractTimestamp(data)
+}
+
+// extractVictoriaLogsBody extracts the _msg field as the log body
+func (lc *LogConverter) extractVictoriaLogsBody(data map[string]interface{}) *commonpb.AnyValue {
+	// Victoria Logs uses _msg for the log message
+	if msg, exists := data["_msg"]; exists {
+		return &commonpb.AnyValue{
+			Value: &commonpb.AnyValue_StringValue{
+				StringValue: fmt.Sprintf("%v", msg),
+			},
+		}
+	}
+
+	// Fallback to standard body extraction
+	return lc.extractBody(data)
+}
+
+// extractVictoriaLogsAttributes extracts all fields as attributes with special handling
+func (lc *LogConverter) extractVictoriaLogsAttributes(data map[string]interface{}) []*commonpb.KeyValue {
+	var attributes []*commonpb.KeyValue
+
+	// Map k8s.node.name or kubernetes.pod_node_name to host
+	hostValue := ""
+	if nodeNameValue, exists := data["k8s.node.name"]; exists {
+		hostValue = fmt.Sprintf("%v", nodeNameValue)
+	} else if nodeNameValue, exists := data["kubernetes.pod_node_name"]; exists {
+		hostValue = fmt.Sprintf("%v", nodeNameValue)
+	} else if nodeNameValue, exists := data["kubernetes_pod_node_name"]; exists {
+		hostValue = fmt.Sprintf("%v", nodeNameValue)
+	}
+
+	if hostValue != "" {
+		attributes = append(attributes, &commonpb.KeyValue{
+			Key: "host",
+			Value: &commonpb.AnyValue{
+				Value: &commonpb.AnyValue_StringValue{StringValue: hostValue},
+			},
+		})
+	}
+
+	// Define fields to exclude from attributes (they're handled separately)
+	excludeFields := map[string]bool{
+		"_msg":    true,                     // Used for body
+		"_time":   true,                     // Used for timestamp
+		"_stream": true, "_stream_id": true, // Victoria Logs metadata, not needed as attributes
+		"level": true, "severity": true, "log.level": true,
+		"log_level": true, "loglevel": true, // Used for severity
+		"k8s.node.name": true, "kubernetes.pod_node_name": true,
+		"kubernetes_pod_node_name": true, // Mapped to host
+	}
+
+	// Add all other fields as attributes
+	for key, value := range data {
+		if !excludeFields[key] {
+			attributes = append(attributes, &commonpb.KeyValue{
+				Key:   key,
+				Value: lc.convertToAnyValue(value),
+			})
+		}
+	}
+
+	return attributes
 }
 
 // extractSeverityNumber extracts severity number from JSON
 func (lc *LogConverter) extractSeverityNumber(data map[string]interface{}) logspb.SeverityNumber {
 	levelFields := []string{"level", "severity", "log_level", "loglevel"}
-	
+
 	for _, field := range levelFields {
 		if value, exists := data[field]; exists {
 			return lc.severityToNumber(value)
 		}
 	}
-	
+
 	return logspb.SeverityNumber_SEVERITY_NUMBER_UNSPECIFIED
 }
 
@@ -201,7 +304,7 @@ func (lc *LogConverter) extractSeverityNumberFromText(line string) logspb.Severi
 // extractSeverityText extracts severity text from JSON
 func (lc *LogConverter) extractSeverityText(data map[string]interface{}) string {
 	levelFields := []string{"level", "severity", "log_level", "loglevel"}
-	
+
 	for _, field := range levelFields {
 		if value, exists := data[field]; exists {
 			if str, ok := value.(string); ok {
@@ -209,7 +312,7 @@ func (lc *LogConverter) extractSeverityText(data map[string]interface{}) string 
 			}
 		}
 	}
-	
+
 	return ""
 }
 
@@ -225,7 +328,7 @@ func (lc *LogConverter) extractSeverityTextFromText(line string) string {
 // severityToNumber converts severity text to OTLP severity number
 func (lc *LogConverter) severityToNumber(value interface{}) logspb.SeverityNumber {
 	var severity string
-	
+
 	switch v := value.(type) {
 	case string:
 		severity = strings.ToUpper(v)
@@ -238,7 +341,7 @@ func (lc *LogConverter) severityToNumber(value interface{}) logspb.SeverityNumbe
 	default:
 		return logspb.SeverityNumber_SEVERITY_NUMBER_UNSPECIFIED
 	}
-	
+
 	switch severity {
 	case "TRACE":
 		return logspb.SeverityNumber_SEVERITY_NUMBER_TRACE
@@ -260,7 +363,7 @@ func (lc *LogConverter) severityToNumber(value interface{}) logspb.SeverityNumbe
 // extractBody extracts the main message body from JSON
 func (lc *LogConverter) extractBody(data map[string]interface{}) *commonpb.AnyValue {
 	bodyFields := []string{"message", "msg", "body", "text", "content"}
-	
+
 	for _, field := range bodyFields {
 		if value, exists := data[field]; exists {
 			return &commonpb.AnyValue{
@@ -270,7 +373,7 @@ func (lc *LogConverter) extractBody(data map[string]interface{}) *commonpb.AnyVa
 			}
 		}
 	}
-	
+
 	// If no specific body field, use the entire JSON as body
 	jsonBytes, _ := json.Marshal(data)
 	return &commonpb.AnyValue{
@@ -289,29 +392,29 @@ func (lc *LogConverter) extractAttributes(data map[string]interface{}) []*common
 		"message": true, "msg": true, "body": true, "text": true, "content": true,
 		"attributes": true, // Exclude the attributes field itself as it gets special handling below
 	}
-	
+
 	// First, handle nested attributes object if it exists
 	if attrValue, exists := data["attributes"]; exists {
 		if attrMap, ok := attrValue.(map[string]interface{}); ok {
 			for key, value := range attrMap {
 				attributes = append(attributes, &commonpb.KeyValue{
-					Key: key,
+					Key:   key,
 					Value: lc.convertToAnyValue(value),
 				})
 			}
 		}
 	}
-	
+
 	// Then, handle other top-level fields as attributes
 	for key, value := range data {
 		if !excludeFields[key] {
 			attributes = append(attributes, &commonpb.KeyValue{
-				Key: key,
+				Key:   key,
 				Value: lc.convertToAnyValue(value),
 			})
 		}
 	}
-	
+
 	return attributes
 }
 
