@@ -595,6 +595,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📚 Documentation
 
 - [Usage Guide](USAGE_GUIDE.md) - Detailed usage instructions
+- [Victoria Logs Integration](VICTORIA_LOGS_USAGE.md) - Using Gonzo with Victoria Logs API
 - [Contributing Guide](CONTRIBUTING.md) - How to contribute
 - [Changelog](CHANGELOG.md) - Version history
 
@@ -615,5 +616,5 @@ If you find this project useful, please consider giving it a star! It helps othe
 ---
 
 <p align="center">
-Made with ❤️ by ControlTheory and the Gonzo community
+Made with ❤️ by <a href="https://controltheory.com">ControlTheory</a> and the Gonzo community
 </p>

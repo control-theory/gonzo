@@ -32,6 +32,10 @@ type Config struct {
 	OTLPEnabled    bool          `mapstructure:"otlp-enabled"`
 	OTLPGRPCPort   int           `mapstructure:"otlp-grpc-port"`
 	OTLPHTTPPort   int           `mapstructure:"otlp-http-port"`
+	VmlogsURL      string        `mapstructure:"vmlogs-url"`
+	VmlogsUser     string        `mapstructure:"vmlogs-user"`
+	VmlogsPassword string        `mapstructure:"vmlogs-password"`
+	VmlogsQuery    string        `mapstructure:"vmlogs-query"`
 }
 
 var (
@@ -76,7 +80,18 @@ Supports OTLP (OpenTelemetry) format natively, with automatic detection of JSON,
   gonzo --otlp-enabled
   
   # With custom ports
-  gonzo --otlp-enabled --otlp-grpc-port=4317 --otlp-http-port=4318`,
+  gonzo --otlp-enabled --otlp-grpc-port=4317 --otlp-http-port=4318
+  
+  # Stream logs from Victoria Logs
+  gonzo --vmlogs-url="http://localhost:9428" --vmlogs-query="*"
+  
+  # With authentication and custom query
+  gonzo --vmlogs-url="https://vmlogs.example.com" --vmlogs-user="myuser" --vmlogs-password="mypass" --vmlogs-query='level:error'
+  
+  # Using environment variables for authentication
+  export GONZO_VMLOGS_USER="myuser"
+  export GONZO_VMLOGS_PASSWORD="mypass"  
+  gonzo --vmlogs-url="https://vmlogs.example.com" --vmlogs-query='service:"myapp"'`,
 		RunE: runApp,
 	}
 
@@ -110,6 +125,10 @@ func init() {
 	rootCmd.Flags().Bool("otlp-enabled", false, "Enable OTLP listener to receive logs via OpenTelemetry protocol (gRPC and HTTP)")
 	rootCmd.Flags().Int("otlp-grpc-port", 4317, "Port for OTLP gRPC listener (default: 4317)")
 	rootCmd.Flags().Int("otlp-http-port", 4318, "Port for OTLP HTTP listener (default: 4318)")
+	rootCmd.Flags().String("vmlogs-url", "", "Victoria Logs URL endpoint for streaming logs (e.g., http://localhost:9428)")
+	rootCmd.Flags().String("vmlogs-user", "", "Victoria Logs basic auth username (can also use GONZO_VMLOGS_USER env var)")
+	rootCmd.Flags().String("vmlogs-password", "", "Victoria Logs basic auth password (can also use GONZO_VMLOGS_PASSWORD env var)")
+	rootCmd.Flags().String("vmlogs-query", "*", "Victoria Logs query (LogsQL) to use for streaming (default: '*' for all logs)")
 
 	// Bind flags to viper
 	viper.BindPFlag("memory-size", rootCmd.Flags().Lookup("memory-size"))
@@ -122,6 +141,10 @@ func init() {
 	viper.BindPFlag("otlp-enabled", rootCmd.Flags().Lookup("otlp-enabled"))
 	viper.BindPFlag("otlp-grpc-port", rootCmd.Flags().Lookup("otlp-grpc-port"))
 	viper.BindPFlag("otlp-http-port", rootCmd.Flags().Lookup("otlp-http-port"))
+	viper.BindPFlag("vmlogs-url", rootCmd.Flags().Lookup("vmlogs-url"))
+	viper.BindPFlag("vmlogs-user", rootCmd.Flags().Lookup("vmlogs-user"))
+	viper.BindPFlag("vmlogs-password", rootCmd.Flags().Lookup("vmlogs-password"))
+	viper.BindPFlag("vmlogs-query", rootCmd.Flags().Lookup("vmlogs-query"))
 
 	// Add version command
 	rootCmd.AddCommand(versionCmd)

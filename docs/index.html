@@ -291,7 +291,7 @@
                 <div class="feature-card">
                     <div class="feature-icon">🎯</div>
                     <h3>Real-Time Analysis</h3>
-                    <p>Process logs as they arrive from stdin with OTLP native support, automatic format detection, and color-coded severity tracking.</p>
+                    <p>Process logs from multiple sources with OTLP and Victoria Logs native support, automatic format detection, and color-coded severity tracking.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">📈</div>
@@ -307,6 +307,11 @@
                     <div class="feature-icon">🤖</div>
                     <h3>AI-Powered Insights</h3>
                     <p>Get intelligent pattern detection, anomaly analysis, and root cause suggestions. Works with OpenAI, Ollama, LM Studio, and more.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📡</div>
+                    <h3>Multiple Log Sources</h3>
+                    <p>Stream from Victoria Logs, receive via OTLP (OpenTelemetry), tail log files, or pipe from kubectl and other tools.</p>
                 </div>
             </div>
         </div>
@@ -378,6 +383,10 @@
                     $ cat application.log | gonzo<br><br>
                     # Stream Kubernetes logs<br>
                     $ kubectl logs -f deployment/my-app | gonzo<br><br>
+                    # Stream from Victoria Logs<br>
+                    $ gonzo --vmlogs-url="http://localhost:9428" --vmlogs-query="*"<br><br>
+                    # Receive OTLP logs<br>
+                    $ gonzo --otlp-enabled<br><br>
                     # With AI analysis<br>
                     $ export OPENAI_API_KEY=sk-your-key-here<br>
                     $ cat logs.json | gonzo

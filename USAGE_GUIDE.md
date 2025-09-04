@@ -89,3 +89,8 @@ gonzo version          # Show detailed version info
 gonzo completion bash  # Generate bash completion
 gonzo help             # Show help
 ```
+
+### Supported Integrations 
+
+- [Victoria Logs Integration](VICTORIA_LOGS_USAGE.md) - Using Gonzo with Victoria Logs API
+
