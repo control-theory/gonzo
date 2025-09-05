@@ -9,11 +9,70 @@ import (
 )
 
 // formatLogEntry formats a log entry with colors
-func (m *DashboardModel) formatLogEntry(entry LogEntry, availableWidth int) string {
+func (m *DashboardModel) formatLogEntry(entry LogEntry, availableWidth int, isSelected bool) string {
 	// Use receive time for display
 	timestamp := entry.Timestamp.Format("15:04:05")
 
-	// Color severity levels
+	// If selected, apply selection style to entire row
+	if isSelected {
+		// Format the entire row without individual component styling
+		severity := fmt.Sprintf("%-5s", entry.Severity)
+		
+		var logLine string
+		if m.showColumns {
+			// Extract host.name and service.name from OTLP attributes
+			host := entry.Attributes["host.name"]
+			service := entry.Attributes["service.name"]
+			
+			// Truncate to fit column width
+			if len(host) > 12 {
+				host = host[:9] + "..."
+			}
+			if len(service) > 16 {
+				service = service[:13] + "..."
+			}
+			
+			// Format fixed-width columns
+			hostCol := fmt.Sprintf("%-12s", host)
+			serviceCol := fmt.Sprintf("%-16s", service)
+			
+			// Calculate remaining space for message
+			// Use same calculation as non-selected: availableWidth - 18 - columnsWidth
+			columnsWidth := 30 // 12 + 16 + 2 spaces
+			maxMessageLen := availableWidth - 18 - columnsWidth
+			if maxMessageLen < 10 {
+				maxMessageLen = 10
+			}
+			
+			message := entry.Message
+			if len(message) > maxMessageLen {
+				message = message[:maxMessageLen-3] + "..."
+			}
+			
+			logLine = fmt.Sprintf("%s %-5s %s %s %s", timestamp, severity, hostCol, serviceCol, message)
+		} else {
+			// Calculate space for message - use same as non-selected: availableWidth - 18
+			maxMessageLen := availableWidth - 18
+			if maxMessageLen < 10 {
+				maxMessageLen = 10
+			}
+			
+			message := entry.Message
+			if len(message) > maxMessageLen {
+				message = message[:maxMessageLen-3] + "..."
+			}
+			
+			logLine = fmt.Sprintf("%s %-5s %s", timestamp, severity, message)
+		}
+		
+		// Apply selection style to entire line
+		selectedStyle := lipgloss.NewStyle().
+			Background(ColorBlue).
+			Foreground(ColorWhite)
+		return selectedStyle.Render(logLine)
+	}
+
+	// Normal (non-selected) formatting with individual component colors
 	severityColor := ColorGray
 	switch strings.ToUpper(entry.Severity) {
 	case "FATAL", "CRITICAL":

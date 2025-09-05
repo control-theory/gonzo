@@ -296,16 +296,8 @@ func (m *DashboardModel) renderLogScrollContent(height int, logWidth int) []stri
 
 	for i := startIdx; i < len(m.logEntries) && i < startIdx+maxLines; i++ {
 		entry := m.logEntries[i]
-		formatted := m.formatLogEntry(entry, logWidth)
-
-		// Highlight selected log when in log section or log viewer modal
-		if (m.activeSection == SectionLogs || m.showLogViewerModal) && i == m.selectedLogIndex {
-			selectedStyle := lipgloss.NewStyle().
-				Background(ColorBlue).
-				Foreground(ColorWhite)
-			formatted = selectedStyle.Render(formatted)
-		}
-
+		isSelected := (m.activeSection == SectionLogs || m.showLogViewerModal) && i == m.selectedLogIndex
+		formatted := m.formatLogEntry(entry, logWidth, isSelected)
 		logLines = append(logLines, formatted)
 	}
 
