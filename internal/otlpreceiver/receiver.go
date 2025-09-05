@@ -10,31 +10,31 @@ import (
 	"net/http"
 	"sync"
 
+	otlpgrpc "go.opentelemetry.io/proto/otlp/collector/logs/v1"
+	commonpb "go.opentelemetry.io/proto/otlp/common/v1"
+	logspb "go.opentelemetry.io/proto/otlp/logs/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
-	commonpb "go.opentelemetry.io/proto/otlp/common/v1"
-	otlpgrpc "go.opentelemetry.io/proto/otlp/collector/logs/v1"
-	logspb "go.opentelemetry.io/proto/otlp/logs/v1"
 )
 
 // Receiver is an OTLP logs receiver
 type Receiver struct {
-	grpcPort   int
-	httpPort   int
-	grpcServer *grpc.Server
-	httpServer *http.Server
+	grpcPort     int
+	httpPort     int
+	grpcServer   *grpc.Server
+	httpServer   *http.Server
 	grpcListener net.Listener
 	httpListener net.Listener
-	lineChan   chan string
-	wg         sync.WaitGroup
-	ctx        context.Context
-	cancel     context.CancelFunc
-	
+	lineChan     chan string
+	wg           sync.WaitGroup
+	ctx          context.Context
+	cancel       context.CancelFunc
+
 	// JSON marshaler/unmarshaler for converting protobuf to JSON
 	jsonMarshaler   protojson.MarshalOptions
 	jsonUnmarshaler protojson.UnmarshalOptions
-	
+
 	otlpgrpc.UnimplementedLogsServiceServer
 }
 
@@ -73,7 +73,7 @@ func (r *Receiver) Start() error {
 			grpc.MaxRecvMsgSize(4*1024*1024), // 4MB max receive message size
 			grpc.MaxSendMsgSize(4*1024*1024), // 4MB max send message size
 		)
-		
+
 		// Register the OTLP logs service
 		otlpgrpc.RegisterLogsServiceServer(r.grpcServer, r)
 
@@ -99,7 +99,7 @@ func (r *Receiver) Start() error {
 		// Create HTTP server with routes
 		mux := http.NewServeMux()
 		mux.HandleFunc("/v1/logs", r.handleHTTPLogs)
-		
+
 		r.httpServer = &http.Server{
 			Handler: mux,
 		}
@@ -123,15 +123,15 @@ func (r *Receiver) Stop() {
 	if r.cancel != nil {
 		r.cancel()
 	}
-	
+
 	if r.grpcServer != nil {
 		r.grpcServer.GracefulStop()
 	}
-	
+
 	if r.httpServer != nil {
 		r.httpServer.Shutdown(context.Background())
 	}
-	
+
 	r.wg.Wait()
 	close(r.lineChan)
 }
@@ -152,7 +152,7 @@ func (r *Receiver) Export(ctx context.Context, req *otlpgrpc.ExportLogsServiceRe
 				resourceAttrs[attr.Key] = extractAttributeValue(attr.Value)
 			}
 		}
-		
+
 		// Process each scope logs
 		for _, scopeLogs := range resourceLogs.ScopeLogs {
 			// Process each log record
@@ -163,7 +163,7 @@ func (r *Receiver) Export(ctx context.Context, req *otlpgrpc.ExportLogsServiceRe
 					log.Printf("Failed to convert log record to JSON: %v", err)
 					continue
 				}
-				
+
 				// Send to channel if not blocked
 				select {
 				case r.lineChan <- jsonLine:
@@ -176,7 +176,7 @@ func (r *Receiver) Export(ctx context.Context, req *otlpgrpc.ExportLogsServiceRe
 			}
 		}
 	}
-	
+
 	// Return success response
 	return &otlpgrpc.ExportLogsServiceResponse{}, nil
 }
@@ -233,7 +233,7 @@ func (r *Receiver) handleHTTPLogs(w http.ResponseWriter, req *http.Request) {
 
 	// Return success response
 	response := &otlpgrpc.ExportLogsServiceResponse{}
-	
+
 	// Check Accept header to determine response format
 	accept := req.Header.Get("Accept")
 	if accept == "application/json" {
@@ -253,12 +253,16 @@ func (r *Receiver) handleHTTPLogs(w http.ResponseWriter, req *http.Request) {
 func (r *Receiver) convertLogRecordToJSON(record *logspb.LogRecord, resourceAttrs map[string]interface{}) (string, error) {
 	// Build a simple JSON object that matches what the stdin processing expects
 	jsonMap := make(map[string]interface{})
-	
-	// Add time
+
+	// Add time - prefer TimeUnixNano, fallback to ObservedTimeUnixNano
 	if record.TimeUnixNano > 0 {
 		jsonMap["timeUnixNano"] = fmt.Sprintf("%d", record.TimeUnixNano)
+	} else if record.ObservedTimeUnixNano > 0 {
+		// Use observed time as fallback when actual time is missing
+		jsonMap["timeUnixNano"] = fmt.Sprintf("%d", record.ObservedTimeUnixNano)
+		jsonMap["observedTimeUnixNano"] = fmt.Sprintf("%d", record.ObservedTimeUnixNano)
 	}
-	
+
 	// Add severity
 	if record.SeverityText != "" {
 		jsonMap["severityText"] = record.SeverityText
@@ -266,7 +270,7 @@ func (r *Receiver) convertLogRecordToJSON(record *logspb.LogRecord, resourceAttr
 	if record.SeverityNumber != 0 {
 		jsonMap["severityNumber"] = int(record.SeverityNumber)
 	}
-	
+
 	// Add body (message)
 	if record.Body != nil {
 		switch v := record.Body.Value.(type) {
@@ -288,7 +292,7 @@ func (r *Receiver) convertLogRecordToJSON(record *logspb.LogRecord, resourceAttr
 			}
 		}
 	}
-	
+
 	// Merge resource and record attributes
 	// First add resource attributes
 	mergedAttrs := make([]map[string]interface{}, 0)
@@ -301,13 +305,13 @@ func (r *Receiver) convertLogRecordToJSON(record *logspb.LogRecord, resourceAttr
 		}
 		mergedAttrs = append(mergedAttrs, attr)
 	}
-	
+
 	// Then add record attributes (they can override resource attributes)
 	for _, attr := range record.Attributes {
 		attrMap := map[string]interface{}{
 			"key": attr.Key,
 		}
-		
+
 		// Extract the value properly
 		if attr.Value != nil {
 			switch v := attr.Value.Value.(type) {
@@ -329,15 +333,15 @@ func (r *Receiver) convertLogRecordToJSON(record *logspb.LogRecord, resourceAttr
 				}
 			}
 		}
-		
+
 		mergedAttrs = append(mergedAttrs, attrMap)
 	}
-	
+
 	// Add merged attributes to the JSON
 	if len(mergedAttrs) > 0 {
 		jsonMap["attributes"] = mergedAttrs
 	}
-	
+
 	// Add trace and span IDs if present
 	if len(record.TraceId) > 0 {
 		jsonMap["traceId"] = fmt.Sprintf("%x", record.TraceId)
@@ -345,13 +349,13 @@ func (r *Receiver) convertLogRecordToJSON(record *logspb.LogRecord, resourceAttr
 	if len(record.SpanId) > 0 {
 		jsonMap["spanId"] = fmt.Sprintf("%x", record.SpanId)
 	}
-	
+
 	// Convert to JSON string
 	finalJSON, err := json.Marshal(jsonMap)
 	if err != nil {
 		return "", err
 	}
-	
+
 	return string(finalJSON), nil
 }
 
@@ -360,7 +364,7 @@ func extractAttributeValue(v *commonpb.AnyValue) interface{} {
 	if v == nil {
 		return nil
 	}
-	
+
 	switch val := v.Value.(type) {
 	case *commonpb.AnyValue_StringValue:
 		return val.StringValue
@@ -389,6 +393,6 @@ func extractAttributeValue(v *commonpb.AnyValue) interface{} {
 	case *commonpb.AnyValue_BytesValue:
 		return val.BytesValue
 	}
-	
+
 	return nil
 }
