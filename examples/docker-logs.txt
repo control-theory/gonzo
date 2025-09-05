@@ -1,0 +1,30 @@
+[08/26/25 12:13:25] INFO     Shutting down due to inactivity.
+[08/26/25 12:13:25] INFO     Shutting down
+[08/26/25 12:13:25] INFO     Waiting for application shutdown.
+[08/26/25 12:13:25] INFO     Application shutdown complete.
+[08/26/25 12:13:25] INFO     Finished server process [6498]
+[08/26/25 12:13:25] ERROR    Worker (pid:6498) was sent SIGINT!
+[08/26/25 12:13:25] INFO     Booting worker with pid: 8447
+[08/26/25 12:13:26] INFO     Started server process [8447]
+[08/26/25 12:13:26] INFO     Waiting for application startup.
+[08/26/25 12:13:26] INFO     Created in-memory cache with unloading after 300s of inactivity.
+[08/26/25 12:13:26] INFO     Initialized request thread pool with 2 threads.
+[08/26/25 12:13:26] INFO     Application startup complete.
+[08/29/25 14:36:55] INFO     Loading visual model 'ViT-B-32__openai' to memory
+[08/29/25 14:36:55] INFO     Setting execution providers to ['CPUExecutionProvider'], in descending order of preference
+[08/29/25 14:36:56] INFO     Loading detection model 'buffalo_l' to memory
+[08/29/25 14:36:56] INFO     Setting execution providers to ['CPUExecutionProvider'], in descending order of preference
+[08/29/25 14:36:56] INFO     Loading recognition model 'buffalo_l' to memory
+[08/29/25 14:36:56] INFO     Setting execution providers to ['CPUExecutionProvider'], in descending order of preference
+[08/29/25 14:50:22] INFO     Shutting down due to inactivity.
+[08/29/25 14:50:22] INFO     Shutting down
+[08/29/25 14:50:22] INFO     Waiting for application shutdown.
+[08/29/25 14:50:22] INFO     Application shutdown complete.
+[08/29/25 14:50:22] INFO     Finished server process [8447]
+[08/29/25 14:50:22] ERROR    Worker (pid:8447) was sent SIGINT!
+[08/29/25 14:50:22] INFO     Booting worker with pid: 36336
+[08/29/25 14:50:23] INFO     Started server process [36336]
+[08/29/25 14:50:23] INFO     Waiting for application startup.
+[08/29/25 14:50:23] INFO     Created in-memory cache with unloading after 300s of inactivity.
+[08/29/25 14:50:23] INFO     Initialized request thread pool with 2 threads.
+[08/29/25 14:50:23] INFO     Application startup complete.

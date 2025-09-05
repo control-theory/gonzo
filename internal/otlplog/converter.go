@@ -15,11 +15,12 @@ import (
 
 // LogConverter converts various log formats to OTLP format
 type LogConverter struct {
-	timestampRegex  *regexp.Regexp
-	levelRegex      *regexp.Regexp
-	jsonRegex       *regexp.Regexp
-	jsonMarshaler   protojson.MarshalOptions
-	jsonUnmarshaler protojson.UnmarshalOptions
+	timestampRegex       *regexp.Regexp
+	dockerTimestampRegex *regexp.Regexp
+	levelRegex           *regexp.Regexp
+	jsonRegex            *regexp.Regexp
+	jsonMarshaler        protojson.MarshalOptions
+	jsonUnmarshaler      protojson.UnmarshalOptions
 }
 
 // NewLogConverter creates a new log converter
@@ -27,6 +28,8 @@ func NewLogConverter() *LogConverter {
 	return &LogConverter{
 		// Common timestamp patterns
 		timestampRegex: regexp.MustCompile(`(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d{3,6})?(?:Z|[+-]\d{2}:?\d{2})?)`),
+		// Docker log timestamp pattern: [MM/DD/YY HH:MM:SS]
+		dockerTimestampRegex: regexp.MustCompile(`\[(\d{2}/\d{2}/\d{2}\s+\d{2}:\d{2}:\d{2})\]`),
 		// Common log level patterns
 		levelRegex: regexp.MustCompile(`(?i)\b(TRACE|DEBUG|INFO|WARN|WARNING|ERROR|FATAL|CRITICAL)\b`),
 		// JSON detection
@@ -90,13 +93,27 @@ func (lc *LogConverter) convertJSONToOTLP(line string) (*logspb.LogRecord, error
 
 // convertTextToOTLP converts plain text logs to OTLP format
 func (lc *LogConverter) convertTextToOTLP(line string) (*logspb.LogRecord, error) {
+	// For Docker logs, extract the message without the timestamp and severity
+	message := line
+
+	// If we find a Docker timestamp, remove it from the message
+	if dockerMatches := lc.dockerTimestampRegex.FindStringIndex(line); dockerMatches != nil {
+		// Remove the timestamp portion from the message
+		message = strings.TrimSpace(line[dockerMatches[1]:])
+
+		// Also remove the severity if it's at the beginning of the remaining message
+		if levelMatches := lc.levelRegex.FindStringIndex(message); levelMatches != nil && levelMatches[0] == 0 {
+			message = strings.TrimSpace(message[levelMatches[1]:])
+		}
+	}
+
 	record := &logspb.LogRecord{
 		TimeUnixNano:   lc.extractTimestampFromText(line),
 		SeverityNumber: lc.extractSeverityNumberFromText(line),
 		SeverityText:   lc.extractSeverityTextFromText(line),
 		Body: &commonpb.AnyValue{
 			Value: &commonpb.AnyValue_StringValue{
-				StringValue: strings.ReplaceAll(line, "\t", " "),
+				StringValue: strings.ReplaceAll(message, "\t", " "),
 			},
 		},
 		Attributes: []*commonpb.KeyValue{},
@@ -124,6 +141,15 @@ func (lc *LogConverter) extractTimestamp(data map[string]interface{}) uint64 {
 
 // extractTimestampFromText extracts timestamp from text
 func (lc *LogConverter) extractTimestampFromText(line string) uint64 {
+	// First try Docker format [MM/DD/YY HH:MM:SS]
+	dockerMatches := lc.dockerTimestampRegex.FindStringSubmatch(line)
+	if len(dockerMatches) > 1 {
+		if timestamp := lc.parseDockerTimestamp(dockerMatches[1]); timestamp > 0 {
+			return timestamp
+		}
+	}
+
+	// Then try standard timestamp formats
 	matches := lc.timestampRegex.FindStringSubmatch(line)
 	if len(matches) > 1 {
 		if timestamp := lc.parseTimestamp(matches[1]); timestamp > 0 {
@@ -133,6 +159,26 @@ func (lc *LogConverter) extractTimestampFromText(line string) uint64 {
 
 	// If no timestamp found, use current time
 	return uint64(time.Now().UnixNano())
+}
+
+// parseDockerTimestamp parses Docker-style timestamps: MM/DD/YY HH:MM:SS
+func (lc *LogConverter) parseDockerTimestamp(timestamp string) uint64 {
+	// Docker format: MM/DD/YY HH:MM:SS
+	// Parse this specific format
+	layout := "01/02/06 15:04:05"
+	if t, err := time.Parse(layout, timestamp); err == nil {
+		// Adjust for 2-digit year (06 means 2006 in Go's time format)
+		// If year is less than 70, assume 2000s; otherwise 1900s
+		if t.Year() < 100 {
+			if t.Year() < 70 {
+				t = t.AddDate(2000, 0, 0)
+			} else {
+				t = t.AddDate(1900, 0, 0)
+			}
+		}
+		return uint64(t.UnixNano())
+	}
+	return 0
 }
 
 // parseTimestamp converts various timestamp formats to nanoseconds
