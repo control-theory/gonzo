@@ -40,12 +40,46 @@
         header {
             background: linear-gradient(135deg, var(--dark-blue) 0%, var(--light-blue) 100%);
             color: var(--white);
-            padding: 2rem 0;
+            padding: 0.75rem 0 2rem;
             text-align: center;
+            position: relative;
         }
 
         .hero {
-            padding: 4rem 0;
+            padding: 1.5rem 0;
+        }
+
+        .hero-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .mascot-gif-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+        }
+
+        .mascot img {
+            width: auto;
+            height: auto;
+            max-width: clamp(240px, 22vw, 360px);
+            max-height: clamp(240px, 22vw, 360px);
+            object-fit: contain;
+        }
+
+        .hero-gif {
+            width: auto;
+            height: auto;
+            max-width: clamp(240px, 22vw, 360px);
+            max-height: clamp(240px, 22vw, 360px);
+            display: block;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
         .hero h1 {
@@ -67,13 +101,28 @@
             margin-right: auto;
         }
 
-        .mascot {
+        .github-stats {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
             margin-bottom: 2rem;
+            opacity: 0.9;
         }
 
-        .mascot img {
-            max-width: 200px;
-            height: auto;
+        .star-count {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            font-weight: 500;
+        }
+
+        .star-icon {
+            color: var(--green);
         }
 
         .cta-buttons {
@@ -81,7 +130,21 @@
             gap: 1rem;
             justify-content: center;
             flex-wrap: wrap;
+            align-items: flex-start;
             margin-top: 2rem;
+        }
+
+        .cta-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .cta-microcopy {
+            font-size: 0.85rem;
+            opacity: 0.7;
+            font-weight: 400;
         }
 
         .btn {
@@ -115,6 +178,50 @@
             color: var(--dark-blue);
         }
 
+        .scroll-indicator {
+            position: absolute;
+            left: 50%;
+            bottom: 16px;
+            transform: translateX(-50%);
+        }
+
+        .learn-more {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+            opacity: 0.8;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: var(--white);
+            text-shadow: 0 2px 8px rgba(0,0,0,0.35);
+        }
+
+        .learn-more:hover {
+            opacity: 1;
+            transform: translateY(2px);
+            color: var(--green);
+        }
+
+        .learn-more .arrow {
+            font-size: 1.2rem;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-5px);
+            }
+            60% {
+                transform: translateY(-3px);
+            }
+        }
+
         .features {
             padding: 4rem 0;
             background-color: #f8f9fa;
@@ -123,8 +230,16 @@
         .features h2 {
             text-align: center;
             font-size: 2.5rem;
-            margin-bottom: 3rem;
+            margin-bottom: 1rem;
             color: var(--dark-blue);
+        }
+
+        .features-tagline {
+            text-align: center;
+            font-size: 1.25rem;
+            color: var(--gray);
+            margin-bottom: 3rem;
+            font-style: italic;
         }
 
         .features-grid {
@@ -186,31 +301,110 @@
             margin-bottom: 3rem;
         }
 
-        .install-methods {
+        .install-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 2rem;
+            align-items: start;
         }
 
-        .install-card {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 2rem;
+        .install-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
-            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            min-height: 200px;
         }
 
-        .install-card h3 {
+        .install-box h3 {
+            color: var(--green);
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+        }
+
+        .install-box p {
+            margin-bottom: 1.5rem;
+            opacity: 0.9;
+        }
+
+        /* Terminal code blocks */
+        .terminal {
+            background: #000;
+            color: var(--green);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 0.9rem;
+            position: relative;
+            margin-top: auto;
+        }
+
+        .terminal-content {
+            white-space: pre-line;
+            line-height: 1.4;
+        }
+
+        /* Download link styling */
+        .download-link {
+            background: #000;
+            color: var(--green);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            margin-top: auto;
+        }
+
+        .download-link a {
+            color: var(--green);
+            text-decoration: none;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 0.95rem;
+        }
+
+        .download-link a:hover {
+            text-decoration: underline;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .copy-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: var(--white);
+        }
+
+        .quickstart {
+            margin-top: 3rem;
+            text-align: center;
+        }
+
+        .quickstart h3 {
             color: var(--green);
             margin-bottom: 1rem;
         }
 
-        .code-block {
-            background: var(--black);
-            color: var(--green);
-            padding: 1rem;
-            border-radius: 8px;
-            font-family: 'Monaco', 'Menlo', monospace;
-            overflow-x: auto;
+        .quickstart .terminal {
+            display: inline-block;
+            text-align: left;
+            max-width: 600px;
             margin-top: 1rem;
         }
 
@@ -244,6 +438,16 @@
         }
 
         @media (max-width: 768px) {
+            .mascot-gif-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .mascot img,
+            .hero-gif {
+                height: 250px;
+            }
+            
             .hero h1 {
                 font-size: 2rem;
             }
@@ -268,25 +472,53 @@
     <header>
         <div class="container">
             <div class="hero">
-                <div class="mascot">
-                    <img src="gonzo-mascot-smaller.png" alt="Gonzo Mascot">
+                <div class="hero-content">
+                    <div class="mascot-gif-container">
+                        <div class="mascot">
+                            <img src="gonzo-mascot-smaller.png" alt="Gonzo Mascot">
+                        </div>
+                        <div>
+                            <img src="framecut.gif" alt="Gonzo in action" class="hero-gif">
+                        </div>
+                    </div>
                 </div>
+                
                 <h1>Gonzo</h1>
                 <p class="subtitle">
                     A powerful, real-time log analysis terminal UI inspired by k9s. 
                     Analyze log streams with beautiful charts, AI-powered insights, and advanced filtering - all from your terminal.
                 </p>
+                
+                <div class="github-stats">
+                    <div class="star-count" id="starCount">
+                        <span class="star-icon">⭐</span>
+                        <span id="starNumber">Loading...</span>
+                        <span>stars</span>
+                    </div>
+                </div>
+                
                 <div class="cta-buttons">
-                    <a href="https://github.com/control-theory/gonzo" class="btn btn-primary">View on GitHub</a>
-                    <a href="#installation" class="btn btn-secondary">Get Started</a>
+                    <div class="cta-group">
+                        <a href="https://github.com/control-theory/gonzo" class="btn btn-primary">Star on GitHub</a>
+                        <span class="cta-microcopy">Star us to stay updated!</span>
+                    </div>
+                    <a href="#installation" class="btn btn-secondary">Install Now</a>
+                </div>
+
+                <div class="scroll-indicator">
+                    <a href="#features" class="learn-more">
+                        <span>Learn more</span>
+                        <span class="arrow">↓</span>
+                    </a>
                 </div>
             </div>
         </div>
     </header>
 
-    <section class="features">
+    <section id="features" class="features">
         <div class="container">
             <h2>✨ Key Features</h2>
+            <p class="features-tagline">Spend less time debugging, more time shipping.</p>
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">🎯</div>
@@ -296,12 +528,12 @@
                 <div class="feature-card">
                     <div class="feature-icon">📈</div>
                     <h3>Interactive Dashboard</h3>
-                    <p>k9s-inspired 2x2 grid interface with real-time charts, vim-style navigation, and expandable modal views for deep log analysis.</p>
+                    <p>k9s-inspired 2x2 grid interface with real-time charts, stay in-flow with vim-style navigation, and expandable modal views for deep log analysis.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🔍</div>
                     <h3>Advanced Filtering</h3>
-                    <p>Filter logs with regex support, attribute search, severity filtering, and interactive keyboard/mouse navigation.</p>
+                    <p>Drill down faster, surface what matters with regex support, attribute search, severity filtering, and interactive keyboard/mouse navigation.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🤖</div>
@@ -348,48 +580,70 @@
     <section id="installation" class="installation">
         <div class="container">
             <h2>🚀 Quick Installation</h2>
-            <div class="install-methods">
-                <div class="install-card">
+            <div class="install-grid">
+                <div class="install-box">
                     <h3>Using Go</h3>
                     <p>Install directly with Go (requires Go 1.21+)</p>
-                    <div class="code-block">$ go install github.com/control-theory/gonzo/cmd/gonzo@latest</div>
-                </div>
-                <div class="install-card">
-                    <h3>Using Homebrew</h3>
-                    <p>Available on macOS and Linux via Homebrew</p>
-                    <div class="code-block">$ brew tap control-theory/gonzo<br>$ brew install gonzo</div>
-                </div>
-                <div class="install-card">
-                    <h3>Download Binary</h3>
-                    <p>Get the latest release for your platform</p>
-                    <div class="code-block">
-                        <a href="https://github.com/control-theory/gonzo/releases" style="color: var(--green); text-decoration: none;">
-                            → Download from GitHub Releases
-                        </a>
+                    <div class="terminal" id="code-go">
+                        <button class="copy-btn" type="button" data-target="code-go">
+                            <svg viewBox="0 0 24 24"><path d="M16 4h-1.18A3 3 0 0012 2a3 3 0 00-2.82 2H8a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V6a2 2 0 00-2-2zm-4-1a1 1 0 011 1h-2a1 1 0 011-1zm4 15H8V6h1.18A3 3 0 0012 8a3 3 0 002.82-2H16v12z"/></svg>
+                        </button>
+                        <div class="terminal-content">go install github.com/control-theory/gonzo/cmd/gonzo@latest</div>
                     </div>
                 </div>
-                <div class="install-card">
+
+                <div class="install-box">
+                    <h3>Using Homebrew</h3>
+                    <p>Available on macOS and Linux</p>
+                    <div class="terminal" id="code-brew">
+                        <button class="copy-btn" type="button" data-target="code-brew">
+                            <svg viewBox="0 0 24 24"><path d="M16 4h-1.18A3 3 0 0012 2a3 3 0 00-2.82 2H8a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V6a2 2 0 00-2-2zm-4-1a1 1 0 011 1h-2a1 1 0 011-1zm4 15H8V6h1.18A3 3 0 0012 8a3 3 0 002.82-2H16v12z"/></svg>
+                        </button>
+                        <div class="terminal-content">brew install gonzo</div>
+                    </div>
+                </div>
+
+                <div class="install-box">
+                    <h3>Download Binary</h3>
+                    <p>Get the latest release for your platform</p>
+                    <div class="download-link">
+                        <a href="https://github.com/control-theory/gonzo/releases">-> Download from GitHub Releases</a>
+                    </div>
+                </div>
+
+                <div class="install-box">
                     <h3>Build from Source</h3>
                     <p>Clone and build the project yourself</p>
-                    <div class="code-block">$ git clone https://github.com/control-theory/gonzo.git<br>$ cd gonzo<br>$ make build</div>
+                    <div class="terminal" id="code-build">
+                        <button class="copy-btn" type="button" data-target="code-build">
+                            <svg viewBox="0 0 24 24"><path d="M16 4h-1.18A3 3 0 0012 2a3 3 0 00-2.82 2H8a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V6a2 2 0 00-2-2zm-4-1a1 1 0 011 1h-2a1 1 0 011-1zm4 15H8V6h1.18A3 3 0 0012 8a3 3 0 002.82-2H16v12z"/></svg>
+                        </button>
+                        <div class="terminal-content">git clone https://github.com/control-theory/gonzo.git
+cd gonzo
+make build</div>
+                    </div>
                 </div>
             </div>
             
-            <div style="margin-top: 3rem; text-align: center;">
-                <h3 style="color: var(--green); margin-bottom: 1rem;">Quick Start</h3>
+            <div class="quickstart">
+                <h3>Quick Start</h3>
                 <p>Start analyzing logs in seconds:</p>
-                <div class="code-block" style="display: inline-block; margin-top: 1rem;">
-                    # Analyze logs from a file<br>
-                    $ cat application.log | gonzo<br><br>
-                    # Stream Kubernetes logs<br>
-                    $ kubectl logs -f deployment/my-app | gonzo<br><br>
-                    # Stream from Victoria Logs<br>
-                    $ gonzo --vmlogs-url="http://localhost:9428" --vmlogs-query="*"<br><br>
-                    # Receive OTLP logs<br>
-                    $ gonzo --otlp-enabled<br><br>
-                    # With AI analysis<br>
-                    $ export OPENAI_API_KEY=sk-your-key-here<br>
-                    $ cat logs.json | gonzo
+                <div class="terminal">
+                    <div class="terminal-content"># Analyze logs from a file
+$ cat application.log | gonzo
+
+# Stream Kubernetes logs
+$ kubectl logs -f deployment/my-app | gonzo
+
+# Stream from Victoria Logs
+$ gonzo --vmlogs-url="http://localhost:9428" --vmlogs-query="*"
+
+# Receive OTLP logs
+$ gonzo --otlp-enabled
+
+# With AI analysis
+$ export OPENAI_API_KEY=sk-your-key-here
+$ cat logs.json | gonzo</div>
                 </div>
             </div>
         </div>
@@ -414,5 +668,108 @@
             </p>
         </div>
     </footer>
+
+    <script>
+        // Fetch GitHub star count
+        async function fetchStarCount() {
+            try {
+                const response = await fetch('https://api.github.com/repos/control-theory/gonzo');
+                if (response.ok) {
+                    const data = await response.json();
+                    const starCount = data.stargazers_count || 0;
+                    document.getElementById('starNumber').textContent = starCount.toLocaleString();
+                } else {
+                    document.getElementById('starNumber').textContent = '★';
+                    console.log('Could not fetch star count: HTTP', response.status);
+                }
+            } catch (error) {
+                document.getElementById('starNumber').textContent = '★';
+                console.log('Could not fetch star count:', error);
+            }
+        }
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Copy functionality
+        function copyToClipboard(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                return navigator.clipboard.writeText(text);
+            } else {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                textArea.style.top = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                
+                return new Promise((resolve, reject) => {
+                    try {
+                        const successful = document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        if (successful) {
+                            resolve();
+                        } else {
+                            reject();
+                        }
+                    } catch (err) {
+                        document.body.removeChild(textArea);
+                        reject(err);
+                    }
+                });
+            }
+        }
+
+        function getTextFromTerminal(elementId) {
+            const element = document.getElementById(elementId);
+            if (!element) return '';
+            
+            const terminalContent = element.querySelector('.terminal-content');
+            if (!terminalContent) return '';
+            
+            return terminalContent.textContent.trim();
+        }
+
+        // Add click event listeners to copy buttons
+        document.addEventListener('click', function(e) {
+            const copyBtn = e.target.closest('.copy-btn');
+            if (!copyBtn) return;
+            
+            const targetId = copyBtn.getAttribute('data-target');
+            if (!targetId) return;
+            
+            const textToCopy = getTextFromTerminal(targetId);
+            
+            copyToClipboard(textToCopy).then(() => {
+                // Visual feedback
+                copyBtn.style.transform = 'scale(0.95)';
+                copyBtn.style.background = 'rgba(76, 175, 80, 0.4)';
+                
+                setTimeout(() => {
+                    copyBtn.style.transform = '';
+                    copyBtn.style.background = '';
+                }, 200);
+            }).catch((err) => {
+                console.error('Copy failed:', err);
+                alert('Copy failed. Please select and copy the text manually.');
+            });
+        });
+
+        // Load star count when page loads
+        document.addEventListener('DOMContentLoaded', fetchStarCount);
+    </script>
 </body>
 </html>
