@@ -57,11 +57,14 @@ func extractAllLogEntriesFromOTLPBatch(logsData *logspb.LogsData) []*tui.LogEntr
 func extractLogEntryFromOTLPRecordWithResource(record *logspb.LogRecord, resourceAttributes map[string]string) *tui.LogEntry {
 	// Use receive time for all processing
 	receiveTime := time.Now()
-	
+
 	// Extract original timestamp if available
+	// Prefer TimeUnixNano, fallback to ObservedTimeUnixNano
 	origTimestamp := time.Time{}
 	if record.TimeUnixNano > 0 {
 		origTimestamp = time.Unix(0, int64(record.TimeUnixNano))
+	} else if record.ObservedTimeUnixNano > 0 {
+		origTimestamp = time.Unix(0, int64(record.ObservedTimeUnixNano))
 	}
 
 	// Extract severity with proper fallback priority:
@@ -69,7 +72,7 @@ func extractLogEntryFromOTLPRecordWithResource(record *logspb.LogRecord, resourc
 	// 2. Use SeverityNumber if specified (not UNSPECIFIED)
 	// 3. Fall back to parsing message text for severity keywords
 	var severity string
-	
+
 	if record.SeverityText != "" {
 		// Priority 1: Use SeverityText if present
 		severity = record.SeverityText
@@ -87,12 +90,12 @@ func extractLogEntryFromOTLPRecordWithResource(record *logspb.LogRecord, resourc
 
 	// Merge resource attributes with record attributes (record attributes take precedence)
 	attributes := make(map[string]string)
-	
+
 	// First add resource attributes
 	for key, value := range resourceAttributes {
 		attributes[key] = value
 	}
-	
+
 	// Then add/override with record attributes
 	for _, attr := range record.Attributes {
 		if attr.Key != "" && attr.Value != nil {
@@ -120,13 +123,13 @@ func extractLogEntryFromOTLPRecord(record *logspb.LogRecord) *tui.LogEntry {
 func createFallbackLogEntry(line string) *tui.LogEntry {
 	// Replace tabs with spaces to prevent formatting issues
 	cleanLine := strings.ReplaceAll(line, "\t", " ")
-	
+
 	// Extract severity from the message text instead of defaulting to INFO
 	severity := extractSeverityFromText(cleanLine)
-	
+
 	// Use receive time for all processing
 	receiveTime := time.Now()
-	
+
 	return &tui.LogEntry{
 		Timestamp:     receiveTime,
 		OrigTimestamp: time.Time{}, // No original timestamp available for fallback
@@ -141,7 +144,7 @@ func createFallbackLogEntry(line string) *tui.LogEntry {
 func normalizeSeverity(severity string) string {
 	// Convert to uppercase for consistent matching
 	normalized := strings.ToUpper(strings.TrimSpace(severity))
-	
+
 	// Map various formats to standard all caps short forms
 	switch normalized {
 	case "TRACE", "TRAC", "TRC":

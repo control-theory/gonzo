@@ -3,7 +3,7 @@ package otlplog
 import (
 	"encoding/json"
 	"strings"
-	
+
 	logspb "go.opentelemetry.io/proto/otlp/logs/v1"
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -20,8 +20,8 @@ const (
 
 // FormatDetector detects the format of incoming log lines
 type FormatDetector struct {
-	otlpKeywords []string
-	jsonMarshaler protojson.MarshalOptions
+	otlpKeywords    []string
+	jsonMarshaler   protojson.MarshalOptions
 	jsonUnmarshaler protojson.UnmarshalOptions
 }
 
@@ -30,14 +30,15 @@ func NewFormatDetector() *FormatDetector {
 	return &FormatDetector{
 		otlpKeywords: []string{
 			"timeUnixNano",
-			"severityNumber", 
+			"observedTimeUnixNano",
+			"severityNumber",
 			"severityText",
 			"resourceLogs",
 			"scopeLogs",
 			"logRecords",
 		},
 		jsonMarshaler: protojson.MarshalOptions{
-			UseProtoNames: true,
+			UseProtoNames:   true,
 			EmitUnpopulated: false,
 		},
 		jsonUnmarshaler: protojson.UnmarshalOptions{
@@ -49,7 +50,7 @@ func NewFormatDetector() *FormatDetector {
 // DetectFormat analyzes a log line and returns the detected format
 func (fd *FormatDetector) DetectFormat(line string) LogFormat {
 	line = strings.TrimSpace(line)
-	
+
 	if line == "" {
 		return FormatUnknown
 	}
@@ -119,13 +120,13 @@ func (fd *FormatDetector) ParseOTLPBatch(line string) (*logspb.LogsData, error) 
 // GetAllLogRecords extracts all log records from an OTLP LogsData structure
 func (fd *FormatDetector) GetAllLogRecords(logsData *logspb.LogsData) []*logspb.LogRecord {
 	var allRecords []*logspb.LogRecord
-	
+
 	for _, resourceLog := range logsData.ResourceLogs {
 		for _, scopeLog := range resourceLog.ScopeLogs {
 			allRecords = append(allRecords, scopeLog.LogRecords...)
 		}
 	}
-	
+
 	return allRecords
 }
 
