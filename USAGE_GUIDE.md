@@ -93,4 +93,5 @@ gonzo help             # Show help
 ### Supported Integrations 
 
 - [Victoria Logs Integration](VICTORIA_LOGS_USAGE.md) - Using Gonzo with Victoria Logs API
+- [AWS CloudWatch Logs](CLOUDWATCH_USAGE_GUIDE.md) - Using Gonzo with the AWS CLI to tail or live tail logs
 
