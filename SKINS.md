@@ -15,6 +15,8 @@ Gonzo supports customizable color schemes (skins) that allow you to personalize 
 
 ## Quick Start
 
+Be sure you download and place in the Gonzo config directory so Gonzo can find them.
+
 ```bash
 # Use a built-in skin
 gonzo --skin=dracula

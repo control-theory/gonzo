@@ -51,7 +51,7 @@ A powerful, real-time log analysis terminal UI inspired by k9s. Analyze log stre
 - **Light and dark modes** - Themes optimized for different lighting conditions
 - **Custom skins** - Create your own color schemes with YAML configuration
 - **Semantic colors** - Intuitive color mapping for different UI components
-- **Professional themes** - Control Theory branded themes included
+- **Professional themes** - ControlTheory original themes included
 
 ### 🤖 AI-Powered Insights
 - **Pattern detection** - Automatically identify recurring issues
