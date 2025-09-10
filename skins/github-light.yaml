@@ -1,0 +1,44 @@
+name: github-light
+description: GitHub Light - Clean and bright theme inspired by GitHub's light mode
+author: Gonzo Community
+colors:
+  # UI Component Colors
+  primary: "#0969da"           # Primary blue for highlights
+  secondary: "#8250df"         # Purple accent
+  background: "#ffffff"        # White background
+  surface: "#f6f8fa"          # Light gray for panels/modals
+  border: "#d1d9e0"           # Light border
+  border_active: "#0969da"     # Active border (blue)
+  text: "#1f2328"             # Dark text on light background
+  text_secondary: "#656d76"    # Muted text
+  text_inverse: "#ffffff"      # White text for colored backgrounds
+  
+  # Chart and Data Colors
+  chart_title: "#0969da"       # Blue for chart titles
+  chart_bar: "#1a7f37"        # Green for bars
+  chart_accent: "#bc4c00"      # Orange accent
+  
+  # Log Entry Colors
+  log_timestamp: "#656d76"     # Muted for timestamps
+  log_message: "#1f2328"       # Dark text for readability
+  log_background: "#ffffff"    # White background
+  log_selected: "#dbeafe"      # Light blue selection
+  
+  # Severity Level Colors
+  severity_trace: "#afb8c1"    # Light gray for trace
+  severity_debug: "#656d76"    # Medium gray for debug
+  severity_info: "#0969da"     # Blue for info
+  severity_warn: "#9a6700"     # Dark yellow for warnings
+  severity_error: "#d1242f"    # Red for errors
+  severity_fatal: "#a40e26"    # Dark red for fatal
+  
+  # Status Colors
+  success: "#1a7f37"          # Green
+  warning: "#9a6700"          # Dark yellow
+  error: "#d1242f"            # Red
+  info: "#0969da"             # Blue
+  
+  # Special Elements
+  help: "#656d76"             # Muted gray for help text
+  highlight: "#fff8c5"        # Light yellow highlight
+  disabled: "#afb8c1"         # Light gray for disabled

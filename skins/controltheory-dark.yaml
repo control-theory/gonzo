@@ -1,0 +1,44 @@
+name: controltheory-dark
+description: ControlTheory Dark - Original Gonzo theme, dark mode!
+author: ControlTheory
+colors:
+  # UI Component Colors (using default dark colors)
+  primary: "#0f93fc"           # ControlTheory blue
+  secondary: "#49E209"         # ControlTheory green
+  background: "#081C39"        # Dark navy background (default)
+  surface: "#2D2D2D"          # Dark gray surface (default)
+  border: "#BCBEC0"           # Gray border (default)
+  border_active: "#0f93fc"     # Blue active border
+  text: "#FFFFFF"             # White text (default)
+  text_secondary: "#BCBEC0"    # Gray secondary text (default)
+  text_inverse: "#000000"      # Black text for light backgrounds (default)
+  
+  # Chart and Data Colors
+  chart_title: "#0f93fc"       # Blue titles (default)
+  chart_bar: "#49E209"        # Green bars (default)
+  chart_accent: "#FF8C42"      # Orange accent (default)
+  
+  # Log Entry Colors
+  log_timestamp: "#BCBEC0"     # Gray timestamps (default)
+  log_message: "#FFFFFF"       # White message text (default)
+  log_background: "#081C39"    # Navy background (default)
+  log_selected: "#0f93fc"      # Blue selection (default)
+  
+  # Severity Level Colors (using default dark colors)
+  severity_trace: "#888888"    # Light gray for trace (default)
+  severity_debug: "#BCBEC0"    # Gray for debug (default)
+  severity_info: "#0f93fc"     # Blue for info (default)
+  severity_warn: "#FFD93D"     # Yellow for warnings (default)
+  severity_error: "#FF8888"    # Light red for errors (default)
+  severity_fatal: "#FF6B6B"    # Red for fatal (default)
+  
+  # Status Colors
+  success: "#49E209"          # Green (default)
+  warning: "#FFD93D"          # Yellow (default)
+  error: "#FF6B6B"            # Red (default)
+  info: "#0f93fc"             # Blue (default)
+  
+  # Special Elements
+  help: "#BCBEC0"             # Gray for help (default)
+  highlight: "#FF69B4"        # Pink highlight (default)
+  disabled: "#666666"         # Dark gray for disabled (default)

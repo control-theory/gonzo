@@ -1,0 +1,44 @@
+name: controltheory-light
+description: ControlTheory Light - Original Gonzo theme, light mode!
+author: ControlTheory
+colors:
+  # UI Component Colors
+  primary: "#0f93fc"           # ControlTheory blue
+  secondary: "#49E209"         # ControlTheory green
+  background: "#ffffff"        # Clean white background
+  surface: "#f8f9fa"          # Light gray surface
+  border: "#dee2e6"           # Light border
+  border_active: "#0f93fc"     # Blue active border
+  text: "#212529"             # Dark text for readability
+  text_secondary: "#6c757d"    # Muted gray text
+  text_inverse: "#ffffff"      # White text for colored backgrounds
+  
+  # Chart and Data Colors
+  chart_title: "#0f93fc"       # Blue titles
+  chart_bar: "#49E209"        # Green bars
+  chart_accent: "#FF8C42"      # Orange accent
+  
+  # Log Entry Colors
+  log_timestamp: "#6c757d"     # Muted timestamps
+  log_message: "#212529"       # Dark message text
+  log_background: "#ffffff"    # White background
+  log_selected: "#e3f2fd"      # Light blue selection
+  
+  # Severity Level Colors
+  severity_trace: "#adb5bd"    # Light gray for trace
+  severity_debug: "#6c757d"    # Medium gray for debug
+  severity_info: "#0f93fc"     # Blue for info
+  severity_warn: "#fd7e14"     # Orange for warnings (better than yellow on light)
+  severity_error: "#dc3545"    # Red for errors
+  severity_fatal: "#6f42c1"    # Purple for fatal
+  
+  # Status Colors
+  success: "#49E209"          # ControlTheory green
+  warning: "#fd7e14"          # Orange
+  error: "#dc3545"            # Red
+  info: "#0f93fc"             # ControlTheory blue
+  
+  # Special Elements
+  help: "#6c757d"             # Muted gray for help
+  highlight: "#fff3cd"        # Light yellow highlight
+  disabled: "#adb5bd"         # Light gray for disabled

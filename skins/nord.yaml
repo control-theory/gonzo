@@ -1,0 +1,44 @@
+name: nord
+description: Nord - An arctic, north-bluish color palette
+author: Gonzo Community
+colors:
+  # UI Component Colors
+  primary: "#88c0d0"           # Nord8 - Frost blue primary
+  secondary: "#5e81ac"         # Nord10 - Deep blue secondary
+  background: "#2e3440"        # Nord0 - Polar night background
+  surface: "#3b4252"          # Nord1 - Darker surface
+  border: "#4c566a"           # Nord3 - Gray border
+  border_active: "#88c0d0"     # Nord8 - Frost blue active
+  text: "#eceff4"             # Nord6 - Snow storm text
+  text_secondary: "#4c566a"    # Nord3 - Gray secondary text
+  text_inverse: "#2e3440"      # Nord0 - Dark text for light backgrounds
+  
+  # Chart and Data Colors
+  chart_title: "#88c0d0"       # Nord8 - Frost blue titles
+  chart_bar: "#a3be8c"        # Nord14 - Green bars
+  chart_accent: "#d08770"      # Nord12 - Orange accent
+  
+  # Log Entry Colors
+  log_timestamp: "#4c566a"     # Nord3 - Gray timestamps
+  log_message: "#eceff4"       # Nord6 - Light message text
+  log_background: "#2e3440"    # Nord0 - Dark background
+  log_selected: "#434c5e"      # Nord2 - Selection
+  
+  # Severity Level Colors
+  severity_trace: "#434c5e"    # Nord2 - Dark gray for trace
+  severity_debug: "#4c566a"    # Nord3 - Gray for debug
+  severity_info: "#81a1c1"     # Nord9 - Blue for info
+  severity_warn: "#ebcb8b"     # Nord13 - Yellow for warnings
+  severity_error: "#bf616a"    # Nord11 - Red for errors
+  severity_fatal: "#b48ead"    # Nord15 - Purple for fatal
+  
+  # Status Colors
+  success: "#a3be8c"          # Nord14 - Green
+  warning: "#ebcb8b"          # Nord13 - Yellow
+  error: "#bf616a"            # Nord11 - Red
+  info: "#81a1c1"             # Nord9 - Blue
+  
+  # Special Elements
+  help: "#4c566a"             # Nord3 - Gray for help
+  highlight: "#ebcb8b"        # Nord13 - Yellow highlight
+  disabled: "#434c5e"         # Nord2 - Dark gray for disabled

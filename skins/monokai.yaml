@@ -1,0 +1,44 @@
+name: monokai
+description: Monokai theme - A warm, high-contrast dark theme
+author: Gonzo Community
+colors:
+  # UI Component Colors
+  primary: "#66d9ef"           # Light blue primary
+  secondary: "#a6e22e"         # Lime green secondary
+  background: "#272822"        # Dark background
+  surface: "#1e1f1c"          # Darker surface
+  border: "#75715e"           # Comment gray border
+  border_active: "#66d9ef"     # Light blue active border
+  text: "#f8f8f2"             # Light text
+  text_secondary: "#75715e"    # Comment gray
+  text_inverse: "#272822"      # Dark text for light backgrounds
+  
+  # Chart and Data Colors
+  chart_title: "#66d9ef"       # Light blue titles
+  chart_bar: "#a6e22e"        # Lime green bars
+  chart_accent: "#fd971f"      # Orange accent
+  
+  # Log Entry Colors
+  log_timestamp: "#75715e"     # Comment gray timestamps
+  log_message: "#f8f8f2"       # Light message text
+  log_background: "#272822"    # Dark background
+  log_selected: "#3e3d32"      # Subtle gray selection
+  
+  # Severity Level Colors
+  severity_trace: "#3e3d32"    # Subtle gray for trace
+  severity_debug: "#75715e"    # Comment gray for debug
+  severity_info: "#66d9ef"     # Light blue for info
+  severity_warn: "#e6db74"     # Yellow for warnings
+  severity_error: "#f92672"    # Magenta-red for errors
+  severity_fatal: "#ae81ff"    # Purple for fatal
+  
+  # Status Colors
+  success: "#a6e22e"          # Lime green
+  warning: "#e6db74"          # Yellow
+  error: "#f92672"            # Magenta-red
+  info: "#66d9ef"             # Light blue
+  
+  # Special Elements
+  help: "#75715e"             # Comment gray for help
+  highlight: "#e6db74"        # Yellow highlight
+  disabled: "#3e3d32"         # Subtle gray for disabled

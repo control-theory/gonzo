@@ -1,0 +1,44 @@
+name: vs-code-light
+description: VS Code Light - Clean professional theme based on VS Code's default light theme
+author: Gonzo Community
+colors:
+  # UI Component Colors
+  primary: "#005cc5"           # VS Code blue
+  secondary: "#6f42c1"         # Purple accent
+  background: "#ffffff"        # White background
+  surface: "#f8f9fa"          # Light gray surface
+  border: "#e1e4e8"           # Light border
+  border_active: "#005cc5"     # Blue active border
+  text: "#24292e"             # Dark text
+  text_secondary: "#6a737d"    # Muted gray
+  text_inverse: "#ffffff"      # White text
+  
+  # Chart and Data Colors
+  chart_title: "#005cc5"       # Blue titles
+  chart_bar: "#28a745"        # Green bars
+  chart_accent: "#e36209"      # Orange accent
+  
+  # Log Entry Colors
+  log_timestamp: "#6a737d"     # Muted timestamps
+  log_message: "#24292e"       # Dark message text
+  log_background: "#ffffff"    # White background
+  log_selected: "#f1f8ff"      # Light blue selection
+  
+  # Severity Level Colors
+  severity_trace: "#959da5"    # Light gray for trace
+  severity_debug: "#6a737d"    # Medium gray for debug
+  severity_info: "#005cc5"     # Blue for info
+  severity_warn: "#e36209"     # Orange for warnings (better than yellow)
+  severity_error: "#d73a49"    # Red for errors
+  severity_fatal: "#b31d28"    # Dark red for fatal
+  
+  # Status Colors
+  success: "#28a745"          # Green
+  warning: "#e36209"          # Orange
+  error: "#d73a49"            # Red
+  info: "#005cc5"             # Blue
+  
+  # Special Elements
+  help: "#6a737d"             # Muted help text
+  highlight: "#fffbdd"        # Light yellow highlight
+  disabled: "#959da5"         # Light gray disabled
