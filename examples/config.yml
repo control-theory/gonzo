@@ -1,5 +1,5 @@
 # Gonzo Configuration File
-# Place this file at ~/.config/gonzo/config.yaml for automatic loading
+# Place this file at ~/.config/gonzo/config.yml for automatic loading
 
 # File input configuration
 files:
