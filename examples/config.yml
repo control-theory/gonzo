@@ -1,5 +1,12 @@
 # Gonzo Configuration File
-# Place this file at ~/.config/gonzo/config.yaml for automatic loading
+# Place this file at ~/.config/gonzo/config.yml for automatic loading
+
+# File input configuration
+files:
+  - "/var/log/app.log"
+  - "/var/log/error.log"
+  - "/var/log/*.log" # Glob patterns supported
+follow: true # Enable follow mode (like tail -f)
 
 # Dashboard update frequency (Go duration format)
 # Examples: 1s, 500ms, 2s, 1m
@@ -13,10 +20,15 @@ log-buffer: 1000
 # Higher values track more unique words/phrases but use more memory
 memory-size: 10000
 
+# UI customization
+skin: dracula # Choose from: default, dracula, nord, monokai, github-light, etc.
+
+# AI configuration
+ai-model: "gpt-4"
+
 # Enable test mode for non-TTY environments
 # Useful for CI/CD pipelines or automated testing
 test-mode: false
-
 # Example: Increase buffer sizes for high-volume logging
 # update-interval: 2s
 # log-buffer: 5000

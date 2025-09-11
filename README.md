@@ -1,4 +1,5 @@
 # Gonzo - The Go based TUI for log analysis
+
 <p align="center"><img src="docs/gonzo-mascot-smaller.png" width="250" alt="Gonzo Mascot"></p>
 
 [![Go Version](https://img.shields.io/badge/go-%3E%3D1.21-blue)](https://go.dev/)
@@ -8,21 +9,25 @@
 A powerful, real-time log analysis terminal UI inspired by k9s. Analyze log streams with beautiful charts, AI-powered insights, and advanced filtering - all from your terminal.
 
 ### See it in action
+
 ![Gonzo Walkthrough](docs/gonzo_video_walkthrough.gif)
 
 ### Main Dashboard
+
 ![Gonzo Main Dashboard](docs/gonzo-main.png)
 
 ### Stats and Info
+
 ![Gonzo Stats](docs/gonzo-stats.png)
 
 ### Everyone loves a heatmap
-![Gonzo Heatmap](docs/gonzo-heatmap.png)
 
+![Gonzo Heatmap](docs/gonzo-heatmap.png)
 
 ## ✨ Features
 
 ### 🎯 Real-Time Analysis
+
 - **Live streaming** - Process logs as they arrive from stdin, files, or network
 - **OTLP native** - First-class support for OpenTelemetry log format
 - **OTLP receiver** - Built-in gRPC server to receive logs via OpenTelemetry protocol
@@ -30,6 +35,7 @@ A powerful, real-time log analysis terminal UI inspired by k9s. Analyze log stre
 - **Severity tracking** - Color-coded severity levels with distribution charts
 
 ### 📈 Interactive Dashboard
+
 - **k9s-inspired layout** - Familiar 2x2 grid interface
 - **Real-time charts** - Word frequency, attributes, severity distribution, and time series
 - **Keyboard + mouse navigation** - Vim-style shortcuts plus click-to-navigate and scroll wheel support
@@ -41,12 +47,14 @@ A powerful, real-time log analysis terminal UI inspired by k9s. Analyze log stre
 - **AI analysis** - Get intelligent insights about log patterns and anomalies with configurable models
 
 ### 🔍 Advanced Filtering
+
 - **Regex support** - Filter logs with regular expressions
 - **Attribute search** - Find logs by specific attribute values
 - **Severity filtering** - Focus on errors, warnings, or specific log levels
 - **Interactive selection** - Click or keyboard navigate to explore logs
 
 ### 🎨 Customizable Themes
+
 - **Built-in skins** - 11+ beautiful themes including Dracula, Nord, Monokai, GitHub Light, and more
 - **Light and dark modes** - Themes optimized for different lighting conditions
 - **Custom skins** - Create your own color schemes with YAML configuration
@@ -54,8 +62,9 @@ A powerful, real-time log analysis terminal UI inspired by k9s. Analyze log stre
 - **Professional themes** - ControlTheory original themes included
 
 ### 🤖 AI-Powered Insights
+
 - **Pattern detection** - Automatically identify recurring issues
-- **Anomaly analysis** - Spot unusual patterns in your logs  
+- **Anomaly analysis** - Spot unusual patterns in your logs
 - **Root cause suggestions** - Get AI-powered debugging assistance
 - **Configurable models** - Choose from GPT-4, GPT-3.5, or any custom model
 - **Multiple providers** - Works with OpenAI, LM Studio, Ollama, or any OpenAI-compatible API
@@ -66,6 +75,7 @@ A powerful, real-time log analysis terminal UI inspired by k9s. Analyze log stre
 ### Installation
 
 #### Using Go
+
 ```bash
 go install github.com/control-theory/gonzo/cmd/gonzo@latest
 ```
@@ -77,14 +87,17 @@ brew install gonzo
 ```
 
 #### Download Binary
+
 Download the latest release for your platform from the [releases page](https://github.com/control-theory/gonzo/releases).
 
 #### Using Nix package manager (beta support)
+
 ```bash
 nix run github:control-theory/gonzo
 ```
 
 #### Build from Source
+
 ```bash
 git clone https://github.com/control-theory/gonzo.git
 cd gonzo
@@ -145,6 +158,7 @@ gonzo --otlp-enabled --otlp-grpc-port=5317 --otlp-http-port=5318
 #### Example: OpenTelemetry Collector Configuration
 
 **Using gRPC:**
+
 ```yaml
 exporters:
   otlp/gonzo_grpc:
@@ -161,6 +175,7 @@ service:
 ```
 
 **Using HTTP:**
+
 ```yaml
 exporters:
   otlphttp/gonzo_http:
@@ -177,6 +192,7 @@ service:
 #### Example: Python Application
 
 **Using gRPC:**
+
 ```python
 from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
 
@@ -187,6 +203,7 @@ exporter = OTLPLogExporter(
 ```
 
 **Using HTTP:**
+
 ```python
 from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
 
@@ -230,51 +247,56 @@ cat logs.json | gonzo --ai-model="gpt-4"
 ### Keyboard Shortcuts
 
 #### Navigation
-| Key/Mouse | Action |
-|-----------|--------|
-| `Tab` / `Shift+Tab` | Navigate between panels |
-| `Mouse Click` | Click on any section to switch to it |
-| `↑`/`↓` or `k`/`j` | Move selection up/down |
-| `Mouse Wheel` | Scroll up/down to navigate selections |
-| `←`/`→` or `h`/`l` | Horizontal navigation |
-| `Enter` | View log details or open analysis modal (Counts section) |
-| `ESC` | Close modal/cancel |
 
-#### Actions  
-| Key | Action |
-|-----|--------|
-| `Space` | Pause/unpause entire dashboard |
-| `/` | Enter filter mode (regex supported) |
-| `s` | Search and highlight text in logs |
-| `f` | Open fullscreen log viewer modal |
-| `c` | Toggle Host/Service columns in log view |
-| `r` | Reset all data (manual reset) |
-| `u` / `U` | Cycle update intervals (forward/backward) |
-| `i` | AI analysis (in detail view) |
-| `m` | Switch AI model (shows available models) |
-| `?` / `h` | Show help |
-| `q` / `Ctrl+C` | Quit |
+| Key/Mouse           | Action                                                   |
+| ------------------- | -------------------------------------------------------- |
+| `Tab` / `Shift+Tab` | Navigate between panels                                  |
+| `Mouse Click`       | Click on any section to switch to it                     |
+| `↑`/`↓` or `k`/`j`  | Move selection up/down                                   |
+| `Mouse Wheel`       | Scroll up/down to navigate selections                    |
+| `←`/`→` or `h`/`l`  | Horizontal navigation                                    |
+| `Enter`             | View log details or open analysis modal (Counts section) |
+| `ESC`               | Close modal/cancel                                       |
+
+#### Actions
+
+| Key            | Action                                    |
+| -------------- | ----------------------------------------- |
+| `Space`        | Pause/unpause entire dashboard            |
+| `/`            | Enter filter mode (regex supported)       |
+| `s`            | Search and highlight text in logs         |
+| `f`            | Open fullscreen log viewer modal          |
+| `c`            | Toggle Host/Service columns in log view   |
+| `r`            | Reset all data (manual reset)             |
+| `u` / `U`      | Cycle update intervals (forward/backward) |
+| `i`            | AI analysis (in detail view)              |
+| `m`            | Switch AI model (shows available models)  |
+| `?` / `h`      | Show help                                 |
+| `q` / `Ctrl+C` | Quit                                      |
 
 #### Log Viewer Navigation
-| Key | Action |
-|-----|--------|
-| `Home` | Jump to top of log buffer (stops auto-scroll) |
-| `End` | Jump to latest logs (resumes auto-scroll) |
-| `PgUp` / `PgDn` | Navigate by pages (10 entries at a time) |
-| `↑`/`↓` or `k`/`j` | Navigate entries with smart auto-scroll |
+
+| Key                | Action                                        |
+| ------------------ | --------------------------------------------- |
+| `Home`             | Jump to top of log buffer (stops auto-scroll) |
+| `End`              | Jump to latest logs (resumes auto-scroll)     |
+| `PgUp` / `PgDn`    | Navigate by pages (10 entries at a time)      |
+| `↑`/`↓` or `k`/`j` | Navigate entries with smart auto-scroll       |
 
 #### AI Chat (in log detail modal)
-| Key | Action |
-|-----|--------|
-| `c` | Start chat with AI about current log |
+
+| Key   | Action                                   |
+| ----- | ---------------------------------------- |
+| `c`   | Start chat with AI about current log     |
 | `Tab` | Switch between log details and chat pane |
-| `m` | Switch AI model (works in modal too) |
+| `m`   | Switch AI model (works in modal too)     |
 
 ### Log Counts Analysis Modal
 
 Press `Enter` on the Counts section to open a comprehensive analysis modal featuring:
 
 #### 🔥 Real-Time Heatmap Visualization
+
 - **Time-series heatmap** showing severity levels vs. time (1-minute resolution)
 - **60-minute rolling window** with automatic scaling per severity level
 - **Color-coded intensity** using ASCII characters (░▒▓█) with gradient effects
@@ -282,18 +304,21 @@ Press `Enter` on the Counts section to open a comprehensive analysis modal featu
 - **Receive time architecture** - visualization based on when logs were received for reliable display
 
 #### 🔍 Pattern Analysis by Severity
+
 - **Top 3 patterns per severity** using drain3 pattern extraction algorithm
 - **Severity-specific tracking** with dedicated drain3 instances for each level
 - **Real-time pattern detection** as logs arrive and are processed
 - **Accurate pattern counts** maintained separately for each severity level
 
-#### 🏢 Service Distribution Analysis  
+#### 🏢 Service Distribution Analysis
+
 - **Top 3 services per severity** showing which services generate each log level
 - **Service name extraction** from common attributes (service.name, service, app, etc.)
 - **Real-time updates** as new logs are processed and analyzed
 - **Fallback to host information** when service names are not available
 
 #### ⌨️ Modal Navigation
+
 - **Scrollable content** using mouse wheel or arrow keys
 - **ESC to close** and return to main dashboard
 - **Full-width display** maximizing screen real estate for data visualization
@@ -337,8 +362,8 @@ Create `~/.config/gonzo/config.yml` for persistent settings:
 files:
   - "/var/log/app.log"
   - "/var/log/error.log"
-  - "/var/log/*.log"  # Glob patterns supported
-follow: true  # Enable follow mode (like tail -f)
+  - "/var/log/*.log" # Glob patterns supported
+follow: true # Enable follow mode (like tail -f)
 
 # Update frequency for dashboard refresh
 update-interval: 2s
@@ -348,7 +373,7 @@ log-buffer: 2000
 memory-size: 15000
 
 # UI customization
-skin: dracula  # Choose from: default, dracula, nord, monokai, github-light, etc.
+skin: dracula # Choose from: default, dracula, nord, monokai, github-light, etc.
 
 # Development/testing
 test-mode: false
@@ -357,13 +382,14 @@ test-mode: false
 ai-model: "gpt-4"
 ```
 
-See [examples/config.yaml](examples/config.yaml) for a complete configuration example with detailed comments.
+See [examples/config.yml](examples/config.yml) for a complete configuration example with detailed comments.
 
 ### AI Configuration
 
 Gonzo supports multiple AI providers for intelligent log analysis. Configure using command line flags and environment variables. You can switch between available models at runtime using the `m` key.
 
 #### OpenAI
+
 ```bash
 # Set your API key
 export OPENAI_API_KEY="sk-your-actual-key-here"
@@ -376,6 +402,7 @@ cat logs.json | gonzo --ai-model="gpt-4"
 ```
 
 #### LM Studio (Local AI)
+
 ```bash
 # 1. Start LM Studio server with a model loaded
 # 2. Set environment variables (IMPORTANT: include /v1 in URL)
@@ -390,6 +417,7 @@ cat logs.json | gonzo --ai-model="openai/gpt-oss-120b"
 ```
 
 #### Ollama (Local AI)
+
 ```bash
 # 1. Start Ollama: ollama serve
 # 2. Pull a model: ollama pull gpt-oss:20b
@@ -406,6 +434,7 @@ cat logs.json | gonzo --ai-model="llama3"
 ```
 
 #### Custom OpenAI-Compatible APIs
+
 ```bash
 # For any OpenAI-compatible API endpoint
 export OPENAI_API_KEY="your-api-key"
@@ -423,6 +452,7 @@ Once Gonzo is running, you can switch between available AI models without restar
 4. **Cancel** with Escape
 
 The model selection modal shows:
+
 - All available models from your configured AI provider
 - Current active model (highlighted in green)
 - Dynamic sizing based on terminal height
@@ -435,12 +465,14 @@ The model selection modal shows:
 When you don't specify the `--ai-model` flag, Gonzo automatically selects the best available model:
 
 **Selection Priority:**
+
 1. **OpenAI**: Prefers `gpt-4` → `gpt-3.5-turbo` → first available
-2. **Ollama**: Prefers `gpt-oss:20b` → `llama3` → `mistral` → `codellama` → first available  
+2. **Ollama**: Prefers `gpt-oss:20b` → `llama3` → `mistral` → `codellama` → first available
 3. **LM Studio**: Uses first available model from the server
 4. **Other providers**: Uses first available model
 
 **Benefits:**
+
 - ✅ No need to know model names beforehand
 - ✅ Works immediately with any AI provider
 - ✅ Intelligent defaults for better performance
@@ -451,12 +483,14 @@ When you don't specify the `--ai-model` flag, Gonzo automatically selects the be
 #### Troubleshooting AI Setup
 
 **LM Studio Issues:**
+
 - ✅ Ensure server is running and model is loaded
 - ✅ Use full model name: `--ai-model="openai/model-name"`
 - ✅ Include `/v1` in base URL: `http://localhost:1234/v1`
 - ✅ Check available models: `curl http://localhost:1234/v1/models`
 
 **Ollama Issues:**
+
 - ✅ Start server: `ollama serve`
 - ✅ Verify model: `ollama list`
 - ✅ Test API: `curl http://localhost:11434/api/tags`
@@ -464,23 +498,24 @@ When you don't specify the `--ai-model` flag, Gonzo automatically selects the be
 - ✅ Model names include tags: `gpt-oss:20b`, `llama3:8b`
 
 **OpenAI Issues:**
+
 - ✅ Verify API key is valid and has credits
 - ✅ Check model availability (gpt-4 requires API access)
 
 ### Environment Variables
 
-| Variable | Description |
-|----------|-------------|
-| `OPENAI_API_KEY` | API key for AI analysis (required for AI features) |
-| `OPENAI_API_BASE` | Custom API endpoint (default: https://api.openai.com/v1) |
-| `GONZO_FILES` | Comma-separated list of files/globs to read (equivalent to -f flags) |
-| `GONZO_FOLLOW` | Enable follow mode (true/false) |
-| `GONZO_UPDATE_INTERVAL` | Override update interval |
-| `GONZO_LOG_BUFFER` | Override log buffer size |
-| `GONZO_MEMORY_SIZE` | Override memory size |
-| `GONZO_AI_MODEL` | Override default AI model |
-| `GONZO_TEST_MODE` | Enable test mode |
-| `NO_COLOR` | Disable colored output |
+| Variable                | Description                                                          |
+| ----------------------- | -------------------------------------------------------------------- |
+| `OPENAI_API_KEY`        | API key for AI analysis (required for AI features)                   |
+| `OPENAI_API_BASE`       | Custom API endpoint (default: <https://api.openai.com/v1>)             |
+| `GONZO_FILES`           | Comma-separated list of files/globs to read (equivalent to -f flags) |
+| `GONZO_FOLLOW`          | Enable follow mode (true/false)                                      |
+| `GONZO_UPDATE_INTERVAL` | Override update interval                                             |
+| `GONZO_LOG_BUFFER`      | Override log buffer size                                             |
+| `GONZO_MEMORY_SIZE`     | Override memory size                                                 |
+| `GONZO_AI_MODEL`        | Override default AI model                                            |
+| `GONZO_TEST_MODE`       | Enable test mode                                                     |
+| `NO_COLOR`              | Disable colored output                                               |
 
 ### Shell Completion
 
@@ -490,7 +525,7 @@ Enable shell completion for better CLI experience:
 # Bash
 source <(gonzo completion bash)
 
-# Zsh  
+# Zsh
 source <(gonzo completion zsh)
 
 # Fish
@@ -503,9 +538,11 @@ gonzo completion powershell | Out-String | Invoke-Expression
 For permanent setup, save the completion script to your shell's completion directory.
 
 ### K9s Integration
+
 By leveraging [K9s plugin system](https://k9scli.io/topics/plugins/) Gonzo integrates seamlessly with K9s for real-time Kubernetes log analysis.
 
 #### Setup
+
 Add this plugin to your `$XDG_CONFIG_HOME/k9s/plugins.yaml` file:
 
 ```yaml
@@ -514,18 +551,18 @@ plugins:
     shortCut: Ctrl-L
     description: "Gonzo log analysis"
     scopes:
-    - po
+      - po
     command: sh
     background: false
     args:
-    - -c
-    - "kubectl logs -f $NAME -n $NAMESPACE --context $CONTEXT | gonzo"
+      - -c
+      - "kubectl logs -f $NAME -n $NAMESPACE --context $CONTEXT | gonzo"
 ```
 
 > ⚠️ NOTE: on `macOS` although it is not required, defining `XDG_CONFIG_HOME=~/.config` is recommended in order to maintain consistency with Linux configuration practices.
 
-
 #### Usage
+
 1. Launch k9s and navigate to pods
 2. Select a pod and press `ctrl-l`
 3. Gonzo opens with live log streaming and analysis
@@ -533,6 +570,7 @@ plugins:
 ## 🏗️ Architecture
 
 Gonzo is built with:
+
 - **[Bubble Tea](https://github.com/charmbracelet/bubbletea)** - Terminal UI framework
 - **[Lipgloss](https://github.com/charmbracelet/lipgloss)** - Styling and layout
 - **[Bubbles](https://github.com/charmbracelet/bubbles)** - TUI components
@@ -542,6 +580,7 @@ Gonzo is built with:
 - **Large amounts of** ☕️
 
 The architecture follows a clean separation:
+
 ```
 cmd/gonzo/              # Main application entry
 internal/
@@ -555,10 +594,12 @@ internal/
 ## 🧪 Development
 
 ### Prerequisites
+
 - Go 1.21 or higher
 - Make (optional, for convenience)
 
 ### Building
+
 ```bash
 # Quick build
 make build
@@ -574,6 +615,7 @@ make dev
 ```
 
 ### Testing
+
 ```bash
 # Run unit tests
 make test
@@ -602,7 +644,7 @@ gonzo --skin=dracula
 gonzo --skin=nord
 gonzo --skin=monokai
 
-# Use a light theme  
+# Use a light theme
 gonzo --skin=github-light
 gonzo --skin=solarized-light
 gonzo --skin=vs-code-light
@@ -621,6 +663,7 @@ gonzo --skin=controltheory-dark     # Dark theme
 ### Creating Custom Themes
 
 See **[SKINS.md](SKINS.md)** for complete documentation on:
+
 - 📖 How to create custom color schemes
 - 🎯 Color reference and semantic naming
 - 📦 Downloading community themes from GitHub
@@ -658,6 +701,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🐛 Reporting Issues
 
 Found a bug? Please [open an issue](https://github.com/control-theory/gonzo/issues/new) with:
+
 - Your OS and Go version
 - Steps to reproduce
 - Expected vs actual behavior
