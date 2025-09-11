@@ -4,7 +4,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// Color palette
+// Color palette - these will be updated by the skin system
 var (
 	ColorBlue     = lipgloss.Color("#0f93fc")
 	ColorGreen    = lipgloss.Color("#49E209")
@@ -20,6 +20,7 @@ var (
 )
 
 // Shared styles used across multiple view components
+// These will be recreated when colors change
 var (
 	sectionStyle = lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder()).

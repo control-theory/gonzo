@@ -46,6 +46,13 @@ A powerful, real-time log analysis terminal UI inspired by k9s. Analyze log stre
 - **Severity filtering** - Focus on errors, warnings, or specific log levels
 - **Interactive selection** - Click or keyboard navigate to explore logs
 
+### 🎨 Customizable Themes
+- **Built-in skins** - 11+ beautiful themes including Dracula, Nord, Monokai, GitHub Light, and more
+- **Light and dark modes** - Themes optimized for different lighting conditions
+- **Custom skins** - Create your own color schemes with YAML configuration
+- **Semantic colors** - Intuitive color mapping for different UI components
+- **Professional themes** - ControlTheory original themes included
+
 ### 🤖 AI-Powered Insights
 - **Pattern detection** - Automatically identify recurring issues
 - **Anomaly analysis** - Spot unusual patterns in your logs  
@@ -314,6 +321,7 @@ Flags:
   -b, --log-buffer int             Maximum log entries to keep (default: 1000)
   -m, --memory-size int            Maximum frequency entries (default: 10000)
   --ai-model string            AI model for analysis (auto-selects best available if not specified)
+  -s, --skin string                Color scheme/skin to use (default, or name of a skin file)
   -t, --test-mode                  Run without TTY for testing
   -v, --version                    Print version information
   --config string              Config file (default: $HOME/.config/gonzo/config.yml)
@@ -338,6 +346,9 @@ update-interval: 2s
 # Buffer sizes
 log-buffer: 2000
 memory-size: 15000
+
+# UI customization
+skin: dracula  # Choose from: default, dracula, nord, monokai, github-light, etc.
 
 # Development/testing
 test-mode: false
@@ -576,6 +587,45 @@ make test-integration
 # Test with sample data
 make demo
 ```
+
+## 🎨 Customization & Themes
+
+Gonzo supports beautiful, customizable color schemes to match your terminal environment and personal preferences.
+
+### Using Built-in Themes
+
+Be sure you download and place in the Gonzo config directory so Gonzo can find them.
+
+```bash
+# Use a dark theme
+gonzo --skin=dracula
+gonzo --skin=nord
+gonzo --skin=monokai
+
+# Use a light theme  
+gonzo --skin=github-light
+gonzo --skin=solarized-light
+gonzo --skin=vs-code-light
+
+# Use Control Theory branded themes
+gonzo --skin=controltheory-light    # Light theme
+gonzo --skin=controltheory-dark     # Dark theme
+```
+
+### Available Themes
+
+**Dark Themes 🌙**: `default`, `controltheory-dark`, `dracula`, `gruvbox`, `monokai`, `nord`, `solarized-dark`
+
+**Light Themes ☀️**: `controltheory-light`, `github-light`, `solarized-light`, `vs-code-light`, `spring`
+
+### Creating Custom Themes
+
+See **[SKINS.md](SKINS.md)** for complete documentation on:
+- 📖 How to create custom color schemes
+- 🎯 Color reference and semantic naming
+- 📦 Downloading community themes from GitHub
+- 🔧 Advanced customization options
+- 🎨 Design guidelines for accessibility
 
 ## 🤝 Contributing
 

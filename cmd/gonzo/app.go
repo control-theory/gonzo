@@ -29,6 +29,13 @@ func runApp(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
+	// Initialize skin/color scheme
+	configDir := os.Getenv("HOME") + "/.config/gonzo"
+	if err := tui.InitializeSkin(cfg.Skin, configDir); err != nil {
+		// Log warning but continue with default skin
+		log.Printf("Warning: Failed to load skin '%s': %v (using default)", cfg.Skin, err)
+	}
+
 	// Initialize components
 	formatDetector := otlplog.NewFormatDetector()
 	logConverter := otlplog.NewLogConverter()

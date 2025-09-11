@@ -36,6 +36,7 @@ type Config struct {
 	VmlogsUser     string        `mapstructure:"vmlogs-user"`
 	VmlogsPassword string        `mapstructure:"vmlogs-password"`
 	VmlogsQuery    string        `mapstructure:"vmlogs-query"`
+	Skin           string        `mapstructure:"skin"`
 }
 
 var (
@@ -91,7 +92,14 @@ Supports OTLP (OpenTelemetry) format natively, with automatic detection of JSON,
   # Using environment variables for authentication
   export GONZO_VMLOGS_USER="myuser"
   export GONZO_VMLOGS_PASSWORD="mypass"  
-  gonzo --vmlogs-url="https://vmlogs.example.com" --vmlogs-query='service:"myapp"'`,
+  gonzo --vmlogs-url="https://vmlogs.example.com" --vmlogs-query='service:"myapp"'
+
+  # Using a custom color scheme/skin
+  gonzo --skin=dracula
+  
+  # Or via environment variable
+  export GONZO_SKIN=monokai
+  gonzo -f application.log`,
 		RunE: runApp,
 	}
 
@@ -129,6 +137,7 @@ func init() {
 	rootCmd.Flags().String("vmlogs-user", "", "Victoria Logs basic auth username (can also use GONZO_VMLOGS_USER env var)")
 	rootCmd.Flags().String("vmlogs-password", "", "Victoria Logs basic auth password (can also use GONZO_VMLOGS_PASSWORD env var)")
 	rootCmd.Flags().String("vmlogs-query", "*", "Victoria Logs query (LogsQL) to use for streaming (default: '*' for all logs)")
+	rootCmd.Flags().StringP("skin", "s", "default", "Color scheme/skin to use (default, or name of a skin file in ~/.config/gonzo/skins/)")
 
 	// Bind flags to viper
 	viper.BindPFlag("memory-size", rootCmd.Flags().Lookup("memory-size"))
@@ -145,6 +154,7 @@ func init() {
 	viper.BindPFlag("vmlogs-user", rootCmd.Flags().Lookup("vmlogs-user"))
 	viper.BindPFlag("vmlogs-password", rootCmd.Flags().Lookup("vmlogs-password"))
 	viper.BindPFlag("vmlogs-query", rootCmd.Flags().Lookup("vmlogs-query"))
+	viper.BindPFlag("skin", rootCmd.Flags().Lookup("skin"))
 
 	// Add version command
 	rootCmd.AddCommand(versionCmd)

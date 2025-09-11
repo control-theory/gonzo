@@ -1,0 +1,44 @@
+name: dracula
+description: Dracula theme - A dark theme with a purple accent
+author: Gonzo Community
+colors:
+  # UI Component Colors
+  primary: "#bd93f9"           # Purple primary
+  secondary: "#8be9fd"         # Cyan secondary
+  background: "#282a36"        # Dark background
+  surface: "#21222c"           # Darker surface
+  border: "#6272a4"            # Comment gray border
+  border_active: "#bd93f9"     # Purple active border
+  text: "#f8f8f2"              # Light text
+  text_secondary: "#6272a4"    # Comment gray
+  text_inverse: "#282a36"      # Dark text for light backgrounds
+  
+  # Chart and Data Colors
+  chart_title: "#bd93f9"       # Purple titles
+  chart_bar: "#50fa7b"         # Green bars
+  chart_accent: "#ffb86c"      # Orange accent
+  
+  # Log Entry Colors
+  log_timestamp: "#6272a4"     # Comment gray timestamps
+  log_message: "#f8f8f2"       # Light message text
+  log_background: "#282a36"    # Dark background
+  log_selected: "#44475a"      # Current line selection
+  
+  # Severity Level Colors
+  severity_trace: "#44475a"    # Current line for trace
+  severity_debug: "#6272a4"    # Comment for debug
+  severity_info: "#8be9fd"     # Cyan for info
+  severity_warn: "#f1fa8c"     # Yellow for warnings
+  severity_error: "#ff5555"    # Red for errors
+  severity_fatal: "#ff79c6"    # Pink for fatal
+  
+  # Status Colors
+  success: "#50fa7b"          # Green
+  warning: "#f1fa8c"          # Yellow
+  error: "#ff5555"            # Red
+  info: "#8be9fd"             # Cyan
+  
+  # Special Elements
+  help: "#6272a4"             # Comment gray for help
+  highlight: "#f1fa8c"        # Yellow highlight
+  disabled: "#44475a"         # Current line for disabled

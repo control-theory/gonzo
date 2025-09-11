@@ -1,0 +1,44 @@
+name: solarized-light
+description: Solarized Light - The bright variant of the precision color scheme
+author: Gonzo Community
+colors:
+  # UI Component Colors
+  primary: "#268bd2"           # Solarized blue
+  secondary: "#2aa198"         # Solarized cyan
+  background: "#fdf6e3"        # Base3 (light cream background)
+  surface: "#eee8d5"          # Base2 (slightly darker cream)
+  border: "#93a1a1"           # Base1 (muted border)
+  border_active: "#268bd2"     # Blue active border
+  text: "#002b36"             # Base03 (dark text)
+  text_secondary: "#586e75"    # Base01 (muted text)
+  text_inverse: "#fdf6e3"      # Light text for dark backgrounds
+  
+  # Chart and Data Colors
+  chart_title: "#268bd2"       # Blue for titles
+  chart_bar: "#859900"        # Green for bars
+  chart_accent: "#cb4b16"      # Orange accent
+  
+  # Log Entry Colors
+  log_timestamp: "#586e75"     # Muted for timestamps
+  log_message: "#002b36"       # Dark text for messages
+  log_background: "#fdf6e3"    # Light background
+  log_selected: "#d3d0c8"      # Subtle selection
+  
+  # Severity Level Colors
+  severity_trace: "#93a1a1"    # Light muted for trace
+  severity_debug: "#586e75"    # Base01 for debug
+  severity_info: "#268bd2"     # Blue for info
+  severity_warn: "#b58900"     # Yellow for warnings
+  severity_error: "#dc322f"    # Red for errors
+  severity_fatal: "#d33682"    # Magenta for fatal
+  
+  # Status Colors
+  success: "#859900"          # Green
+  warning: "#b58900"          # Yellow
+  error: "#dc322f"            # Red
+  info: "#268bd2"             # Blue
+  
+  # Special Elements
+  help: "#586e75"             # Muted text for help
+  highlight: "#d3d0c8"        # Subtle highlight
+  disabled: "#93a1a1"         # Light gray for disabled

@@ -1,0 +1,44 @@
+name: spring
+description: Spring - Fresh and vibrant light theme with nature-inspired colors
+author: Gonzo Community
+colors:
+  # UI Component Colors
+  primary: "#2196f3"           # Bright blue
+  secondary: "#9c27b0"         # Purple accent
+  background: "#fafafa"        # Very light gray background
+  surface: "#f5f5f5"          # Light gray surface
+  border: "#e0e0e0"           # Light border
+  border_active: "#2196f3"     # Blue active border
+  text: "#212121"             # Dark text
+  text_secondary: "#616161"    # Medium gray
+  text_inverse: "#ffffff"      # White text
+  
+  # Chart and Data Colors
+  chart_title: "#2196f3"       # Blue titles
+  chart_bar: "#4caf50"        # Green bars
+  chart_accent: "#ff5722"      # Orange accent
+  
+  # Log Entry Colors
+  log_timestamp: "#616161"     # Muted timestamps
+  log_message: "#212121"       # Dark message text
+  log_background: "#fafafa"    # Light background
+  log_selected: "#e3f2fd"      # Light blue selection
+  
+  # Severity Level Colors
+  severity_trace: "#9e9e9e"    # Light gray for trace
+  severity_debug: "#616161"    # Medium gray for debug
+  severity_info: "#2196f3"     # Blue for info
+  severity_warn: "#ff9800"     # Amber for warnings
+  severity_error: "#f44336"    # Red for errors
+  severity_fatal: "#d32f2f"    # Dark red for fatal
+  
+  # Status Colors
+  success: "#4caf50"          # Green
+  warning: "#ff9800"          # Amber
+  error: "#f44336"            # Red
+  info: "#00bcd4"             # Cyan
+  
+  # Special Elements
+  help: "#616161"             # Muted help text
+  highlight: "#fff3e0"        # Light orange highlight
+  disabled: "#9e9e9e"         # Light gray disabled
