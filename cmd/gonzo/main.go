@@ -37,6 +37,7 @@ type Config struct {
 	VmlogsPassword string        `mapstructure:"vmlogs-password"`
 	VmlogsQuery    string        `mapstructure:"vmlogs-query"`
 	Skin           string        `mapstructure:"skin"`
+	StopWords      []string      `mapstructure:"stop-words"`
 }
 
 var (
@@ -138,6 +139,7 @@ func init() {
 	rootCmd.Flags().String("vmlogs-password", "", "Victoria Logs basic auth password (can also use GONZO_VMLOGS_PASSWORD env var)")
 	rootCmd.Flags().String("vmlogs-query", "*", "Victoria Logs query (LogsQL) to use for streaming (default: '*' for all logs)")
 	rootCmd.Flags().StringP("skin", "s", "default", "Color scheme/skin to use (default, or name of a skin file in ~/.config/gonzo/skins/)")
+	rootCmd.Flags().StringSlice("stop-words", []string{}, "Additional stop words to filter out from analysis (adds to built-in list)")
 
 	// Bind flags to viper
 	viper.BindPFlag("memory-size", rootCmd.Flags().Lookup("memory-size"))
@@ -155,6 +157,7 @@ func init() {
 	viper.BindPFlag("vmlogs-password", rootCmd.Flags().Lookup("vmlogs-password"))
 	viper.BindPFlag("vmlogs-query", rootCmd.Flags().Lookup("vmlogs-query"))
 	viper.BindPFlag("skin", rootCmd.Flags().Lookup("skin"))
+	viper.BindPFlag("stop-words", rootCmd.Flags().Lookup("stop-words"))
 
 	// Add version command
 	rootCmd.AddCommand(versionCmd)
