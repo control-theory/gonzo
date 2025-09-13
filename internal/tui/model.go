@@ -48,7 +48,7 @@ type PatternCount struct {
 	Count   int
 }
 
-// ServiceCount represents a service and its count for a specific severity  
+// ServiceCount represents a service and its count for a specific severity
 type ServiceCount struct {
 	Service string
 	Count   int
@@ -57,15 +57,15 @@ type ServiceCount struct {
 // DashboardModel represents the main TUI model
 type DashboardModel struct {
 	// Dashboard state
-	width             int
-	height            int
-	activeSection     Section
-	showModal         bool
-	modalContent      string
-	showHelp          bool
-	showPatternsModal bool
-	showStatsModal    bool
-	showCountsModal   bool
+	width              int
+	height             int
+	activeSection      Section
+	showModal          bool
+	modalContent       string
+	showHelp           bool
+	showPatternsModal  bool
+	showStatsModal     bool
+	showCountsModal    bool
 	showLogViewerModal bool
 
 	// Data
@@ -73,10 +73,10 @@ type DashboardModel struct {
 	logEntries    []LogEntry       // Filtered view for display
 	allLogEntries []LogEntry       // Complete unfiltered log buffer
 	countsHistory []SeverityCounts // Line counts per interval by severity
-	
+
 	// Log Counts Modal Data
-	heatmapData      []HeatmapMinute    // Minute-by-minute severity counts for heatmap (60 minute rolling window)
-	drain3BySeverity map[string]*Drain3Manager // Separate drain3 instance for each severity
+	heatmapData        []HeatmapMinute           // Minute-by-minute severity counts for heatmap (60 minute rolling window)
+	drain3BySeverity   map[string]*Drain3Manager // Separate drain3 instance for each severity
 	servicesBySeverity map[string][]ServiceCount // Top services by severity level
 
 	// Configuration
@@ -146,25 +146,26 @@ type DashboardModel struct {
 	// Drain3 pattern extraction
 	drain3Manager       *Drain3Manager
 	drain3LastProcessed int // Track last processed log index for drain3
-	
+
 	// Statistics tracking
-	statsStartTime        time.Time
-	statsTotalBytes       int64
-	statsPeakLogsPerSec   float64
-	statsLastSecond       time.Time
-	statsLogsThisSecond   int
-	statsTotalLogsEver    int         // Total logs processed (not limited by buffer)
+	statsStartTime      time.Time
+	statsTotalBytes     int64
+	statsPeakLogsPerSec float64
+	statsLastSecond     time.Time
+	statsLogsThisSecond int
+	statsTotalLogsEver  int // Total logs processed (not limited by buffer)
 	// Sliding window for real-time rate calculation (last 10 seconds)
-	statsRecentCounts     []int       // Count of logs in each second
-	statsRecentTimes      []time.Time // Timestamp for each second
-	
+	statsRecentCounts []int       // Count of logs in each second
+	statsRecentTimes  []time.Time // Timestamp for each second
+
 	// Lifetime statistics (unlimited, not affected by buffer pruning)
-	lifetimeSeverityCounts map[string]int64              // Total count per severity level
-	lifetimeHostCounts     map[string]int64              // Total count per host
-	lifetimeServiceCounts  map[string]int64              // Total count per service
-	lifetimeAttrCounts     map[string]int64              // Total count per attribute=value pair
-	lifetimeWordCounts     map[string]int64              // Total count per word (for charts)
-	lifetimeAttrKeyCounts  map[string]map[string]int64   // Per attribute key: value -> count (for charts)
+	lifetimeSeverityCounts map[string]int64            // Total count per severity level
+	lifetimeHostCounts     map[string]int64            // Total count per host
+	lifetimeServiceCounts  map[string]int64            // Total count per service
+	lifetimeAttrCounts     map[string]int64            // Total count per attribute=value pair
+	lifetimeWordCounts     map[string]int64            // Total count per word (for charts)
+	lifetimeAttrKeyCounts  map[string]map[string]int64 // Per attribute key: value -> count (for charts)
+	stopWords              map[string]bool             // Stop words to filter from word counting
 }
 
 // UpdateMsg contains data updates for the dashboard
@@ -198,16 +199,16 @@ type ManualResetMsg struct{}
 func initializeDrain3BySeverity() map[string]*Drain3Manager {
 	severities := []string{"FATAL", "ERROR", "WARN", "INFO", "DEBUG", "TRACE", "UNKNOWN"}
 	drain3Map := make(map[string]*Drain3Manager)
-	
+
 	for _, severity := range severities {
 		drain3Map[severity] = NewDrain3Manager()
 	}
-	
+
 	return drain3Map
 }
 
-// NewDashboardModel creates a new dashboard model
-func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiModel string) *DashboardModel {
+// NewDashboardModel creates a new dashboard model with stop words
+func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiModel string, stopWords map[string]bool) *DashboardModel {
 	filterInput := textinput.New()
 	filterInput.Placeholder = "Filter logs (regex supported)..."
 	filterInput.CharLimit = 200
@@ -270,15 +271,15 @@ func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiModel s
 		logAutoScroll:       true,               // Start with auto-scroll enabled
 		showColumns:         true,               // Show Host/Service columns by default
 		// Initialize statistics tracking
-		statsStartTime:        time.Now(),
-		statsTotalBytes:       0,
-		statsPeakLogsPerSec:   0.0,
-		statsLastSecond:       time.Now(),
-		statsLogsThisSecond:   0,
-		statsTotalLogsEver:    0,
-		statsRecentCounts:     make([]int, 0, 10),    // 10 second sliding window
-		statsRecentTimes:      make([]time.Time, 0, 10),
-		
+		statsStartTime:      time.Now(),
+		statsTotalBytes:     0,
+		statsPeakLogsPerSec: 0.0,
+		statsLastSecond:     time.Now(),
+		statsLogsThisSecond: 0,
+		statsTotalLogsEver:  0,
+		statsRecentCounts:   make([]int, 0, 10), // 10 second sliding window
+		statsRecentTimes:    make([]time.Time, 0, 10),
+
 		// Initialize lifetime statistics
 		lifetimeSeverityCounts: make(map[string]int64),
 		lifetimeHostCounts:     make(map[string]int64),
@@ -286,6 +287,7 @@ func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiModel s
 		lifetimeAttrCounts:     make(map[string]int64),
 		lifetimeWordCounts:     make(map[string]int64),
 		lifetimeAttrKeyCounts:  make(map[string]map[string]int64),
+		stopWords:              stopWords,
 	}
 
 	// Initialize AI status based on client validation
@@ -331,14 +333,14 @@ func (m *DashboardModel) switchToModel(newModel string) (tea.Model, tea.Cmd) {
 // getLifetimeWordEntries returns word entries sorted by count (for dashboard charts)
 func (m *DashboardModel) getLifetimeWordEntries() []*memory.FrequencyEntry {
 	entries := make([]*memory.FrequencyEntry, 0, len(m.lifetimeWordCounts))
-	
+
 	for word, count := range m.lifetimeWordCounts {
 		entries = append(entries, &memory.FrequencyEntry{
 			Term:  word,
 			Count: count,
 		})
 	}
-	
+
 	// Sort by count (descending) then by word (ascending)
 	sort.Slice(entries, func(i, j int) bool {
 		if entries[i].Count == entries[j].Count {
@@ -346,28 +348,28 @@ func (m *DashboardModel) getLifetimeWordEntries() []*memory.FrequencyEntry {
 		}
 		return entries[i].Count > entries[j].Count
 	})
-	
+
 	return entries
 }
 
 // getLifetimeAttributeEntries returns attribute entries sorted by unique value count (for dashboard charts)
 func (m *DashboardModel) getLifetimeAttributeEntries() []*memory.AttributeStatsEntry {
 	entries := make([]*memory.AttributeStatsEntry, 0, len(m.lifetimeAttrKeyCounts))
-	
+
 	for key, valueCounts := range m.lifetimeAttrKeyCounts {
 		totalCount := int64(0)
 		for _, count := range valueCounts {
 			totalCount += count
 		}
-		
+
 		entries = append(entries, &memory.AttributeStatsEntry{
 			Key:              key,
 			UniqueValueCount: len(valueCounts),
 			TotalCount:       totalCount,
-			Values:          valueCounts,
+			Values:           valueCounts,
 		})
 	}
-	
+
 	// Sort by unique value count (descending) then by key (ascending)
 	sort.Slice(entries, func(i, j int) bool {
 		if entries[i].UniqueValueCount == entries[j].UniqueValueCount {
@@ -375,7 +377,7 @@ func (m *DashboardModel) getLifetimeAttributeEntries() []*memory.AttributeStatsE
 		}
 		return entries[i].UniqueValueCount > entries[j].UniqueValueCount
 	})
-	
+
 	return entries
 }
 
