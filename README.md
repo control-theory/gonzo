@@ -347,6 +347,7 @@ Flags:
   -m, --memory-size int            Maximum frequency entries (default: 10000)
   --ai-model string            AI model for analysis (auto-selects best available if not specified)
   -s, --skin string                Color scheme/skin to use (default, or name of a skin file)
+  --stop-words strings         Additional stop words to filter out from analysis (adds to built-in list)
   -t, --test-mode                  Run without TTY for testing
   -v, --version                    Print version information
   --config string              Config file (default: $HOME/.config/gonzo/config.yml)
@@ -374,6 +375,12 @@ memory-size: 15000
 
 # UI customization
 skin: dracula # Choose from: default, dracula, nord, monokai, github-light, etc.
+
+# Additional stop words to filter from analysis
+stop-words:
+  - "log"
+  - "message"
+  - "debug"
 
 # Development/testing
 test-mode: false

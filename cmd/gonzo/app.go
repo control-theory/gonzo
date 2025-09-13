@@ -39,7 +39,7 @@ func runApp(cmd *cobra.Command, args []string) error {
 	// Initialize components
 	formatDetector := otlplog.NewFormatDetector()
 	logConverter := otlplog.NewLogConverter()
-	textAnalyzer := analyzer.NewTextAnalyzer()
+	textAnalyzer := analyzer.NewTextAnalyzerWithStopWords(cfg.StopWords)
 	otlpAnalyzer := analyzer.NewOTLPAnalyzer()
 	freqMemory := memory.NewFrequencyMemory(cfg.MemorySize)
 

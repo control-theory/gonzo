@@ -75,9 +75,10 @@ cat test.log | ./build/gonzo
 
 ```bash
 # TUI specific options
--u, --update-interval=3s         # Dashboard update frequency  
+-u, --update-interval=3s         # Dashboard update frequency
 -b, --log-buffer=1000            # Maximum log buffer size
 -m, --memory-size=10000          # Maximum entries in memory
+    --stop-words strings         # Additional stop words to filter from analysis
     --config string              # Config file (default: ~/.gonzo.yaml)
 
 # Version and help
@@ -90,7 +91,76 @@ gonzo completion bash  # Generate bash completion
 gonzo help             # Show help
 ```
 
-### Supported Integrations 
+## Stop Words Configuration
+
+### Overview
+Gonzo filters common English stop words from frequency analysis to focus on meaningful terms. You can add your own custom stop words to filter domain-specific or application-specific terms that aren't relevant to your analysis.
+
+### Built-in Stop Words
+Gonzo includes 60+ common English stop words by default (the, and, for, are, but, not, etc.). These are automatically filtered from word frequency analysis.
+
+### Adding Custom Stop Words
+
+#### Via Command Line
+```bash
+# Add single custom stop word
+./build/gonzo -f app.log --stop-words="debug"
+
+# Add multiple stop words (repeat the flag)
+./build/gonzo -f app.log --stop-words="debug" --stop-words="info" --stop-words="warning"
+
+# Filter common log terms
+./build/gonzo -f app.log --stop-words="log" --stop-words="message" --stop-words="error"
+```
+
+#### Via Configuration File
+```yaml
+# ~/.config/gonzo/config.yml
+stop-words:
+  - "debug"
+  - "info"
+  - "warning"
+  - "error"
+  - "log"
+  - "message"
+  - "timestamp"
+  - "level"
+```
+
+#### Via Environment Variable
+```bash
+# Space-separated list
+export GONZO_STOP_WORDS="debug info warning error"
+./build/gonzo -f app.log
+```
+
+### Use Cases
+
+1. **Filter log-specific terms**: Remove common logging terms like "log", "message", "level"
+2. **Domain-specific filtering**: Filter technical terms specific to your application
+3. **Noise reduction**: Remove high-frequency but low-value terms from analysis
+4. **Focus analysis**: Highlight actual content by removing structural terms
+
+### Examples
+
+```bash
+# Analyzing web server logs - filter HTTP-related terms
+./build/gonzo -f access.log --stop-words="GET" --stop-words="POST" --stop-words="HTTP"
+
+# Analyzing application logs - filter framework noise
+./build/gonzo -f app.log --stop-words="springframework" --stop-words="hibernate"
+
+# Analyzing error logs - focus on actual errors
+./build/gonzo -f error.log --stop-words="stack" --stop-words="trace" --stop-words="at"
+```
+
+### Notes
+- Custom stop words are case-insensitive ("ERROR" and "error" are treated the same)
+- Custom stop words are added to (not replacing) the built-in list
+- Stop words only affect word frequency analysis, not log display or filtering
+- Changes take effect immediately when logs are processed
+
+### Supported Integrations
 
 - [Victoria Logs Integration](VICTORIA_LOGS_USAGE.md) - Using Gonzo with Victoria Logs API
 - [AWS CloudWatch Logs](CLOUDWATCH_USAGE_GUIDE.md) - Using Gonzo with the AWS CLI to tail or live tail logs
