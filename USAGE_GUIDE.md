@@ -109,6 +109,9 @@ Gonzo includes 60+ common English stop words by default (the, and, for, are, but
 # Add multiple stop words (repeat the flag)
 ./build/gonzo -f app.log --stop-words="debug" --stop-words="info" --stop-words="warning"
 
+# Or in a single param:
+./build/gonzo -f app.log --stop-words="debug,info,warning"
+
 # Filter common log terms
 ./build/gonzo -f app.log --stop-words="log" --stop-words="message" --stop-words="error"
 ```
