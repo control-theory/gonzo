@@ -3,12 +3,15 @@ package analyzer
 import (
 	"regexp"
 	"strings"
+
+	"github.com/control-theory/gonzo/internal/timestamp"
 )
 
 type TextAnalyzer struct {
 	minWordLength   int
 	maxPhraseLength int
 	wordPattern     *regexp.Regexp
+	timestampParser *timestamp.Parser
 }
 
 type AnalysisResult struct {
@@ -21,6 +24,7 @@ func NewTextAnalyzer() *TextAnalyzer {
 		minWordLength:   3,
 		maxPhraseLength: 4,
 		wordPattern:     regexp.MustCompile(`[a-zA-Z_][a-zA-Z0-9_]*`),
+		timestampParser: timestamp.NewParser(),
 	}
 }
 
@@ -94,39 +98,5 @@ func (ta *TextAnalyzer) extractPhrases(words []string) []string {
 // extractMessage attempts to extract just the log message from a full log line,
 // stripping out timestamp, severity, and other metadata prefixes
 func (ta *TextAnalyzer) extractMessage(line string) string {
-	// Common log format patterns to match and extract message from:
-	// - "2024-01-01 10:00:00 INFO message here"
-	// - "2024-01-01T10:00:00Z ERROR message here"
-	// - "[INFO] 2024-01-01 message here"
-	// - "INFO: message here"
-	// - "10:00:00 WARN message here"
-
-	// Pattern to match: optional brackets, timestamp (various formats), severity level, separators
-	// Then capture everything after as the message
-	patterns := []string{
-		// ISO datetime + severity + message: "2024-01-01 10:00:00 INFO message"
-		`^\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?\s+(?:\[)?(?:TRACE|DEBUG|INFO|WARN|WARNING|ERROR|FATAL|CRITICAL)(?:\])?\s*[:>-]?\s*(.*)$`,
-
-		// Time only + severity: "10:00:00 INFO message"
-		`^\d{2}:\d{2}:\d{2}(?:\.\d+)?\s+(?:\[)?(?:TRACE|DEBUG|INFO|WARN|WARNING|ERROR|FATAL|CRITICAL)(?:\])?\s*[:>-]?\s*(.*)$`,
-
-		// Severity first: "[INFO] message" or "INFO: message"
-		`^(?:\[)?(?:TRACE|DEBUG|INFO|WARN|WARNING|ERROR|FATAL|CRITICAL)(?:\])?\s*[:>-]\s*(.*)$`,
-
-		// Bracketed severity + timestamp: "[INFO] 2024-01-01 message"
-		`^\[(?:TRACE|DEBUG|INFO|WARN|WARNING|ERROR|FATAL|CRITICAL)\]\s+\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?\s+(.*)$`,
-	}
-
-	for _, pattern := range patterns {
-		re := regexp.MustCompile(pattern)
-		if matches := re.FindStringSubmatch(line); len(matches) > 1 {
-			message := strings.TrimSpace(matches[1])
-			if message != "" {
-				return message
-			}
-		}
-	}
-
-	// If no pattern matches, return the original line (might be a pure message)
-	return line
+	return ta.timestampParser.ExtractLogMessage(line)
 }
