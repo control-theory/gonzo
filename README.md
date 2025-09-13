@@ -700,8 +700,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📚 Documentation
 
 - [Usage Guide](USAGE_GUIDE.md) - Detailed usage instructions
-- [AWS CloudWatch Logs Usage Guide](CLOUDWATCH_USAGE_GUIDE.md) - Usage instructions for AWS CLI log tail and live tail with Gonzo
-- [Victoria Logs Integration](VICTORIA_LOGS_USAGE.md) - Using Gonzo with Victoria Logs API
+- [AWS CloudWatch Logs Usage Guide](guides/CLOUDWATCH_USAGE_GUIDE.md) - Usage instructions for AWS CLI log tail and live tail with Gonzo
+- [Stern Usage Guide](guides/STERN_USAGE_GUIDE.md) - Usage and examples for using Stern with Gonzo
+- [Victoria Logs Integration](guides/VICTORIA_LOGS_USAGE.md) - Using Gonzo with Victoria Logs API
 - [Contributing Guide](CONTRIBUTING.md) - How to contribute
 - [Changelog](CHANGELOG.md) - Version history
 
