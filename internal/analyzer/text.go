@@ -108,6 +108,11 @@ func (ta *TextAnalyzer) extractPhrases(words []string) []string {
 
 // extractMessage attempts to extract just the log message from a full log line,
 // stripping out timestamp, severity, and other metadata prefixes
+// GetStopWords returns the stopwords map for external use
+func (ta *TextAnalyzer) GetStopWords() map[string]bool {
+	return ta.stopWords
+}
+
 func (ta *TextAnalyzer) extractMessage(line string) string {
 	// Common log format patterns to match and extract message from:
 	// - "2024-01-01 10:00:00 INFO message here"

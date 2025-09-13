@@ -50,7 +50,7 @@ func runApp(cmd *cobra.Command, args []string) error {
 		textAnalyzer:   textAnalyzer,
 		otlpAnalyzer:   otlpAnalyzer,
 		freqMemory:     freqMemory,
-		dashboard:      tui.NewDashboardModel(cfg.LogBuffer, cfg.UpdateInterval, cfg.AIModel),
+		dashboard:      tui.NewDashboardModel(cfg.LogBuffer, cfg.UpdateInterval, cfg.AIModel, textAnalyzer.GetStopWords()),
 		updateInterval: cfg.UpdateInterval,
 		testMode:       cfg.TestMode,
 	}

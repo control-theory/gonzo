@@ -629,7 +629,8 @@ func (m *DashboardModel) updateLifetimeStats(entry LogEntry) {
 		if len(word) >= 2 && len(word) <= 50 {
 			// Remove common punctuation
 			word = strings.Trim(word, ".,!?;:()[]{}\"'")
-			if len(word) >= 2 {
+			// Check minimum length and stopwords filter
+			if len(word) >= 3 && !m.stopWords[word] {
 				m.lifetimeWordCounts[word]++
 			}
 		}
