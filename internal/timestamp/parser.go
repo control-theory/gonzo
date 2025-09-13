@@ -7,10 +7,21 @@ import (
 	"time"
 )
 
+var (
+	// timestampRegex matches various timestamp formats
+	// Supports ISO 8601, RFC formats, syslog, and common log formats
+	// Including support for comma decimal separators (international format)
+	timestampRegex = regexp.MustCompile(`(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:[,.]\d{3,9})?(?:Z|[+-]\d{2}:?\d{2})?|\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}(?:[,.]\d{3,6})?|\[\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}(?:[,.]\d{3,6})?\]|\d{2}:\d{2}:\d{2}(?:[,.]\d{3,6})?)`)
+
+	// commaRegex for comma to dot conversion in fractional seconds
+	commaRegex = regexp.MustCompile(`,(\d+)`)
+
+	// severityRegex for extracting severity levels from log lines
+	severityRegex = regexp.MustCompile(`^(?:\s*\[)?(TRACE|DEBUG|INFO|WARN|WARNING|ERROR|FATAL|CRITICAL)(?:\])?\s*[:>-]?\s*(.*)$`)
+)
+
 // Parser handles timestamp detection and parsing from log lines
 type Parser struct {
-	// Regex for detecting timestamps in text
-	timestampRegex *regexp.Regexp
 	// Compiled layouts for fast parsing
 	layouts []string
 }
@@ -25,11 +36,6 @@ type ParseResult struct {
 // NewParser creates a new timestamp parser
 func NewParser() *Parser {
 	return &Parser{
-		// Comprehensive regex pattern that matches various timestamp formats
-		// Supports ISO 8601, RFC formats, syslog, and common log formats
-		// Now includes support for comma decimal separators (international format)
-		timestampRegex: regexp.MustCompile(`(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:[,.]\d{3,9})?(?:Z|[+-]\d{2}:?\d{2})?|\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}(?:[,.]\d{3,6})?|\[\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}(?:[,.]\d{3,6})?\]|\d{2}:\d{2}:\d{2}(?:[,.]\d{3,6})?)`),
-
 		// Ordered list of timestamp layouts for parsing
 		// Most common formats first for better performance
 		layouts: []string{
@@ -92,7 +98,7 @@ func NewParser() *Parser {
 
 // ParseFromText extracts and parses the first timestamp found in text
 func (p *Parser) ParseFromText(text string) ParseResult {
-	matches := p.timestampRegex.FindStringSubmatch(text)
+	matches := timestampRegex.FindStringSubmatch(text)
 	if len(matches) < 2 {
 		return ParseResult{Found: false, Remaining: text}
 	}
@@ -168,7 +174,6 @@ func (p *Parser) normalizeDecimalSeparator(timestamp, layout string) string {
 	if strings.Contains(layout, ".") && strings.Contains(timestamp, ",") {
 		// Find the position where fractional seconds would be
 		// Look for comma followed by digits
-		commaRegex := regexp.MustCompile(`,(\d+)`)
 		return commaRegex.ReplaceAllString(timestamp, ".$1")
 	}
 	return timestamp
@@ -198,7 +203,6 @@ func (p *Parser) ExtractLogMessage(line string) string {
 	}
 
 	// Now remove severity levels from the remaining text
-	severityRegex := regexp.MustCompile(`^(?:\s*\[)?(TRACE|DEBUG|INFO|WARN|WARNING|ERROR|FATAL|CRITICAL)(?:\])?\s*[:>-]?\s*(.*)$`)
 	if matches := severityRegex.FindStringSubmatch(workingLine); len(matches) > 2 {
 		message := strings.TrimSpace(matches[2])
 		if message != "" {
