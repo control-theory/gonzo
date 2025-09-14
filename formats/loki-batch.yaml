@@ -1,0 +1,32 @@
+name: loki-batch
+description: Loki batch format with streams array
+author: Gonzo Community
+type: json
+
+# For Loki's batch format: {"streams":[{"stream":{...},"values":[["timestamp","message"]]}]}
+json:
+  array_path: streams
+
+mapping:
+  # Special handling for values array - each entry is [timestamp, message]
+  timestamp:
+    field: values[0]
+    time_format: unix_ns
+
+  body:
+    field: values[1]
+
+  severity:
+    field: stream.severity
+    transform: uppercase
+    default: INFO
+
+  attributes:
+    container:
+      field: stream.k8s_container_name
+    namespace:
+      field: stream.k8s_namespace_name
+    pod:
+      field: stream.k8s_pod_name
+    service:
+      field: stream.service_name

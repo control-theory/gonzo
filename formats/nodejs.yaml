@@ -1,0 +1,69 @@
+# Node.js Application Log Format
+# This format is designed for Node.js applications that use bracketed components
+#
+# Example log lines this format can parse:
+# [Backend] 5300 LOG [InstanceLoader] TypeOrmModule dependencies initialized +6ms
+# [Frontend] 5301 ERROR [RouteHandler] Cannot connect to database
+# [API] 5302 WARN [AuthService] Token expired for user 123
+#
+# The pattern captures:
+# - Project name in brackets: [Backend], [Frontend], etc.
+# - Process ID (PID): 5300, 5301, etc.
+# - Log level: LOG, ERROR, WARN, INFO, DEBUG, etc.
+# - Module/Component name in brackets: [InstanceLoader], [RouteHandler], etc.
+# - Log message: The actual log content
+# - Optional duration: +6ms, +100ms, etc.
+
+name: nodejs
+description: Node.js application log format with bracketed components
+author: Gonzo Community
+type: text  # 'text' type is for plain text logs that need pattern matching
+
+pattern:
+  # Use regex for precise field extraction
+  use_regex: true
+
+  # Main pattern explanation:
+  # ^\[(?P<project>[^\]]+)\] - Captures project name in brackets at start of line
+  # \s+(?P<pid>\d+) - Captures process ID (digits)
+  # \s+(?P<level>\w+) - Captures log level (word characters)
+  # \s+\[(?P<module>[^\]]+)\] - Captures module name in brackets
+  # \s+(?P<message>[^+]+?) - Captures the main message (non-greedy, stops before +)
+  # (?:\s+\+(?P<duration>\d+)ms)?$ - Optionally captures duration like +6ms
+  main: '^\[(?P<project>[^\]]+)\]\s+(?P<pid>\d+)\s+(?P<level>\w+)\s+\[(?P<module>[^\]]+)\]\s+(?P<message>[^+]+?)(?:\s+\+(?P<duration>\d+)ms)?$'
+
+mapping:
+  # Map the log level to OTLP severity
+  severity:
+    field: level           # Use the captured 'level' field
+    transform: uppercase   # Ensure it's uppercase (LOG -> LOG, error -> ERROR)
+
+  # The main log message becomes the OTLP body
+  body:
+    template: "{{.message}}"  # Use template syntax to extract the message
+
+  # Since Node.js logs typically don't include timestamps,
+  # we'll use the current time when the log is processed
+  timestamp:
+    field: timestamp      # This field won't exist in the parsed data
+    time_format: auto     # Auto-detect format (will default to current time)
+    default: ""          # Empty default means use current time
+
+  # Additional attributes that provide context
+  attributes:
+    # Which part of the application generated this log
+    project:
+      field: project      # Maps directly to the captured 'project' field
+
+    # Process identifier for debugging multi-process apps
+    pid:
+      field: pid
+
+    # Which module or component within the project
+    module:
+      field: module
+
+    # Execution duration if present (useful for performance monitoring)
+    duration_ms:
+      field: duration
+      default: "0"        # Default to 0 if no duration is captured

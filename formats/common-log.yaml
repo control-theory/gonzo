@@ -1,0 +1,68 @@
+# Common Log Format
+# This format handles standard log lines with timestamp, level, and message
+# It's a flexible format that works with many logging libraries and applications
+#
+# Example log lines this format can parse:
+# 2024-01-15 10:30:45 ERROR [Service] Connection failed
+# 2024-01-15 10:30:46.123 INFO Application started successfully
+# 2024-01-15 10:30:47 WARN [Database] Slow query detected
+# 2024-01-15 10:30:48 DEBUG Starting background job
+#
+# Pattern captures:
+# - Timestamp: Date and time in various formats
+# - Log level: ERROR, WARN, INFO, DEBUG, TRACE, etc.
+# - Optional component in brackets: [Service], [Database], etc.
+# - Message: The rest of the line after the metadata
+
+name: common-log
+description: Common log format with timestamp, level, and message
+author: Gonzo Community
+type: text  # Plain text logs that need pattern matching
+
+pattern:
+  use_regex: true
+
+  # Main regex pattern breakdown:
+  # ^(?P<timestamp>[\d\-]+\s+[\d:]+(?:\.\d+)?)
+  #   - Captures timestamp like "2024-01-15 10:30:45" or "2024-01-15 10:30:45.123"
+  #   - [\d\-]+ matches the date part (digits and hyphens)
+  #   - \s+ matches space(s) between date and time
+  #   - [\d:]+ matches the time part (digits and colons)
+  #   - (?:\.\d+)? optionally matches milliseconds (.123)
+  #
+  # \s+(?P<level>\w+)
+  #   - Captures the log level (any word characters like ERROR, INFO, etc.)
+  #
+  # \s+(?:\[(?P<component>[^\]]+)\])?
+  #   - Optionally captures component name in brackets [Service]
+  #   - (?: ... )? makes the entire bracketed component optional
+  #
+  # \s*(?P<message>.*)$
+  #   - Captures everything else as the message
+  #   - \s* handles optional spaces before the message
+  #   - .* captures the rest of the line
+  main: '^(?P<timestamp>[\d\-]+\s+[\d:]+(?:\.\d+)?)\s+(?P<level>\w+)\s+(?:\[(?P<component>[^\]]+)\])?\s*(?P<message>.*)$'
+
+mapping:
+  # Parse the captured timestamp
+  timestamp:
+    field: timestamp
+    # This format matches "2006-01-02 15:04:05" which is Go's reference time
+    # Go uses specific reference time: Mon Jan 2 15:04:05 MST 2006
+    time_format: "2006-01-02 15:04:05"
+
+  # Map log level to OTLP severity
+  severity:
+    field: level
+    transform: uppercase    # Normalize to uppercase
+
+  # The message is the main content
+  body:
+    field: message
+
+  # Additional attributes for context
+  attributes:
+    # Component/module that generated the log (if present)
+    component:
+      field: component
+      default: ""           # Empty string if no component specified

@@ -20,10 +20,17 @@ type LogConverter struct {
 	jsonRegex       *regexp.Regexp
 	jsonMarshaler   protojson.MarshalOptions
 	jsonUnmarshaler protojson.UnmarshalOptions
+	customFormatName string
+	customParser    interface{} // Will hold *formats.Parser when needed
 }
 
 // NewLogConverter creates a new log converter
 func NewLogConverter() *LogConverter {
+	return NewLogConverterWithFormat("", nil)
+}
+
+// NewLogConverterWithFormat creates a new log converter with optional custom format
+func NewLogConverterWithFormat(formatName string, parser interface{}) *LogConverter {
 	return &LogConverter{
 		timestampParser: timestamp.NewParser(),
 		// Common log level patterns
@@ -37,6 +44,8 @@ func NewLogConverter() *LogConverter {
 		jsonUnmarshaler: protojson.UnmarshalOptions{
 			DiscardUnknown: true,
 		},
+		customFormatName: formatName,
+		customParser:    parser,
 	}
 }
 
@@ -49,6 +58,8 @@ func (lc *LogConverter) ConvertToOTLP(line string, format LogFormat) (*logspb.Lo
 		return lc.convertJSONToOTLP(line)
 	case FormatText:
 		return lc.convertTextToOTLP(line)
+	case FormatCustom:
+		return lc.convertCustomToOTLP(line)
 	default:
 		return lc.convertTextToOTLP(line) // Default to text parsing
 	}

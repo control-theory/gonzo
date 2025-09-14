@@ -16,6 +16,7 @@ const (
 	FormatOTLP
 	FormatJSON
 	FormatText
+	FormatCustom // Custom user-defined format
 )
 
 // FormatDetector detects the format of incoming log lines
@@ -23,10 +24,16 @@ type FormatDetector struct {
 	otlpKeywords    []string
 	jsonMarshaler   protojson.MarshalOptions
 	jsonUnmarshaler protojson.UnmarshalOptions
+	customFormat    string // User-specified format name
 }
 
 // NewFormatDetector creates a new format detector
 func NewFormatDetector() *FormatDetector {
+	return NewFormatDetectorWithFormat("")
+}
+
+// NewFormatDetectorWithFormat creates a new format detector with a specified format
+func NewFormatDetectorWithFormat(formatName string) *FormatDetector {
 	return &FormatDetector{
 		otlpKeywords: []string{
 			"timeUnixNano",
@@ -44,6 +51,7 @@ func NewFormatDetector() *FormatDetector {
 		jsonUnmarshaler: protojson.UnmarshalOptions{
 			DiscardUnknown: true,
 		},
+		customFormat: formatName,
 	}
 }
 
@@ -55,6 +63,23 @@ func (fd *FormatDetector) DetectFormat(line string) LogFormat {
 		return FormatUnknown
 	}
 
+	// If a custom format is specified, use it
+	if fd.customFormat != "" {
+		// Check if it's a built-in format
+		switch strings.ToLower(fd.customFormat) {
+		case "otlp":
+			return FormatOTLP
+		case "json":
+			return FormatJSON
+		case "text":
+			return FormatText
+		default:
+			// It's a custom format
+			return FormatCustom
+		}
+	}
+
+	// Auto-detect format
 	// Try to parse as JSON first
 	var jsonData map[string]interface{}
 	if err := json.Unmarshal([]byte(line), &jsonData); err == nil {
@@ -67,6 +92,11 @@ func (fd *FormatDetector) DetectFormat(line string) LogFormat {
 
 	// If not JSON, assume it's plain text
 	return FormatText
+}
+
+// GetCustomFormatName returns the name of the custom format if set
+func (fd *FormatDetector) GetCustomFormatName() string {
+	return fd.customFormat
 }
 
 // containsOTLPFields checks if the JSON contains OTLP-specific fields

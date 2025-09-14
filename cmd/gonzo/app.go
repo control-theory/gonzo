@@ -11,6 +11,7 @@ import (
 
 	"github.com/control-theory/gonzo/internal/analyzer"
 	"github.com/control-theory/gonzo/internal/filereader"
+	"github.com/control-theory/gonzo/internal/formats"
 	"github.com/control-theory/gonzo/internal/memory"
 	"github.com/control-theory/gonzo/internal/otlplog"
 	"github.com/control-theory/gonzo/internal/otlpreceiver"
@@ -36,9 +37,45 @@ func runApp(cmd *cobra.Command, args []string) error {
 		log.Printf("Warning: Failed to load skin '%s': %v (using default)", cfg.Skin, err)
 	}
 
-	// Initialize components
-	formatDetector := otlplog.NewFormatDetector()
-	logConverter := otlplog.NewLogConverter()
+	// Initialize format detector and converter with custom format if specified
+	var formatDetector *otlplog.FormatDetector
+	var logConverter *otlplog.LogConverter
+	var customParser *formats.Parser
+
+	if cfg.Format != "" {
+		// Check if it's a built-in format
+		switch strings.ToLower(cfg.Format) {
+		case "otlp", "json", "text":
+			// Built-in format
+			formatDetector = otlplog.NewFormatDetectorWithFormat(cfg.Format)
+			logConverter = otlplog.NewLogConverter()
+		default:
+			// Try to load custom format
+			format, err := formats.LoadFormatByName(cfg.Format, configDir)
+			if err != nil {
+				log.Printf("Warning: Failed to load custom format '%s': %v (using auto-detect)", cfg.Format, err)
+				formatDetector = otlplog.NewFormatDetector()
+				logConverter = otlplog.NewLogConverter()
+			} else {
+				// Create parser for the custom format
+				customParser, err = formats.NewParser(format)
+				if err != nil {
+					log.Printf("Warning: Failed to create parser for format '%s': %v (using auto-detect)", cfg.Format, err)
+					formatDetector = otlplog.NewFormatDetector()
+					logConverter = otlplog.NewLogConverter()
+				} else {
+					formatDetector = otlplog.NewFormatDetectorWithFormat(cfg.Format)
+					logConverter = otlplog.NewLogConverterWithFormat(cfg.Format, customParser)
+					log.Printf("Using custom format: %s", cfg.Format)
+				}
+			}
+		}
+	} else {
+		// Auto-detect format
+		formatDetector = otlplog.NewFormatDetector()
+		logConverter = otlplog.NewLogConverter()
+	}
+
 	textAnalyzer := analyzer.NewTextAnalyzerWithStopWords(cfg.StopWords)
 	otlpAnalyzer := analyzer.NewOTLPAnalyzer()
 	freqMemory := memory.NewFrequencyMemory(cfg.MemorySize)

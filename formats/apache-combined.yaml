@@ -1,0 +1,79 @@
+# Apache Combined Log Format
+# This format demonstrates the 'structured' type for parsing Apache/Nginx access logs
+# Example log line:
+# 192.168.1.1 - - [10/Oct/2023:13:55:36 +0000] "GET /api/users HTTP/1.1" 200 2326 "https://example.com" "Mozilla/5.0"
+
+name: apache-combined
+description: Apache/Nginx Combined Log Format parser
+author: Gonzo Community
+type: structured  # 'structured' type is for logs with consistent field positions
+
+pattern:
+  # Main pattern using regex with named capture groups
+  # Each group captures a specific field from the log line
+  use_regex: true
+  main: '^(?P<client_ip>[\d\.]+)\s+(?P<remote_user>\S+)\s+(?P<auth_user>\S+)\s+\[(?P<timestamp>[^\]]+)\]\s+"(?P<method>\w+)\s+(?P<path>[^\s]+)\s+(?P<protocol>[^"]+)"\s+(?P<status>\d+)\s+(?P<bytes>\d+)\s+"(?P<referrer>[^"]*)"\s+"(?P<user_agent>[^"]*)"'
+
+mapping:
+  # Map the timestamp field to OTLP timestamp
+  timestamp:
+    field: timestamp
+    # Apache uses a specific timestamp format
+    time_format: "02/Jan/2006:15:04:05 -0700"
+
+  # Extract HTTP status code as severity
+  # 2xx = INFO, 4xx = WARN, 5xx = ERROR
+  severity:
+    field: status
+    # We'll need custom logic to map status codes to severity
+    transform: "status_to_severity"
+    default: "INFO"
+
+  # The body will contain the request method, path, and status
+  body:
+    # Using template to combine multiple fields
+    template: "{{.method}} {{.path}} - {{.status}}"
+
+  # Map various fields to OTLP attributes
+  attributes:
+    # Client information
+    client_ip:
+      field: client_ip
+
+    # HTTP request details
+    http_method:
+      field: method
+      transform: uppercase
+
+    http_path:
+      field: path
+
+    http_protocol:
+      field: protocol
+
+    http_status:
+      field: status
+
+    # Response size in bytes
+    response_bytes:
+      field: bytes
+      default: "0"
+
+    # Referrer URL (where the request came from)
+    http_referrer:
+      field: referrer
+      default: "-"
+
+    # User agent string (browser/client info)
+    user_agent:
+      field: user_agent
+      default: "-"
+
+    # Authentication info (if present)
+    remote_user:
+      field: remote_user
+      default: "-"
+
+    auth_user:
+      field: auth_user
+      default: "-"
