@@ -1,0 +1,95 @@
+# Multi-region log aggregation configuration
+# Aggregate logs from multiple geographic regions
+# Usage: gonzo --config examples/config/multi-source-regions.yml
+
+# Global settings
+memory-size: 30000  # Larger memory for high volume
+update-interval: 3s
+log-buffer: 5000
+skin: solarized
+
+# Regional log sources
+sources:
+  # US East Region
+  - name: us_east_1
+    type: loki
+    config:
+      url: https://loki-us-east-1.example.com:3100
+      user: ${US_EAST_USER}
+      password: ${US_EAST_PASSWORD}
+      query: |
+        {region="us-east-1", env="production"}
+      labels:
+        datacenter: us-east-1a
+      since: 2h
+      limit: 5000
+
+  - name: us_east_1_errors
+    type: loki
+    config:
+      url: https://loki-us-east-1.example.com:3100
+      user: ${US_EAST_USER}
+      password: ${US_EAST_PASSWORD}
+      query: |
+        {region="us-east-1", env="production", level=~"error|critical"}
+      since: 6h
+
+  # US West Region
+  - name: us_west_2
+    type: vmlogs
+    config:
+      url: https://vmlogs-us-west-2.example.com:9428
+      user: ${US_WEST_USER}
+      password: ${US_WEST_PASSWORD}
+      query: 'region:"us-west-2" AND env:"production"'
+      params:
+        start_offset: 2h
+
+  # EU Central Region
+  - name: eu_central_1
+    type: loki
+    config:
+      url: https://loki-eu-central-1.example.com:3100
+      user: ${EU_CENTRAL_USER}
+      password: ${EU_CENTRAL_PASSWORD}
+      query: '{region="eu-central-1", env="production"}'
+      since: 2h
+      limit: 5000
+
+  # EU West Region
+  - name: eu_west_1
+    type: loki
+    config:
+      url: https://loki-eu-west-1.example.com:3100
+      user: ${EU_WEST_USER}
+      password: ${EU_WEST_PASSWORD}
+      query: '{region="eu-west-1", env="production"}'
+      since: 2h
+
+  # Asia Pacific Region
+  - name: ap_southeast_1
+    type: vmlogs
+    config:
+      url: https://vmlogs-ap-southeast-1.example.com:9428
+      user: ${AP_USER}
+      password: ${AP_PASSWORD}
+      query: 'region:"ap-southeast-1"'
+      params:
+        start_offset: 3h
+
+  # Global CDN logs
+  - name: cdn_global
+    type: loki
+    config:
+      url: https://loki-cdn.example.com:3100
+      user: ${CDN_USER}
+      password: ${CDN_PASSWORD}
+      query: '{service="cdn", type="access"}'
+      since: 30m
+
+  # Global OTLP collector
+  - name: global_traces
+    type: otlp
+    config:
+      grpc_port: 4317
+      http_port: 4318

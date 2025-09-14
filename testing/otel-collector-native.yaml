@@ -1,0 +1,42 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+exporters:
+  # Send OTLP logs directly to your local Loki's OTLP endpoint
+  otlphttp:
+    endpoint: http://loki.rbg.local/otlp
+    compression: gzip
+    headers:
+      "X-Scope-OrgID": "test"
+  
+  # Also output to console for debugging
+  debug:
+    verbosity: basic
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+  
+  # Add resource attributes that Loki can use as labels
+  resource:
+    attributes:
+      - key: job
+        value: "otel-collector"
+        action: insert
+
+service:
+  pipelines:
+    logs:
+      receivers: [otlp]
+      processors: [resource]
+      exporters: [otlphttp, debug]
+  
+  telemetry:
+    logs:
+      level: debug

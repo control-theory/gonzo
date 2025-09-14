@@ -1,0 +1,15 @@
+# Usage: gonzo --config examples/config/loki-local.yml
+
+# Global settings
+memory-size: 20000
+update-interval: 2s
+log-buffer: 2000
+skin: dracula
+
+sources:
+  - name: loki_local
+    type: loki
+    config:
+      url: http://localhost:3100
+      since: 24h
+      limit: 10000

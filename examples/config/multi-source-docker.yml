@@ -1,0 +1,76 @@
+# Docker containers monitoring configuration
+# Monitor all Docker containers and compose stacks
+# Usage: gonzo --config examples/config/multi-source-docker.yml
+
+# Global settings
+memory-size: 10000
+update-interval: 1s
+log-buffer: 2000
+skin: default
+
+# Docker container sources
+sources:
+  # Direct Docker API streaming (recommended)
+  - name: docker_direct
+    type: docker
+    config:
+      endpoint: unix:///var/run/docker.sock
+      interval: 10s
+      follow:
+        - "*"  # Follow all containers
+        # Or specify specific containers:
+        # - "myapp-*"
+        # - "database"
+        # - "redis:latest"
+
+  # Alternative: Docker container logs via files
+  - name: docker_files
+    type: files
+    config:
+      files:
+        # Default Docker log location
+        - "/var/lib/docker/containers/*/*.log"
+      follow: true
+
+  # Docker Compose stack - Frontend
+  - name: frontend_stack
+    type: files
+    config:
+      files:
+        - "./docker/logs/frontend/*.log"
+        - "./docker/logs/nginx/*.log"
+      follow: true
+
+  # Docker Compose stack - Backend
+  - name: backend_stack
+    type: files
+    config:
+      files:
+        - "./docker/logs/api/*.log"
+        - "./docker/logs/worker/*.log"
+      follow: true
+
+  # Docker Compose stack - Databases
+  - name: database_stack
+    type: files
+    config:
+      files:
+        - "./docker/logs/postgres/*.log"
+        - "./docker/logs/redis/*.log"
+        - "./docker/logs/mongo/*.log"
+      follow: true
+
+  # Container metrics via OTLP
+  - name: container_metrics
+    type: otlp
+    config:
+      grpc_port: 4317
+      http_port: 4318
+
+  # If using Loki with Docker driver
+  - name: docker_loki
+    type: loki
+    config:
+      url: http://localhost:3100
+      query: '{container_name=~".+"}'  # All containers
+      since: 1h

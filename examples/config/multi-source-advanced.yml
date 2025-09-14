@@ -1,0 +1,77 @@
+# Advanced multi-source configuration with authentication and filters
+# Usage: gonzo --config examples/config/multi-source-advanced.yml
+
+# Global settings
+memory-size: 20000
+update-interval: 2s
+log-buffer: 2000
+ai-model: gpt-4
+skin: dracula
+
+# Multiple input sources with advanced configurations
+sources:
+  # Kubernetes logs via files with glob patterns
+  - name: k8s_pods
+    type: files
+    config:
+      files:
+        - "/var/log/pods/**/containers/*/*.log"
+        - "/var/log/containers/*.log"
+      follow: true
+
+  # Loki with authentication and complex query
+  - name: loki_prod_errors
+    type: loki
+    config:
+      url: https://loki.prod.example.com
+      user: ${LOKI_USER}  # Environment variable
+      password: ${LOKI_PASSWORD}  # Environment variable
+      query: |
+        {env="production", level=~"error|critical|fatal"}
+        |= "exception"
+        |~ "timeout|refused|failed"
+      labels:
+        env: production
+        team: backend
+      since: 24h
+      limit: 10000
+
+  # Victoria Logs with authentication
+  - name: vmlogs_staging
+    type: vmlogs
+    config:
+      url: https://vmlogs.staging.example.com:9428
+      user: ${VMLOGS_USER}
+      password: ${VMLOGS_PASSWORD}
+      query: 'service:"api-gateway" AND (level:error OR level:warn)'
+      params:
+        start_offset: 2h
+        limit: 1000
+
+  # Another Loki instance for different region
+  - name: loki_eu_west
+    type: loki
+    config:
+      url: https://loki-eu-west.example.com:3100
+      user: ${LOKI_EU_USER}
+      password: ${LOKI_EU_PASSWORD}
+      query: '{region="eu-west", namespace="production"}'
+      since: 6h
+
+  # OTLP receiver with custom ports
+  - name: otlp_custom
+    type: otlp
+    config:
+      grpc_port: 5317
+      http_port: 5318
+      grpc_enabled: true
+      http_enabled: false  # Only gRPC
+
+  # Local development logs
+  - name: dev_logs
+    type: files
+    config:
+      files:
+        - "./logs/development.log"
+        - "./logs/error.log"
+      follow: true

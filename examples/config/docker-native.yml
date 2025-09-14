@@ -1,0 +1,89 @@
+# Docker Native Plugin Configuration Examples
+# Direct streaming from Docker daemon using the native Docker plugin
+# Usage: gonzo --config examples/config/docker-native.yml
+
+# Global settings
+memory-size: 10000
+update-interval: 1s
+log-buffer: 2000
+skin: default
+
+sources:
+  # Example 1: Follow all containers
+  - name: all_containers
+    type: docker
+    config:
+      endpoint: unix:///var/run/docker.sock
+      interval: 10s
+      follow:
+        - "*"
+
+  # Example 2: Follow specific application containers
+  # - name: app_containers
+  #   type: docker
+  #   config:
+  #     follow:
+  #       - "web-app"
+  #       - "api-server"
+  #       - "worker"
+
+  # Example 3: Follow containers by pattern
+  # - name: microservices
+  #   type: docker
+  #   config:
+  #     follow:
+  #       - "service-*"      # All microservices
+  #       - "db-*"          # All databases
+  #       - "*-staging"     # All staging containers
+
+  # Example 4: Follow by image name
+  # - name: specific_images
+  #   type: docker
+  #   config:
+  #     follow:
+  #       - "nginx:latest"
+  #       - "postgres:14"
+  #       - "redis:alpine"
+
+  # Example 5: Remote Docker daemon
+  # - name: remote_docker
+  #   type: docker
+  #   config:
+  #     endpoint: tcp://docker.example.com:2376
+  #     interval: 30s
+  #     follow:
+  #       - "production-*"
+
+  # Example 6: Multiple Docker daemons
+  # - name: local_docker
+  #   type: docker
+  #   config:
+  #     endpoint: unix:///var/run/docker.sock
+  #     follow:
+  #       - "dev-*"
+  #
+  # - name: remote_docker
+  #   type: docker
+  #   config:
+  #     endpoint: tcp://192.168.1.100:2376
+  #     follow:
+  #       - "prod-*"
+
+  # Example 7: Combined with other sources
+  # - name: containers
+  #   type: docker
+  #   config:
+  #     follow:
+  #       - "app-*"
+  #
+  # - name: system_logs
+  #   type: files
+  #   config:
+  #     files:
+  #       - "/var/log/syslog"
+  #     follow: true
+  #
+  # - name: metrics
+  #   type: otlp
+  #   config:
+  #     grpc_port: 4317

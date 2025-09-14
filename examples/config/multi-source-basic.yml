@@ -1,0 +1,37 @@
+# Basic multi-source configuration
+# Usage: gonzo --config examples/config/multi-source-basic.yml
+
+# Global settings
+memory-size: 10000
+update-interval: 1s
+log-buffer: 1000
+skin: default
+
+# Multiple input sources
+sources:
+  # Local file monitoring
+  - name: application_logs
+    type: files
+    config:
+      files:
+        - "/var/log/myapp/*.log"
+        - "/var/log/nginx/*.log"
+      follow: true
+
+  # Loki for production logs
+  - name: production_logs
+    type: loki
+    config:
+      url: http://loki.example.com:3100
+      query: '{job="myapp"}'
+      since: 1h
+      limit: 5000
+
+  # OTLP receiver for traces
+  - name: otlp_receiver
+    type: otlp
+    config:
+      grpc_port: 4317
+      http_port: 4318
+      grpc_enabled: true
+      http_enabled: true

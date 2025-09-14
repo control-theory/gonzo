@@ -23,6 +23,15 @@ memory-size: 10000
 # UI customization
 skin: dracula # Choose from: default, dracula, nord, monokai, github-light, etc.
 
+# Additional stop words to filter from analysis
+# These are added to the built-in common English stop words
+stop-words:
+  - "log"
+  - "message"
+  - "info"
+  - "error"
+  - "warning"
+
 # AI configuration
 ai-model: "gpt-4"
 

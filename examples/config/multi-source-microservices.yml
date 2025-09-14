@@ -1,0 +1,83 @@
+# Microservices debugging configuration
+# Monitor multiple services simultaneously for distributed tracing
+# Usage: gonzo --config examples/config/multi-source-microservices.yml
+
+# Global settings
+memory-size: 15000
+update-interval: 500ms  # Faster updates for real-time debugging
+log-buffer: 5000
+skin: monokai
+
+# Microservices sources
+sources:
+  # API Gateway
+  - name: api_gateway
+    type: loki
+    config:
+      url: http://loki.internal:3100
+      query: '{service="api-gateway", namespace="default"}'
+      since: 15m
+
+  # Authentication Service
+  - name: auth_service
+    type: loki
+    config:
+      url: http://loki.internal:3100
+      query: '{service="auth-service", namespace="default"}'
+      since: 15m
+
+  # User Service
+  - name: user_service
+    type: loki
+    config:
+      url: http://loki.internal:3100
+      query: '{service="user-service", namespace="default"}'
+      since: 15m
+
+  # Order Service
+  - name: order_service
+    type: loki
+    config:
+      url: http://loki.internal:3100
+      query: '{service="order-service", namespace="default"}'
+      since: 15m
+
+  # Payment Service
+  - name: payment_service
+    type: loki
+    config:
+      url: http://loki.internal:3100
+      query: '{service="payment-service", namespace="default"}'
+      since: 15m
+
+  # Database logs
+  - name: database
+    type: files
+    config:
+      files:
+        - "/var/log/postgresql/postgresql-*.log"
+        - "/var/log/mysql/error.log"
+      follow: true
+
+  # Redis logs
+  - name: redis_cache
+    type: files
+    config:
+      files:
+        - "/var/log/redis/redis-server.log"
+      follow: true
+
+  # Message Queue logs
+  - name: rabbitmq
+    type: files
+    config:
+      files:
+        - "/var/log/rabbitmq/*.log"
+      follow: true
+
+  # OTLP for distributed traces
+  - name: traces
+    type: otlp
+    config:
+      grpc_port: 4317
+      http_port: 4318
