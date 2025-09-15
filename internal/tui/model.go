@@ -151,6 +151,7 @@ type DashboardModel struct {
 	// Column display
 	showColumns bool // Toggle Host and Service columns in log view
 	showFullDate bool // Toggle full date display (MM/DD/YYYY HH:MM:SS) vs time only (HH:MM:SS)
+	showObservedTime bool // Toggle to show observed time instead of arrival time
 
 	// Drain3 pattern extraction
 	drain3Manager       *Drain3Manager

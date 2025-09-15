@@ -261,14 +261,20 @@ func (m *DashboardModel) renderLogScrollContent(height int, logWidth int) []stri
 		// Build headers with proper alignment
 		// Format matches: sourceIndicator(4) + timestamp(8 or 19) + space + severity(5) + space + host(12) + space + service(16) + space + message
 		var headerLine string
+		var timeLabel string
+		if m.showObservedTime {
+			timeLabel = "Observed"
+		} else {
+			timeLabel = "Time"
+		}
 		if m.showFullDate {
 			// Date/Time mode: 19 chars for timestamp
 			headerLine = fmt.Sprintf("%-4s%-19s %-5s %-12s %-16s %s",
-				"Src", "Date/Time", "Level", "Host", "Service", "Message")
+				"Src", timeLabel+" Date/Time", "Level", "Host", "Service", "Message")
 		} else {
 			// Time only mode: 8 chars for timestamp
 			headerLine = fmt.Sprintf("%-4s%-8s %-5s %-12s %-16s %s",
-				"Src", "Time", "Level", "Host", "Service", "Message")
+				"Src", timeLabel, "Level", "Host", "Service", "Message")
 		}
 		// Apply white color to headers
 		styledHeaderLine := lipgloss.NewStyle().Foreground(ColorWhite).Render(headerLine)
@@ -278,14 +284,20 @@ func (m *DashboardModel) renderLogScrollContent(height int, logWidth int) []stri
 		// Simplified header without Host/Service columns
 		// Format matches: sourceIndicator(4) + timestamp(8 or 19) + space + severity(5) + space + message
 		var headerLine string
+		var timeLabel string
+		if m.showObservedTime {
+			timeLabel = "Observed"
+		} else {
+			timeLabel = "Time"
+		}
 		if m.showFullDate {
 			// Date/Time mode: 19 chars for timestamp
 			headerLine = fmt.Sprintf("%-4s%-19s %-5s %s",
-				"Src", "Date/Time", "Level", "Message")
+				"Src", timeLabel+" Date/Time", "Level", "Message")
 		} else {
 			// Time only mode: 8 chars for timestamp
 			headerLine = fmt.Sprintf("%-4s%-8s %-5s %s",
-				"Src", "Time", "Level", "Message")
+				"Src", timeLabel, "Level", "Message")
 		}
 		// Apply white color to headers
 		styledHeaderLine := lipgloss.NewStyle().Foreground(ColorWhite).Render(headerLine)

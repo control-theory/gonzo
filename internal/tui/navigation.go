@@ -349,6 +349,13 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+	case "o":
+		// Toggle observed time display in log view
+		if !m.showModal && !m.filterActive && !m.searchActive {
+			m.showObservedTime = !m.showObservedTime
+			return m, nil
+		}
+
 	case "i":
 		// Toggle statistics modal
 		if !m.showModal && !m.filterActive && !m.searchActive && !m.showHelp && !m.showPatternsModal && !m.showModelSelectionModal {

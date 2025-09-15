@@ -15,7 +15,7 @@ func (m *DashboardModel) formatLogEntry(entry LogEntry, availableWidth int, isSe
 		sourceIndicator = "??  "
 	}
 
-	// Use original timestamp if available, otherwise use receive time
+	// Use arrival time by default, show observed time when toggled
 	var timestamp string
 	var timeFormat string
 	if m.showFullDate {
@@ -26,7 +26,8 @@ func (m *DashboardModel) formatLogEntry(entry LogEntry, availableWidth int, isSe
 		timeFormat = "15:04:05"
 	}
 
-	if !entry.OrigTimestamp.IsZero() {
+	// Show observed time when toggled, otherwise show arrival time
+	if m.showObservedTime && !entry.OrigTimestamp.IsZero() {
 		timestamp = entry.OrigTimestamp.Format(timeFormat)
 	} else {
 		timestamp = entry.Timestamp.Format(timeFormat)

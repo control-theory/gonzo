@@ -384,6 +384,7 @@ ACTIONS:
   Space          - Pause/unpause UI updates
   c              - Toggle Host/Service columns in log view
   d              - Toggle full date display (MM/DD/YYYY HH:MM:SS)
+  o              - Toggle observed/arrival time display
   r              - Reset all data (manual reset)
   u/U            - Cycle update intervals (forward/backward)
   i              - Show comprehensive statistics modal
