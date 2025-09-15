@@ -256,17 +256,40 @@ func (m *DashboardModel) renderLogScrollContent(height int, logWidth int) []stri
 		height-- // Reduce available height for logs
 	}
 
-	// Add column headers when columns are enabled
+	// Add column headers
 	if m.showColumns {
-		timestampHeader := lipgloss.NewStyle().Foreground(ColorWhite).Render("Time    ")
-		severityHeader := lipgloss.NewStyle().Foreground(ColorWhite).Render("Level")
-		hostHeader := lipgloss.NewStyle().Foreground(ColorWhite).Render("Host        ")
-		serviceHeader := lipgloss.NewStyle().Foreground(ColorWhite).Render("Service         ")
-		messageHeader := lipgloss.NewStyle().Foreground(ColorWhite).Render("Message")
-
-		headerLine := fmt.Sprintf("%s %s %s %s %s",
-			timestampHeader, severityHeader, hostHeader, serviceHeader, messageHeader)
-		logLines = append(logLines, headerLine)
+		// Build headers with proper alignment
+		// Format matches: sourceIndicator(4) + timestamp(8 or 19) + space + severity(5) + space + host(12) + space + service(16) + space + message
+		var headerLine string
+		if m.showFullDate {
+			// Date/Time mode: 19 chars for timestamp
+			headerLine = fmt.Sprintf("%-4s%-19s %-5s %-12s %-16s %s",
+				"Src", "Date/Time", "Level", "Host", "Service", "Message")
+		} else {
+			// Time only mode: 8 chars for timestamp
+			headerLine = fmt.Sprintf("%-4s%-8s %-5s %-12s %-16s %s",
+				"Src", "Time", "Level", "Host", "Service", "Message")
+		}
+		// Apply white color to headers
+		styledHeaderLine := lipgloss.NewStyle().Foreground(ColorWhite).Render(headerLine)
+		logLines = append(logLines, styledHeaderLine)
+		height-- // Reduce available height for logs
+	} else {
+		// Simplified header without Host/Service columns
+		// Format matches: sourceIndicator(4) + timestamp(8 or 19) + space + severity(5) + space + message
+		var headerLine string
+		if m.showFullDate {
+			// Date/Time mode: 19 chars for timestamp
+			headerLine = fmt.Sprintf("%-4s%-19s %-5s %s",
+				"Src", "Date/Time", "Level", "Message")
+		} else {
+			// Time only mode: 8 chars for timestamp
+			headerLine = fmt.Sprintf("%-4s%-8s %-5s %s",
+				"Src", "Time", "Level", "Message")
+		}
+		// Apply white color to headers
+		styledHeaderLine := lipgloss.NewStyle().Foreground(ColorWhite).Render(headerLine)
+		logLines = append(logLines, styledHeaderLine)
 		height-- // Reduce available height for logs
 	}
 

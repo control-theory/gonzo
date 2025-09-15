@@ -1,0 +1,37 @@
+@startuml gonzo_architecture
+hide footbox
+
+title Gonzo Experimental Architecture - Overall Flow
+
+participant "User" as user
+participant "CLI\n(gonzo)" as cli
+participant "Plugin\nManager" as manager
+participant "Plugin\nAdapter" as adapter
+participant "Log Source\n(Plugin)" as plugin
+participant "Processing\nPipeline" as pipeline
+participant "TUI\nDashboard" as tui
+
+== Initialization ==
+user -> cli: gonzo --use-experimental\n--source='docker:{"follow":["*"]}'
+cli -> cli: Parse source config
+cli -> manager: StartPlugin("docker", config)
+manager -> plugin: Create & Configure
+manager -> adapter: NewAdapter(plugin, convertToJSON=false)
+adapter -> plugin: Start(ctx)
+plugin --> adapter: <-chan LogEntry
+adapter --> cli: *Adapter
+
+== Log Streaming ==
+plugin -> plugin: Connect to source
+plugin -> plugin: Stream logs
+plugin -> adapter: LogEntry{Source: {Type:"docker"}}
+adapter -> adapter: convertToJSON(entry)
+note right: Adds _source field\nto JSON
+adapter -> cli: JSON string via channel
+cli -> pipeline: processLogLine(json)
+pipeline -> pipeline: extractSourceInfo(json)
+note right: Extracts _source\nSets SourceType="D"\nSourceID=1
+pipeline -> tui: LogEntry{SourceType:"D", SourceID:1}
+tui -> user: Display "D1" in first column
+
+@enduml

@@ -12,9 +12,13 @@ import (
 type LogFormat int
 
 const (
+	// FormatUnknown represents an unknown log format.
 	FormatUnknown LogFormat = iota
+	// FormatOTLP represents OpenTelemetry Protocol format.
 	FormatOTLP
+	// FormatJSON represents JSON format.
 	FormatJSON
+	// FormatText represents plain text format.
 	FormatText
 )
 

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/control-theory/gonzo/internal/logger"
 	"github.com/control-theory/gonzo/internal/tui"
 
 	commonpb "go.opentelemetry.io/proto/otlp/common/v1"
@@ -14,13 +15,6 @@ import (
 
 // extractLogEntryFromOTLPBatch extracts a LogEntry from OTLP batch data (DEPRECATED - only gets first log)
 // Use extractAllLogEntriesFromOTLPBatch instead for complete batch processing
-func extractLogEntryFromOTLPBatch(logsData *logspb.LogsData) *tui.LogEntry {
-	entries := extractAllLogEntriesFromOTLPBatch(logsData)
-	if len(entries) > 0 {
-		return entries[0]
-	}
-	return nil
-}
 
 // extractAllLogEntriesFromOTLPBatch extracts ALL LogEntries from OTLP batch data
 func extractAllLogEntriesFromOTLPBatch(logsData *logspb.LogsData) []*tui.LogEntry {
@@ -63,8 +57,12 @@ func extractLogEntryFromOTLPRecordWithResource(record *logspb.LogRecord, resourc
 	origTimestamp := time.Time{}
 	if record.TimeUnixNano > 0 {
 		origTimestamp = time.Unix(0, int64(record.TimeUnixNano))
+		logger.Debugf("[EXTRACTOR] Set OrigTimestamp from TimeUnixNano: %v", origTimestamp)
 	} else if record.ObservedTimeUnixNano > 0 {
 		origTimestamp = time.Unix(0, int64(record.ObservedTimeUnixNano))
+		logger.Debugf("[EXTRACTOR] Set OrigTimestamp from ObservedTimeUnixNano: %v", origTimestamp)
+	} else {
+		logger.Debug("[EXTRACTOR] No timestamp found in OTLP record")
 	}
 
 	// Extract severity with proper fallback priority:

@@ -98,7 +98,7 @@ func runAppExperimental(cmd *cobra.Command, args []string) error {
 	// Initialize components
 	formatDetector := otlplog.NewFormatDetector()
 	logConverter := otlplog.NewLogConverter()
-	textAnalyzer := analyzer.NewTextAnalyzer()
+	textAnalyzer := analyzer.NewTextAnalyzerWithStopWords(cfg.StopWords)
 	otlpAnalyzer := analyzer.NewOTLPAnalyzer()
 	freqMemory := memory.NewFrequencyMemory(cfg.MemorySize)
 
@@ -109,11 +109,13 @@ func runAppExperimental(cmd *cobra.Command, args []string) error {
 		textAnalyzer:   textAnalyzer,
 		otlpAnalyzer:   otlpAnalyzer,
 		freqMemory:     freqMemory,
-		dashboard:      tui.NewDashboardModel(cfg.LogBuffer, cfg.UpdateInterval, cfg.AIModel),
+		dashboard:      tui.NewDashboardModel(cfg.LogBuffer, cfg.UpdateInterval, cfg.AIModel, textAnalyzer.GetStopWords()),
 		updateInterval: cfg.UpdateInterval,
 		testMode:       cfg.TestMode,
 		adapter:        adapter,
 		sourceName:     sourceName,
+		sourceTypes:    make(map[string]string),
+		sourceCounters: make(map[string]int),
 	}
 
 	var p *tea.Program
@@ -158,6 +160,10 @@ type experimentalTuiModel struct {
 	}
 	sourceName string
 
+	// Source tracking for display
+	sourceTypes    map[string]string // Maps source identifier to type letter (L, D, V, O, I, F)
+	sourceCounters map[string]int    // Counts instances of each source type
+
 	// Internal state
 	finished       bool
 	logCount       int
@@ -182,6 +188,9 @@ func (m *experimentalTuiModel) Init() tea.Cmd {
 
 	// Get metrics periodically
 	go m.monitorMetrics()
+
+	// Log the adapter type for debugging
+	logger.Infof("Starting with adapter: %T, source: %s", m.adapter, m.sourceName)
 
 	// Start the dashboard
 	dashboardCmd := m.dashboard.Init()
@@ -228,6 +237,12 @@ func (m *experimentalTuiModel) checkInputChannel() tea.Cmd {
 				return finishedMsg{}
 			}
 			if line != "" {
+				// Debug: log first 100 chars of line to see what we're getting
+				preview := line
+				if len(preview) > 100 {
+					preview = preview[:100] + "..."
+				}
+				logger.Debugf("Received line from adapter: %s", preview)
 				return logLineMsg(line)
 			}
 			// Empty line, continue checking

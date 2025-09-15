@@ -1,3 +1,4 @@
+// Package memory provides in-memory storage for frequency analysis.
 package memory
 
 import (
@@ -6,6 +7,7 @@ import (
 	"time"
 )
 
+// FrequencyEntry represents a term with its occurrence statistics.
 type FrequencyEntry struct {
 	Term      string
 	Count     int64
@@ -13,6 +15,7 @@ type FrequencyEntry struct {
 	FirstSeen time.Time
 }
 
+// AttributeStats tracks statistics for log attributes.
 type AttributeStats struct {
 	Key          string
 	UniqueValues map[string]int64
@@ -21,6 +24,7 @@ type AttributeStats struct {
 	FirstSeen    time.Time
 }
 
+// AttributeStatsEntry represents aggregated statistics for a single attribute.
 type AttributeStatsEntry struct {
 	Key               string
 	UniqueValueCount  int
@@ -30,6 +34,7 @@ type AttributeStatsEntry struct {
 	Values           map[string]int64 // Individual values and their counts
 }
 
+// FrequencyMemory provides thread-safe storage for frequency analysis of words, phrases, and attributes.
 type FrequencyMemory struct {
 	words      map[string]*FrequencyEntry
 	phrases    map[string]*FrequencyEntry
@@ -38,12 +43,14 @@ type FrequencyMemory struct {
 	maxSize    int
 }
 
+// FrequencySnapshot represents a point-in-time view of frequency data.
 type FrequencySnapshot struct {
 	Words      []*FrequencyEntry
 	Phrases    []*FrequencyEntry
 	Attributes []*AttributeStatsEntry
 }
 
+// NewFrequencyMemory creates a new FrequencyMemory with the specified maximum size.
 func NewFrequencyMemory(maxSize int) *FrequencyMemory {
 	return &FrequencyMemory{
 		words:      make(map[string]*FrequencyEntry),
@@ -53,6 +60,7 @@ func NewFrequencyMemory(maxSize int) *FrequencyMemory {
 	}
 }
 
+// AddWords adds words to the frequency memory with occurrence tracking.
 func (fm *FrequencyMemory) AddWords(words []string) {
 	fm.mutex.Lock()
 	defer fm.mutex.Unlock()
@@ -77,6 +85,7 @@ func (fm *FrequencyMemory) AddWords(words []string) {
 	}
 }
 
+// AddPhrases adds phrases to the frequency memory with occurrence tracking.
 func (fm *FrequencyMemory) AddPhrases(phrases []string) {
 	fm.mutex.Lock()
 	defer fm.mutex.Unlock()
@@ -101,6 +110,7 @@ func (fm *FrequencyMemory) AddPhrases(phrases []string) {
 	}
 }
 
+// AddAttributes adds log attributes to the frequency memory with value tracking.
 func (fm *FrequencyMemory) AddAttributes(attributes map[string]string) {
 	fm.mutex.Lock()
 	defer fm.mutex.Unlock()
@@ -110,11 +120,7 @@ func (fm *FrequencyMemory) AddAttributes(attributes map[string]string) {
 		if stats, exists := fm.attributes[key]; exists {
 			stats.TotalCount++
 			stats.LastSeen = now
-			if _, valueExists := stats.UniqueValues[value]; valueExists {
-				stats.UniqueValues[value]++
-			} else {
-				stats.UniqueValues[value] = 1
-			}
+			stats.UniqueValues[value]++
 		} else {
 			fm.attributes[key] = &AttributeStats{
 				Key:          key,
@@ -131,6 +137,7 @@ func (fm *FrequencyMemory) AddAttributes(attributes map[string]string) {
 	}
 }
 
+// GetSnapshot returns a snapshot of the current frequency data.
 func (fm *FrequencyMemory) GetSnapshot() *FrequencySnapshot {
 	fm.mutex.RLock()
 	defer fm.mutex.RUnlock()
@@ -282,6 +289,7 @@ func (fm *FrequencyMemory) pruneAttributes() {
 	}
 }
 
+// Reset clears all stored frequency data.
 func (fm *FrequencyMemory) Reset() {
 	fm.mutex.Lock()
 	defer fm.mutex.Unlock()

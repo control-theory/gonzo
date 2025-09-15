@@ -73,8 +73,9 @@ func determineInputSource(cfg *Config) (string, map[string]interface{}, error) {
 func startInputSource(sourceName string, config map[string]interface{}) (*plugin.Adapter, error) {
 	manager := plugin.GetManager()
 
-	// Convert to OTLP format for consistent processing
-	convertToOTLP := true
+	// Use JSON format to preserve source metadata
+	// OTLP format doesn't include the _source field needed for source indicators
+	convertToOTLP := false
 
 	adapter, err := manager.StartPlugin(sourceName, config, convertToOTLP)
 	if err != nil {

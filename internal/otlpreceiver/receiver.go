@@ -1,3 +1,4 @@
+// Package otlpreceiver implements an OpenTelemetry log receiver.
 package otlpreceiver
 
 import (
@@ -129,7 +130,7 @@ func (r *Receiver) Stop() {
 	}
 
 	if r.httpServer != nil {
-		r.httpServer.Shutdown(context.Background())
+		_ = r.httpServer.Shutdown(context.Background())
 	}
 
 	r.wg.Wait()
@@ -240,12 +241,12 @@ func (r *Receiver) handleHTTPLogs(w http.ResponseWriter, req *http.Request) {
 		// Return JSON response
 		w.Header().Set("Content-Type", "application/json")
 		jsonBytes, _ := r.jsonMarshaler.Marshal(response)
-		w.Write(jsonBytes)
+		_, _ = w.Write(jsonBytes)
 	} else {
 		// Return protobuf response
 		w.Header().Set("Content-Type", "application/x-protobuf")
 		protoBytes, _ := proto.Marshal(response)
-		w.Write(protoBytes)
+		_, _ = w.Write(protoBytes)
 	}
 }
 

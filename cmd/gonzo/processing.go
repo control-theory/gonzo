@@ -57,18 +57,17 @@ func (m *simpleTuiModel) processLogLine(line string) {
 				}
 			}
 			return // Important: return early for batch processing to avoid duplicate processing below
+		}
+		// Parse single OTLP record
+		record, err := m.formatDetector.ParseSingleOTLPRecord(line)
+		if err != nil {
+			result = m.textAnalyzer.AnalyzeLine(line)
+			attributes = make(map[string]string)
+			logEntry = createFallbackLogEntry(line)
 		} else {
-			// Parse single OTLP record
-			record, err := m.formatDetector.ParseSingleOTLPRecord(line)
-			if err != nil {
-				result = m.textAnalyzer.AnalyzeLine(line)
-				attributes = make(map[string]string)
-				logEntry = createFallbackLogEntry(line)
-			} else {
-				result = m.otlpAnalyzer.AnalyzeOTLPRecord(record)
-				attributes = m.otlpAnalyzer.ExtractAttributesFromOTLPRecord(record)
-				logEntry = extractLogEntryFromOTLPRecord(record)
-			}
+			result = m.otlpAnalyzer.AnalyzeOTLPRecord(record)
+			attributes = m.otlpAnalyzer.ExtractAttributesFromOTLPRecord(record)
+			logEntry = extractLogEntryFromOTLPRecord(record)
 		}
 	} else {
 		// Convert non-OTLP format to OTLP
@@ -153,10 +152,10 @@ func (m *simpleTuiModel) tryAccumulateJSON(line string) bool {
 	trimmed := strings.TrimSpace(line)
 	
 	// If we're not currently accumulating JSON, check if this line starts a JSON object
-	if !m.inJsonObject {
+	if !m.inJSONObject {
 		if trimmed == "{" || strings.HasPrefix(trimmed, "{") {
 			// Start accumulating JSON
-			m.inJsonObject = true
+			m.inJSONObject = true
 			m.jsonBuffer.Reset()
 			m.jsonDepth = 0
 			m.jsonBuffer.WriteString(line)
@@ -232,7 +231,7 @@ func countJSONDepth(line string) int {
 
 // resetJSONAccumulation resets the JSON accumulation state
 func (m *simpleTuiModel) resetJSONAccumulation() {
-	m.inJsonObject = false
+	m.inJSONObject = false
 	m.jsonDepth = 0
 	m.jsonBuffer.Reset()
 }
@@ -276,18 +275,17 @@ func (m *simpleTuiModel) processCompleteJSON(jsonStr string) {
 				}
 			}
 			return // Important: return early for batch processing to avoid duplicate processing below
+		}
+		// Parse single OTLP record
+		record, err := m.formatDetector.ParseSingleOTLPRecord(jsonStr)
+		if err != nil {
+			result = m.textAnalyzer.AnalyzeLine(jsonStr)
+			attributes = make(map[string]string)
+			logEntry = createFallbackLogEntry(jsonStr)
 		} else {
-			// Parse single OTLP record
-			record, err := m.formatDetector.ParseSingleOTLPRecord(jsonStr)
-			if err != nil {
-				result = m.textAnalyzer.AnalyzeLine(jsonStr)
-				attributes = make(map[string]string)
-				logEntry = createFallbackLogEntry(jsonStr)
-			} else {
-				result = m.otlpAnalyzer.AnalyzeOTLPRecord(record)
-				attributes = m.otlpAnalyzer.ExtractAttributesFromOTLPRecord(record)
-				logEntry = extractLogEntryFromOTLPRecord(record)
-			}
+			result = m.otlpAnalyzer.AnalyzeOTLPRecord(record)
+			attributes = m.otlpAnalyzer.ExtractAttributesFromOTLPRecord(record)
+			logEntry = extractLogEntryFromOTLPRecord(record)
 		}
 	} else {
 		// Convert non-OTLP format to OTLP

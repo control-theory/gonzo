@@ -17,6 +17,10 @@ type VmlogsSource struct {
 	password   string
 	query      string
 	params     map[string]string
+	limit      int           // Maximum number of logs to fetch
+	since      time.Duration // How far back to look for logs
+	oneShot    bool          // Fetch once and stop (for testing)
+	labels     map[string]string // Label filters
 	receiver   *vmlogs.Receiver
 	logChan    chan plugin.LogEntry
 	ctx        context.Context
@@ -66,6 +70,37 @@ func (s *VmlogsSource) Configure(config map[string]interface{}) error {
 		s.query = query
 	}
 
+	// Optional: Limit
+	if v, ok := config["limit"].(float64); ok {
+		s.limit = int(v)
+	} else if v, ok := config["limit"].(int); ok {
+		s.limit = v
+	}
+
+	// Optional: Since duration (how far back to look)
+	if v, ok := config["since"].(string); ok {
+		duration, err := time.ParseDuration(v)
+		if err != nil {
+			return fmt.Errorf("invalid since duration: %w", err)
+		}
+		s.since = duration
+	}
+
+	// Optional: oneShot mode (for testing - fetch once and stop)
+	if v, ok := config["oneShot"].(bool); ok {
+		s.oneShot = v
+	}
+
+	// Optional: Label filters
+	if v, ok := config["labels"].(map[string]string); ok {
+		s.labels = v
+	} else if v, ok := config["labels"].(map[string]interface{}); ok {
+		s.labels = make(map[string]string)
+		for k, val := range v {
+			s.labels[k] = fmt.Sprintf("%v", val)
+		}
+	}
+
 	// Optional: Additional parameters
 	if params, ok := config["params"].(map[string]string); ok {
 		s.params = params
@@ -74,6 +109,27 @@ func (s *VmlogsSource) Configure(config map[string]interface{}) error {
 		for k, v := range params {
 			s.params[k] = fmt.Sprintf("%v", v)
 		}
+	}
+
+	// Apply limit, since, and labels to params
+	if s.limit > 0 {
+		if s.params == nil {
+			s.params = make(map[string]string)
+		}
+		s.params["limit"] = fmt.Sprintf("%d", s.limit)
+	}
+
+	if s.since > 0 {
+		if s.params == nil {
+			s.params = make(map[string]string)
+		}
+		// Victoria Logs uses start_offset parameter
+		s.params["start_offset"] = s.since.String()
+	}
+
+	// Build query from labels if provided
+	if len(s.labels) > 0 && s.query == "*" {
+		s.query = s.buildQueryFromLabels()
 	}
 
 	return nil
@@ -183,6 +239,32 @@ func (s *VmlogsSource) GetConfigSchema() plugin.ConfigSchema {
 				Example:     `service:"myapp" AND level:error`,
 			},
 			{
+				Name:        "labels",
+				Type:        "map[string]string",
+				Description: "Label selectors (will be converted to LogsQL query)",
+				Example:     map[string]string{"service": "myapp", "env": "prod"},
+			},
+			{
+				Name:        "limit",
+				Type:        "int",
+				Description: "Maximum number of log entries to fetch",
+				Default:     "0 (unlimited)",
+				Example:     "1000",
+			},
+			{
+				Name:        "since",
+				Type:        "string",
+				Description: "How far back to look for logs (duration string)",
+				Default:     "1h",
+				Example:     "30m, 2h, 1d",
+			},
+			{
+				Name:        "oneShot",
+				Type:        "bool",
+				Description: "Fetch logs once and stop (useful for testing)",
+				Default:     "false",
+			},
+			{
 				Name:        "params",
 				Type:        "map[string]string",
 				Description: "Additional query parameters",
@@ -190,6 +272,28 @@ func (s *VmlogsSource) GetConfigSchema() plugin.ConfigSchema {
 			},
 		},
 	}
+}
+
+// buildQueryFromLabels constructs a Victoria Logs query from label filters
+func (s *VmlogsSource) buildQueryFromLabels() string {
+	if len(s.labels) == 0 {
+		return "*"
+	}
+
+	var parts []string
+	for key, value := range s.labels {
+		// Victoria Logs uses field:value syntax
+		parts = append(parts, fmt.Sprintf(`%s:"%s"`, key, value))
+	}
+
+	// Join with AND operator
+	if len(parts) > 0 {
+		return fmt.Sprintf("(%s)", parts[0])
+	}
+	for i := 1; i < len(parts); i++ {
+		parts[0] = fmt.Sprintf("%s AND %s", parts[0], parts[i])
+	}
+	return parts[0]
 }
 
 // readVmlogs reads logs from Victoria Logs
@@ -202,6 +306,7 @@ func (s *VmlogsSource) readVmlogs() {
 	// Get the channel from Victoria Logs receiver
 	vmlogsLineChan := s.receiver.GetLineChan()
 
+	logsProcessed := 0
 	for {
 		select {
 		case <-s.ctx.Done():
@@ -230,10 +335,23 @@ func (s *VmlogsSource) readVmlogs() {
 				select {
 				case s.logChan <- entry:
 					s.incrementMetrics()
+					logsProcessed++
+
+					// Check if we're in oneShot mode and have processed enough logs
+					if s.oneShot && s.limit > 0 && logsProcessed >= s.limit {
+						return
+					}
 				case <-s.ctx.Done():
 					return
 				}
 			}
+		}
+
+		// If oneShot mode and no more logs, exit
+		if s.oneShot {
+			// Give a small delay to ensure we've received all logs
+			time.Sleep(100 * time.Millisecond)
+			return
 		}
 	}
 }

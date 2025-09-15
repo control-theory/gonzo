@@ -1,3 +1,4 @@
+// Package output provides output formatting for logs.
 package output
 
 import (
@@ -8,20 +9,24 @@ import (
 	"github.com/control-theory/gonzo/internal/memory"
 )
 
+// StdoutFormatter formats log analysis output for standard output.
 type StdoutFormatter struct {
 	processedLines        int64
 	intervalProcessedLines int64
 }
 
+// NewStdoutFormatter creates a new stdout formatter.
 func NewStdoutFormatter() *StdoutFormatter {
 	return &StdoutFormatter{}
 }
 
+// RecordLineProcessed increments the line processing counters.
 func (sf *StdoutFormatter) RecordLineProcessed() {
 	sf.processedLines++
 	sf.intervalProcessedLines++
 }
 
+// PrintMetrics displays frequency analysis metrics to stdout.
 func (sf *StdoutFormatter) PrintMetrics(snapshot *memory.FrequencySnapshot) {
 	timestamp := time.Now().Format("2006-01-02 15:04:05")
 	
@@ -112,6 +117,7 @@ func (sf *StdoutFormatter) PrintMetrics(snapshot *memory.FrequencySnapshot) {
 	fmt.Printf("═══════════════════════════════════════════════════════════════\n\n")
 }
 
+// ResetInterval resets the interval line counter.
 func (sf *StdoutFormatter) ResetInterval() {
 	sf.intervalProcessedLines = 0
 }

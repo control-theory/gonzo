@@ -1,0 +1,59 @@
+@startuml gonzo_loki_plugin
+hide footbox
+
+title Loki Plugin - Detailed Flow
+
+actor User
+participant "Loki Plugin" as loki
+participant "Loki\nServer" as server
+participant "Adapter" as adapter
+participant "Gonzo\nPipeline" as gonzo
+
+== Configuration ==
+User -> loki: --source='loki:{"url":"http://localhost:3100",\n"query":"{app=\"myapp\"}","limit":100}'
+loki -> loki: Parse config:\n- url, query, limit\n- since, oneShot, labels
+
+== Query Execution ==
+loki -> server: GET /loki/api/v1/query_range\n?query={app="myapp"}\n&limit=100
+server --> loki: JSON response with streams
+
+== Stream Processing ==
+loop For each stream
+    loki -> loki: Extract labels from stream
+    loop For each log entry
+        loki -> loki: Parse timestamp & log line
+        loki -> loki: Try to parse as JSON
+        alt JSON log
+            loki -> loki: Extract severity, message, attributes
+        else Plain text
+            loki -> loki: Use full line as message
+        end
+        loki -> loki: Create LogEntry:\n- Source.Type = "loki"\n- Source.Identifier = query\n- Resource = labels
+        loki -> adapter: LogEntry via channel
+    end
+end
+
+== Adapter Conversion ==
+adapter -> adapter: convertToJSON(LogEntry)
+note right
+{
+  "_source": {
+    "type": "loki",
+    "identifier": "{app=\"myapp\"}"
+  },
+  "message": "application log",
+  "resource": {
+    "app": "myapp",
+    "env": "prod"
+  }
+}
+end note
+
+adapter -> gonzo: JSON string
+
+== Gonzo Processing ==
+gonzo -> gonzo: extractSourceInfo(json)
+note right: Finds _source.type="loki"\nMaps to "L"\nAssigns ID=1
+gonzo -> User: Display "L1" in log view
+
+@enduml

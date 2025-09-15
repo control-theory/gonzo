@@ -96,7 +96,8 @@ func startSourcesFromConfig(configFile string) (*plugin.MultiplexerAdapter, erro
 	}
 
 	// Create and start adapter
-	adapter := plugin.NewMultiplexerAdapter(multiplexer, true)
+	// Use JSON format (false) to preserve source metadata
+	adapter := plugin.NewMultiplexerAdapter(multiplexer, false)
 	if err := adapter.Start(); err != nil {
 		return nil, fmt.Errorf("failed to start multiplexer: %w", err)
 	}

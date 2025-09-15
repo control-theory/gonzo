@@ -1,0 +1,56 @@
+@startuml gonzo_all_plugins
+hide footbox
+
+title Gonzo Plugins - Source Type Mapping
+
+package "Input Sources" {
+    component [Docker Plugin] as docker #LightBlue
+    component [Loki Plugin] as loki #LightGreen
+    component [VMLogs Plugin] as vmlogs #Magenta
+    component [OTLP Plugin] as otlp #Orange
+    component [Files Plugin] as files #Yellow
+    component [Stdin Plugin] as stdin #LightGray
+}
+
+package "Source Indicators" {
+    rectangle "**D**" as D #LightBlue
+    rectangle "**L**" as L #LightGreen
+    rectangle "**V**" as V #Magenta
+    rectangle "**O**" as O #Orange
+    rectangle "**F**" as F #Yellow
+    rectangle "**I**" as I #LightGray
+}
+
+package "Examples in Log View" {
+    note "D1 - First Docker container\nD2 - Second Docker container" as docker_ex
+    note "L1 - First Loki query\nL2 - Second Loki query" as loki_ex
+    note "V1 - First VMLogs source\nV2 - Second VMLogs source" as vmlogs_ex
+    note "O1 - OTLP receiver\n(usually only one)" as otlp_ex
+    note "F1 - File reader\n(all files share one ID)" as files_ex
+    note "I0 - Stdin\n(always 0)" as stdin_ex
+}
+
+docker --> D: type="docker"
+loki --> L: type="loki"
+vmlogs --> V: type="vmlogs"
+otlp --> O: type="otlp"
+files --> F: type="file"
+stdin --> I: type="stdin"
+
+D --> docker_ex
+L --> loki_ex
+V --> vmlogs_ex
+O --> otlp_ex
+F --> files_ex
+I --> stdin_ex
+
+note bottom
+**How Source IDs are Assigned:**
+- Each unique source instance gets an ID
+- IDs start at 1 and increment per type
+- Example: First nginx container = D1,
+  Second apache container = D2
+- stdin is special: always I0
+end note
+
+@enduml

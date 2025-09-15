@@ -3,9 +3,10 @@ package plugin
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync"
 	"time"
+
+	"github.com/control-theory/gonzo/internal/logger"
 )
 
 // Multiplexer combines multiple log sources into a single stream
@@ -75,7 +76,7 @@ func (m *Multiplexer) AddSource(name string, source LogSource, config map[string
 		config: config,
 	}
 
-	log.Printf("Added source: %s (%s)", name, source.Description())
+	logger.Debugf("Added source: %s (%s)", name, source.Description())
 	return nil
 }
 
@@ -95,7 +96,7 @@ func (m *Multiplexer) RemoveSource(name string) error {
 	}
 
 	delete(m.sources, name)
-	log.Printf("Removed source: %s", name)
+	logger.Debugf("Removed source: %s", name)
 	return nil
 }
 
@@ -114,7 +115,7 @@ func (m *Multiplexer) Start(ctx context.Context) (<-chan LogEntry, error) {
 	for name, wrapper := range m.sources {
 		logChan, err := wrapper.source.Start(m.ctx)
 		if err != nil {
-			log.Printf("Failed to start source %s: %v", name, err)
+			logger.Debugf("Failed to start source %s: %v", name, err)
 			continue
 		}
 
@@ -141,7 +142,7 @@ func (m *Multiplexer) Stop() error {
 	// Stop all sources
 	for name, wrapper := range m.sources {
 		if err := wrapper.source.Stop(); err != nil {
-			log.Printf("Error stopping source %s: %v", name, err)
+			logger.Debugf("Error stopping source %s: %v", name, err)
 		}
 	}
 
@@ -164,7 +165,7 @@ func (m *Multiplexer) readFromSource(name string, _ LogSource, logChan <-chan Lo
 			return
 		case entry, ok := <-logChan:
 			if !ok {
-				log.Printf("Source %s closed", name)
+				logger.Debugf("Source %s closed", name)
 				return
 			}
 
@@ -181,7 +182,7 @@ func (m *Multiplexer) readFromSource(name string, _ LogSource, logChan <-chan Lo
 				return
 			default:
 				// Channel full, log and drop
-				log.Printf("Warning: Multiplexer channel full, dropping log from %s", name)
+				logger.Debugf("Warning: Multiplexer channel full, dropping log from %s", name)
 			}
 		}
 	}
@@ -201,10 +202,10 @@ func (m *Multiplexer) reportMetrics() {
 			for name, wrapper := range m.sources {
 				metrics := wrapper.source.GetMetrics()
 				if metrics.Connected {
-					log.Printf("[Multiplexer/%s] Logs: %d total, %.1f/sec",
+					logger.Debugf("[Multiplexer/%s] Logs: %d total, %.1f/sec",
 						name, metrics.TotalLogs, metrics.LogsPerSecond)
 				} else if metrics.LastError != "" {
-					log.Printf("[Multiplexer/%s] Error: %s",
+					logger.Debugf("[Multiplexer/%s] Error: %s",
 						name, metrics.LastError)
 				}
 			}
@@ -319,7 +320,7 @@ func (a *MultiplexerAdapter) Start() error {
 	}()
 
 	sourcesCount := len(a.multiplexer.GetSources())
-	log.Printf("Started multiplexer with %d sources", sourcesCount)
+	logger.Debugf("Started multiplexer with %d sources", sourcesCount)
 	return nil
 }
 

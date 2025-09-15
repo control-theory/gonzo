@@ -432,6 +432,7 @@ func (d *Source) tailContainer(ctx context.Context, c container.Summary) {
 				}
 
 				entry := d.createLogEntry(c, line)
+				logger.Debugf("Docker plugin sending log entry: source=%+v, message=%.50s", entry.Source, entry.Message)
 
 				select {
 				case d.logChan <- entry:

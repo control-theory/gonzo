@@ -1,6 +1,9 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/control-theory/gonzo/internal/analyzer"
@@ -9,13 +12,76 @@ import (
 	"github.com/control-theory/gonzo/internal/tui"
 )
 
+// extractSourceInfo extracts source information from JSON line
+func (m *experimentalTuiModel) extractSourceInfo(line string) (sourceType string, sourceID int) {
+	// Default to stdin
+	sourceType = "I"
+	sourceID = 0
+
+	// Try to extract _source field from JSON
+	if strings.Contains(line, "_source") {
+		var jsonData map[string]interface{}
+		if err := json.Unmarshal([]byte(line), &jsonData); err == nil {
+			if sourceInfo, ok := jsonData["_source"].(map[string]interface{}); ok {
+				if typeStr, ok := sourceInfo["type"].(string); ok {
+					// Map source type to single letter
+					switch typeStr {
+					case "loki":
+						sourceType = "L"
+					case "docker":
+						sourceType = "D"
+					case "vmlogs":
+						sourceType = "V"
+					case "otlp":
+						sourceType = "O"
+					case "file", "files":
+						sourceType = "F"
+					case "stdin":
+						sourceType = "I"
+					default:
+						sourceType = "?"
+					}
+
+					// Track source instances
+					// Use multiplexer_source if available (for multi-source setups)
+					// Otherwise use the identifier field
+					var sourceKey string
+					if metadata, ok := sourceInfo["metadata"].(map[string]interface{}); ok {
+						if muxSource, ok := metadata["multiplexer_source"].(string); ok {
+							sourceKey = typeStr + ":" + muxSource
+						}
+					}
+
+					// Fallback to identifier if no multiplexer_source
+					if sourceKey == "" {
+						if identifier, ok := sourceInfo["identifier"].(string); ok {
+							sourceKey = typeStr + ":" + identifier
+						} else {
+							sourceKey = typeStr + ":default"
+						}
+					}
+
+					if storedID, exists := m.sourceTypes[sourceKey]; !exists {
+						// New source, assign an ID
+						m.sourceCounters[typeStr]++
+						m.sourceTypes[sourceKey] = fmt.Sprintf("%d", m.sourceCounters[typeStr])
+						sourceID = m.sourceCounters[typeStr]
+					} else {
+						// Existing source, get its stored ID
+						sourceID, _ = strconv.Atoi(storedID)
+					}
+				}
+			}
+		}
+	}
+
+	return sourceType, sourceID
+}
+
 // processLogLine processes a single log line for the experimental model
 func (m *experimentalTuiModel) processLogLine(line string) {
-	logger.Debugf("[EXPERIMENTAL] processLogLine called with line length: %d", len(line))
-	
 	// Early filter: Skip OTLP collector logs about traces/metrics processing
 	if isOTLPSignalLog(line) {
-		logger.Debug("[EXPERIMENTAL] Skipping OTLP signal log")
 		return // Skip processing this line entirely
 	}
 
@@ -27,13 +93,11 @@ func (m *experimentalTuiModel) processLogLine(line string) {
 	// Count only lines that pass the filter
 	m.logCount++
 
+	// Extract source information from the line
+	sourceType, sourceID := m.extractSourceInfo(line)
+
 	// Detect format
 	format := m.formatDetector.DetectFormat(line)
-	logger.Debugf("[EXPERIMENTAL] Detected format: %v for line starting: %.100s", format, line)
-	// Debug: log first part of line if it looks like JSON with attributes
-	if strings.Contains(line, "\"attributes\"") {
-		logger.Debugf("[EXPERIMENTAL] Line contains attributes field: %.200s", line)
-	}
 	var result *analyzer.AnalysisResult
 	var attributes map[string]string
 	var logEntry *tui.LogEntry
@@ -49,6 +113,8 @@ func (m *experimentalTuiModel) processLogLine(line string) {
 				result = m.textAnalyzer.AnalyzeLine(line)
 				attributes = make(map[string]string)
 				logEntry = createFallbackLogEntry(line)
+			logEntry.SourceType = sourceType
+			logEntry.SourceID = sourceID
 
 				// Process the single fallback entry
 				m.processSingleLogEntry(result, attributes, logEntry)
@@ -58,6 +124,10 @@ func (m *experimentalTuiModel) processLogLine(line string) {
 
 				// Process each log entry individually
 				for _, entry := range logEntries {
+					// Set source info on the entry
+					entry.SourceType = sourceType
+					entry.SourceID = sourceID
+
 					// Analyze each log entry for frequency data
 					entryResult := m.otlpAnalyzer.AnalyzeOTLPRecord(convertLogEntryToOTLPRecord(entry))
 					entryAttributes := entry.Attributes // Already includes resource + record attributes
@@ -74,11 +144,17 @@ func (m *experimentalTuiModel) processLogLine(line string) {
 			result = m.textAnalyzer.AnalyzeLine(line)
 			attributes = make(map[string]string)
 			logEntry = createFallbackLogEntry(line)
+			logEntry.SourceType = sourceType
+			logEntry.SourceID = sourceID
 		} else {
 			logger.Debug("[EXPERIMENTAL] Successfully parsed OTLP record")
 			result = m.otlpAnalyzer.AnalyzeOTLPRecord(record)
 			attributes = m.otlpAnalyzer.ExtractAttributesFromOTLPRecord(record)
 			logEntry = extractLogEntryFromOTLPRecord(record)
+			if logEntry != nil {
+				logEntry.SourceType = sourceType
+				logEntry.SourceID = sourceID
+			}
 			if logEntry != nil {
 				if len(logEntry.Attributes) > 0 {
 					logger.Debugf("[EXPERIMENTAL] LogEntry has %d attributes", len(logEntry.Attributes))
@@ -109,11 +185,17 @@ func (m *experimentalTuiModel) processLogLine(line string) {
 			result = m.textAnalyzer.AnalyzeLine(line)
 			attributes = make(map[string]string)
 			logEntry = createFallbackLogEntry(line)
+			logEntry.SourceType = sourceType
+			logEntry.SourceID = sourceID
 		} else {
 			logger.Debug("[EXPERIMENTAL] Successfully converted to OTLP")
 			result = m.otlpAnalyzer.AnalyzeOTLPRecord(otlpRecord)
 			attributes = m.otlpAnalyzer.ExtractAttributesFromOTLPRecord(otlpRecord)
 			logEntry = extractLogEntryFromOTLPRecord(otlpRecord)
+			if logEntry != nil {
+				logEntry.SourceType = sourceType
+				logEntry.SourceID = sourceID
+			}
 			// Debug: log.Printf("[UNIFIED-v2] Extracted logEntry: %+v", logEntry)
 		}
 	}

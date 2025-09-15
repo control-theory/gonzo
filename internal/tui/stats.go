@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/control-theory/gonzo/internal/logger"
 )
 
 // renderStatsContent renders the detailed statistics content
@@ -80,6 +81,8 @@ func (m *DashboardModel) renderStatsContent(contentWidth int) string {
 
 	// Attribute Statistics Section (formatted with columns)
 	attributeStats := m.calculateAttributeStatsFormatted()
+	logger.Debugf("[STATS] calculateAttributeStatsFormatted returned %d items", len(attributeStats))
+	logger.Debugf("[STATS] lifetimeAttrCounts has %d items", len(m.lifetimeAttrCounts))
 	if len(attributeStats) > 0 {
 		sections = append(sections, m.renderAttributeSection(attributeStats[:min(15, len(attributeStats))], contentWidth))
 	}
@@ -219,13 +222,14 @@ func (m *DashboardModel) sortAndFormatStats(counts map[string]int) []StatItem {
 func (m *DashboardModel) formatBytes(bytes int64) string {
 	if bytes < 1024 {
 		return fmt.Sprintf("%d B", bytes)
-	} else if bytes < 1024*1024 {
-		return fmt.Sprintf("%.1f KB", float64(bytes)/1024)
-	} else if bytes < 1024*1024*1024 {
-		return fmt.Sprintf("%.1f MB", float64(bytes)/(1024*1024))
-	} else {
-		return fmt.Sprintf("%.1f GB", float64(bytes)/(1024*1024*1024))
 	}
+	if bytes < 1024*1024 {
+		return fmt.Sprintf("%.1f KB", float64(bytes)/1024)
+	}
+	if bytes < 1024*1024*1024 {
+		return fmt.Sprintf("%.1f MB", float64(bytes)/(1024*1024))
+	}
+	return fmt.Sprintf("%.1f GB", float64(bytes)/(1024*1024*1024))
 }
 
 func (m *DashboardModel) formatUptime() string {
@@ -236,11 +240,11 @@ func (m *DashboardModel) formatUptime() string {
 
 	if duration < time.Minute {
 		return fmt.Sprintf("%.0fs", duration.Seconds())
-	} else if duration < time.Hour {
-		return fmt.Sprintf("%.1fm", duration.Minutes())
-	} else {
-		return fmt.Sprintf("%.1fh", duration.Hours())
 	}
+	if duration < time.Hour {
+		return fmt.Sprintf("%.1fm", duration.Minutes())
+	}
+	return fmt.Sprintf("%.1fh", duration.Hours())
 }
 
 func (m *DashboardModel) formatCurrentRate() string {
@@ -399,10 +403,10 @@ func (m *DashboardModel) calculateAttributeStatsFormatted() []AttributeStatForma
 			continue
 		}
 
-		// Skip common keys that we handle separately
-		if parts[0] == "host" || parts[0] == "service.name" || parts[0] == "service" {
-			continue
-		}
+		// Don't skip any keys for now - show all attributes
+		// if parts[0] == "host" || parts[0] == "service.name" || parts[0] == "service" {
+		// 	continue
+		// }
 
 		kvList = append(kvList, kv{
 			Key:   parts[0],

@@ -140,6 +140,45 @@ export OPENAI_API_KEY=sk-your-key-here
 gonzo -f application.log --ai-model="gpt-4"
 ```
 
+### Experimental Mode (Beta)
+
+Gonzo has two modes of operation:
+- **Legacy/Stable Mode** (default): The original, battle-tested implementation
+- **Experimental Mode** (beta): A new plugin-based architecture with enhanced features
+
+#### Enabling Experimental Mode
+
+The experimental mode activates automatically when you:
+1. Use the `--use-experimental` flag, OR
+2. Use the `--source` flag (for specifying input sources)
+
+```bash
+# Explicitly enable experimental mode
+cat logs.txt | gonzo --use-experimental
+
+# Automatically uses experimental mode (because --source is set)
+gonzo --source='files:{"files":["app.log"]}'
+
+# Multiple sources (experimental mode)
+gonzo --source='stdin:;files:{"files":["/var/log/*.log"]}'
+
+# Stream from Loki (experimental mode)
+gonzo --source='loki:{"url":"http://localhost:3100","query":"{job=\"myapp\"}"}'
+
+# Stream from Victoria Logs (experimental mode)
+gonzo --source='vmlogs:{"url":"http://localhost:9428","query":"*"}'
+```
+
+#### Benefits of Experimental Mode
+
+- **Plugin-based architecture**: All input sources use a consistent interface
+- **Better metrics**: Enhanced monitoring and status reporting
+- **Multiple simultaneous sources**: Aggregate logs from different sources
+- **Improved performance**: Optimized processing pipeline
+- **Future-ready**: New features will be added here first
+
+> **Note**: The experimental mode is stable for daily use but may have minor API changes as we refine the plugin architecture.
+
 ### OTLP Network Receiver
 
 Gonzo can receive logs directly via OpenTelemetry Protocol (OTLP) over both gRPC and HTTP:

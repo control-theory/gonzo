@@ -115,9 +115,8 @@ func (s *FileSource) Stop() error {
 		s.reader.Stop()
 	}
 
-	if s.logChan != nil {
-		close(s.logChan)
-	}
+	// Don't close logChan here - it's closed by the goroutine when it exits
+	// This prevents "close of closed channel" panic
 
 	return nil
 }

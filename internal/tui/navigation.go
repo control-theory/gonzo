@@ -341,7 +341,14 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.showColumns = !m.showColumns
 			return m, nil
 		}
-		
+
+	case "d":
+		// Toggle full date display in log view
+		if !m.showModal && !m.filterActive && !m.searchActive {
+			m.showFullDate = !m.showFullDate
+			return m, nil
+		}
+
 	case "i":
 		// Toggle statistics modal
 		if !m.showModal && !m.filterActive && !m.searchActive && !m.showHelp && !m.showPatternsModal && !m.showModelSelectionModal {
@@ -782,31 +789,6 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			} else {
 				m.chatViewport, cmd = m.chatViewport.Update(msg)
 			}
-			return m, cmd
-		} else {
-			// Handle single modal scrolling and shortcuts
-			switch msg.String() {
-			case "up", "k":
-				m.infoViewport.ScrollUp(1)
-				return m, nil
-			case "down", "j":
-				m.infoViewport.ScrollDown(1)
-				return m, nil
-			case "pgup":
-				m.infoViewport.HalfPageUp()
-				return m, nil
-			case "pgdown":
-				m.infoViewport.HalfPageDown()
-				return m, nil
-			case "escape", "esc":
-				m.showModal = false
-				m.modalContent = ""
-				return m, nil
-			}
-
-			// Update single viewport with scroll messages
-			var cmd tea.Cmd
-			m.infoViewport, cmd = m.infoViewport.Update(msg)
 			return m, cmd
 		}
 	}

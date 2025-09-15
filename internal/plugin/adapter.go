@@ -5,9 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"sync"
 	"time"
+
+	"github.com/control-theory/gonzo/internal/logger"
 )
 
 // Adapter wraps a LogSource plugin to work with gonzo's existing architecture
@@ -126,10 +127,17 @@ func (a *Adapter) convertToJSON(entry LogEntry) string {
 	}
 
 	// Add source metadata
-	jsonMap["_source"] = map[string]interface{}{
+	sourceMap := map[string]interface{}{
 		"type":       entry.Source.Type,
 		"identifier": entry.Source.Identifier,
 	}
+
+	// Include metadata if present
+	if len(entry.Source.Metadata) > 0 {
+		sourceMap["metadata"] = entry.Source.Metadata
+	}
+
+	jsonMap["_source"] = sourceMap
 
 	jsonBytes, _ := json.Marshal(jsonMap)
 	return string(jsonBytes)
@@ -323,9 +331,9 @@ func (m *Manager) MonitorMetrics(interval time.Duration) {
 		metrics := m.GetMetrics()
 		for name, m := range metrics {
 			if m.Connected {
-				log.Printf("[%s] Logs: %d total, %.1f/sec", name, m.TotalLogs, m.LogsPerSecond)
+				logger.Debugf("[%s] Logs: %d total, %.1f/sec", name, m.TotalLogs, m.LogsPerSecond)
 			} else {
-				log.Printf("[%s] Disconnected - Errors: %d, Last: %s", name, m.Errors, m.LastError)
+				logger.Debugf("[%s] Disconnected - Errors: %d, Last: %s", name, m.Errors, m.LastError)
 			}
 		}
 	}

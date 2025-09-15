@@ -1,3 +1,4 @@
+// Package otlplog provides OpenTelemetry log processing utilities.
 package otlplog
 
 import (
@@ -342,9 +343,23 @@ func (lc *LogConverter) extractAttributes(data map[string]any) []*commonpb.KeyVa
 		"level": true, "severity": true, "log_level": true, "loglevel": true,
 		"message": true, "msg": true, "body": true, "text": true, "content": true,
 		"attributes": true, // Exclude the attributes field itself as it gets special handling below
+		"resource": true,   // Exclude the resource field as it gets special handling below
+		"_source": true,    // Exclude _source field as it's metadata
 	}
 
-	// First, handle nested attributes object if it exists
+	// First, handle resource attributes (these go first so attributes can override)
+	if resourceValue, exists := data["resource"]; exists {
+		if resourceMap, ok := resourceValue.(map[string]any); ok {
+			for key, value := range resourceMap {
+				attributes = append(attributes, &commonpb.KeyValue{
+					Key:   key,
+					Value: lc.convertToAnyValue(value),
+				})
+			}
+		}
+	}
+
+	// Then, handle nested attributes object if it exists
 	if attrValue, exists := data["attributes"]; exists {
 		if attrMap, ok := attrValue.(map[string]any); ok {
 			for key, value := range attrMap {
@@ -356,7 +371,7 @@ func (lc *LogConverter) extractAttributes(data map[string]any) []*commonpb.KeyVa
 		}
 	}
 
-	// Then, handle other top-level fields as attributes
+	// Finally, handle other top-level fields as attributes
 	for key, value := range data {
 		if !excludeFields[key] {
 			attributes = append(attributes, &commonpb.KeyValue{

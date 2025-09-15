@@ -1,3 +1,4 @@
+// Package reader provides input reading functionality for the application.
 package reader
 
 import (
@@ -7,16 +8,19 @@ import (
 	"os"
 )
 
+// StdinReader reads input from standard input.
 type StdinReader struct {
 	scanner *bufio.Scanner
 }
 
+// NewStdinReader creates a new standard input reader.
 func NewStdinReader() *StdinReader {
 	return &StdinReader{
 		scanner: bufio.NewScanner(os.Stdin),
 	}
 }
 
+// ReadLines reads lines from stdin and sends them to the output channel.
 func (r *StdinReader) ReadLines(ctx context.Context, output chan<- string) error {
 	defer close(output)
 	

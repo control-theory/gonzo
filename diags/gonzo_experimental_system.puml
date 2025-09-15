@@ -1,0 +1,189 @@
+@startuml gonzo_experimental_system
+hide footbox
+
+title Gonzo Experimental System Architecture - Components & Relationships
+
+package "Input Layer" {
+    interface "LogSource" as ILogSource {
+        + Name() string
+        + Configure(config map) error
+        + Start(ctx) <-chan LogEntry
+        + Stop() error
+        + GetMetrics() Metrics
+    }
+    
+    class "Loki Plugin" as Loki #LightGreen
+    class "Docker Plugin" as Docker #LightBlue
+    class "VMLogs Plugin" as VMLogs #Magenta
+    class "OTLP Plugin" as OTLP #Orange
+    class "Files Plugin" as Files #Yellow
+    class "Stdin Plugin" as Stdin #LightGray
+    
+    Loki ..|> ILogSource
+    Docker ..|> ILogSource
+    VMLogs ..|> ILogSource
+    OTLP ..|> ILogSource
+    Files ..|> ILogSource
+    Stdin ..|> ILogSource
+}
+
+package "Plugin Management" {
+    class "Plugin Manager" as Manager {
+        - registry: map[string]Factory
+        - adapters: map[string]*Adapter
+        + RegisterPlugin(name, factory)
+        + StartPlugin(name, config) *Adapter
+        + GetMetrics() map[string]Metrics
+    }
+    
+    class "Plugin Adapter" as Adapter {
+        - source: LogSource
+        - lineChan: chan string
+        - convertOTLP: bool
+        + Start() error
+        + Stop()
+        + GetLineChan() <-chan string
+        + convertToJSON(entry) string
+    }
+    
+    class "Multiplexer" as Mux {
+        - sources: []*Adapter
+        - outChan: chan string
+        + AddSource(adapter)
+        + Start()
+        + GetLineChan() <-chan string
+    }
+}
+
+package "Processing Pipeline" {
+    class "ExperimentalTuiModel" as TuiModel {
+        - formatDetector: FormatDetector
+        - logConverter: LogConverter
+        - textAnalyzer: TextAnalyzer
+        - otlpAnalyzer: OTLPAnalyzer
+        - freqMemory: FrequencyMemory
+        - sourceTypes: map[string]string
+        - sourceCounters: map[string]int
+        + processLogLine(line)
+        + extractSourceInfo(line) (type, id)
+    }
+    
+    class "Format Detector" as FormatDetector {
+        + DetectFormat(line) Format
+        + IsOTLPBatch(line) bool
+        + ParseOTLPBatch(line) LogsData
+    }
+    
+    class "Analyzers" as Analyzers {
+        + TextAnalyzer
+        + OTLPAnalyzer
+        + AnalyzeLine(line) Result
+        + ExtractAttributes() map
+    }
+    
+    class "Frequency Memory" as FreqMemory {
+        + AddWords(words)
+        + AddPhrases(phrases)
+        + AddAttributes(attrs)
+        + GetSnapshot() Snapshot
+    }
+}
+
+package "UI Layer" {
+    class "Dashboard Model" as Dashboard {
+        - logEntries: []LogEntry
+        - activeSection: Section
+        + formatLogEntry(entry) string
+        + View() string
+        + Update(msg) Model
+    }
+    
+    class "TUI LogEntry" as LogEntry {
+        + Timestamp: Time
+        + Message: string
+        + Severity: string
+        + SourceType: string
+        + SourceID: int
+        + Attributes: map
+    }
+}
+
+package "Data Flow" {
+    entity "Plugin LogEntry" as PLogEntry {
+        Source: {Type, Identifier}
+        Message: string
+        Attributes: map
+        Resource: map
+    }
+    
+    entity "JSON Line" as JSON {
+        "_source": {type, identifier}
+        "message": string
+        "attributes": {}
+    }
+    
+    entity "Source Indicator" as Indicator {
+        "D1" : Docker container 1
+        "L2" : Loki source 2
+        "V1" : VMLogs source 1
+        "I0" : Stdin (always 0)
+    }
+}
+
+' Relationships with notes
+
+Manager --> Adapter : creates & manages
+note on link: "1 adapter per source\nConverts LogEntry→JSON"
+
+Adapter --> ILogSource : wraps
+note on link: "Adapter handles\nformat conversion"
+
+Mux --> Adapter : combines multiple
+note on link: "For multi-source mode\nMerges channels"
+
+TuiModel --> Mux : reads from
+note on link: "Single or multi\nsource pipeline"
+
+PLogEntry --> JSON : converted by Adapter
+note on link: "Preserves _source\nmetadata"
+
+JSON --> TuiModel : processed
+note on link: "extractSourceInfo()\nparses _source field"
+
+TuiModel --> LogEntry : creates
+note on link: "Sets SourceType\nand SourceID"
+
+LogEntry --> Indicator : displayed as
+note on link: "First column\nin log view"
+
+TuiModel --> FormatDetector : uses
+TuiModel --> Analyzers : uses
+TuiModel --> FreqMemory : updates
+
+Dashboard --> LogEntry : displays
+note on link: "formatLogEntry()\nrenders with colors"
+
+' Key architecture notes
+note bottom of Manager
+**Plugin Registration**
+- Built-in plugins registered at startup
+- Each plugin type has a factory function
+- Manager maintains singleton instances
+end note
+
+note bottom of TuiModel
+**Source Tracking**
+- sourceTypes: maps "type:id" → letter code
+- sourceCounters: tracks instance count per type
+- First Docker container → D1
+- Second Docker container → D2
+end note
+
+note bottom of Adapter
+**Format Conversion**
+- convertOTLP=false for experimental
+- Preserves _source metadata in JSON
+- Critical for source indicators
+end note
+
+@enduml

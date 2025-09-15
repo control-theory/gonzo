@@ -1,3 +1,4 @@
+// Package tui provides the terminal user interface for Gonzo.
 package tui
 
 import (
@@ -40,10 +41,12 @@ func (m *DashboardModel) renderAttributesChart(width, height int) string {
 		style = activeSectionStyle.Width(width).Height(height)
 	}
 
-	title := chartTitleStyle.Render("Top Attributes")
-
 	var content string
 	lifetimeAttrs := m.getLifetimeAttributeEntries()
+
+	// Build title clearly indicating this shows unique values
+	title := chartTitleStyle.Render("Top Attributes (Unique Values)")
+
 	if len(lifetimeAttrs) > 0 {
 		content = m.renderAttributesContent(width, lifetimeAttrs)
 	} else {
@@ -96,7 +99,7 @@ func (m *DashboardModel) renderAttributesContent(chartWidth int, attributes []*m
 	for i := 0; i < maxItems; i++ {
 		entry := attributes[i]
 
-		// Create bar visualization
+		// Create bar visualization based on unique value count
 		filled := int((float64(entry.UniqueValueCount) / float64(maxUniqueCount)) * float64(barWidth))
 		if filled == 0 && entry.UniqueValueCount > 0 {
 			filled = 1
@@ -110,7 +113,7 @@ func (m *DashboardModel) renderAttributesContent(chartWidth int, attributes []*m
 			key = key[:labelWidth-3] + "..."
 		}
 
-		// Dynamic format string with calculated label width and count field width
+		// Dynamic format string with calculated label width - show unique value count
 		formatStr := fmt.Sprintf("%%2d. %%-%ds %%%dd |%%s|", labelWidth, countFieldWidth)
 		line := fmt.Sprintf(formatStr, i+1, key, entry.UniqueValueCount, bar)
 

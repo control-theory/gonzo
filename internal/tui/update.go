@@ -7,6 +7,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/control-theory/gonzo/internal/logger"
 )
 
 // Update handles messages
@@ -508,7 +509,7 @@ func (m *DashboardModel) handleUpdate(msg UpdateMsg) (tea.Model, tea.Cmd) {
 func (m *DashboardModel) addLogEntry(entry LogEntry) {
 	// Always add to the complete unfiltered buffer
 	m.allLogEntries = append(m.allLogEntries, entry)
-	
+
 	// Update statistics tracking
 	m.statsTotalLogsEver++  // Track total logs processed (unlimited)
 	m.statsTotalBytes += int64(len(entry.RawLine))
@@ -608,11 +609,20 @@ func (m *DashboardModel) updateLifetimeStats(entry LogEntry) {
 	}
 	
 	// Update attribute counts
+	if len(entry.Attributes) == 0 {
+		logger.Debug("[TUI] addLogEntry: LogEntry has NO attributes")
+	} else {
+		logger.Debugf("[TUI] addLogEntry: LogEntry has %d attributes", len(entry.Attributes))
+	}
 	for key, value := range entry.Attributes {
 		// Skip common keys that we handle separately for some stats
 		attrKey := fmt.Sprintf("%s=%s", key, value)
 		if len(attrKey) < 200 { // Only include reasonable length attributes
 			m.lifetimeAttrCounts[attrKey]++
+			// Debug: Log first few attribute increments
+			if len(m.lifetimeAttrCounts) <= 5 {
+				logger.Debugf("[TUI] Incremented attribute: %s (total unique: %d)", attrKey, len(m.lifetimeAttrCounts))
+			}
 		}
 		
 		// Update per-attribute-key value counts (for dashboard charts)

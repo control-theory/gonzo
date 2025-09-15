@@ -1,0 +1,40 @@
+@startuml gonzo_stdin_plugin
+hide footbox
+
+title Stdin Plugin (Piped Input) - Why it shows "I0"
+
+actor User
+participant "stdin" as stdin
+participant "Stdin Plugin" as plugin
+participant "Adapter" as adapter
+participant "Gonzo\nPipeline" as gonzo
+
+== When Piping Docker Logs ==
+User -> stdin: docker logs apache | gonzo
+note left: Original Docker log
+
+stdin -> plugin: Read from os.Stdin
+plugin -> plugin: bufio.Scanner reads line
+plugin -> plugin: Create LogEntry:\n- Source.Type = "stdin"\n- Source.Identifier = "stdin"
+
+plugin -> adapter: LogEntry{Source: "stdin"}
+
+adapter -> adapter: convertToJSON(LogEntry)
+note right
+{
+  "_source": {
+    "type": "stdin",
+    "identifier": "stdin"
+  },
+  "message": "apache log line"
+}
+end note
+
+adapter -> gonzo: JSON with stdin source
+
+gonzo -> gonzo: extractSourceInfo(json)
+note right: Finds _source.type="stdin"\nMaps to "I"\nID=0 (always for stdin)
+
+gonzo -> User: Display "I0" in log view
+
+@enduml

@@ -1,3 +1,4 @@
+// Package analyzer provides log analysis capabilities.
 package analyzer
 
 import (
@@ -129,27 +130,6 @@ func (oa *OTLPAnalyzer) extractFromBody(body *commonpb.AnyValue) string {
 }
 
 // extractFromAttributes extracts text from log record attributes
-func (oa *OTLPAnalyzer) extractFromAttributes(attributes []*commonpb.KeyValue) string {
-	if len(attributes) == 0 {
-		return ""
-	}
-	
-	var textParts []string
-	
-	for _, attr := range attributes {
-		// Add the key itself as it might be meaningful
-		if attr.Key != "" {
-			textParts = append(textParts, attr.Key)
-		}
-		
-		// Extract text from the value
-		if valueText := oa.extractFromAnyValue(attr.Value); valueText != "" {
-			textParts = append(textParts, valueText)
-		}
-	}
-	
-	return strings.Join(textParts, " ")
-}
 
 // extractFromAnyValue extracts text from an AnyValue protobuf structure
 func (oa *OTLPAnalyzer) extractFromAnyValue(value *commonpb.AnyValue) string {

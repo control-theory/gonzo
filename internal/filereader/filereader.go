@@ -1,3 +1,4 @@
+// Package filereader provides file reading utilities.
 package filereader
 
 import (

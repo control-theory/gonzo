@@ -18,11 +18,17 @@ import (
 type Section int
 
 const (
+	// SectionWords represents the words frequency section.
 	SectionWords Section = iota
+	// SectionAttributes represents the attributes section.
 	SectionAttributes
+	// SectionDistribution represents the distribution section.
 	SectionDistribution
+	// SectionCounts represents the counts section.
 	SectionCounts
+	// SectionFilter represents the filter section.
 	SectionFilter
+	// SectionLogs represents the logs section.
 	SectionLogs
 )
 
@@ -34,6 +40,8 @@ type LogEntry struct {
 	Message       string
 	RawLine       string
 	Attributes    map[string]string
+	SourceType    string    // Source type: "O"=OTLP, "V"=VMLogs, "L"=Loki, "D"=Docker, "I"=stdin, "F"=Files
+	SourceID      int       // Source instance number (0 for stdin, 1+ for others)
 }
 
 // HeatmapMinute represents severity counts for one minute in the heatmap
@@ -142,6 +150,7 @@ type DashboardModel struct {
 
 	// Column display
 	showColumns bool // Toggle Host and Service columns in log view
+	showFullDate bool // Toggle full date display (MM/DD/YYYY HH:MM:SS) vs time only (HH:MM:SS)
 
 	// Drain3 pattern extraction
 	drain3Manager       *Drain3Manager
@@ -379,6 +388,16 @@ func (m *DashboardModel) getLifetimeAttributeEntries() []*memory.AttributeStatsE
 	})
 
 	return entries
+}
+
+// GetTotalLogsProcessed returns the total number of logs processed
+func (m *DashboardModel) GetTotalLogsProcessed() int {
+	return m.statsTotalLogsEver
+}
+
+// GetAttributeCount returns the number of unique attributes tracked
+func (m *DashboardModel) GetAttributeCount() int {
+	return len(m.lifetimeAttrCounts)
 }
 
 // Init initializes the model

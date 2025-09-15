@@ -1,3 +1,4 @@
+// Package ai provides AI-powered log analysis features.
 package ai
 
 import (

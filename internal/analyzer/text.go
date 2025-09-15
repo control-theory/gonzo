@@ -7,6 +7,7 @@ import (
 	"github.com/control-theory/gonzo/internal/timestamp"
 )
 
+// TextAnalyzer performs text analysis to extract words and phrases from log lines.
 type TextAnalyzer struct {
 	minWordLength   int
 	maxPhraseLength int
@@ -15,11 +16,13 @@ type TextAnalyzer struct {
 	stopWords       map[string]bool
 }
 
+// AnalysisResult contains the extracted words and phrases from text analysis.
 type AnalysisResult struct {
 	Words   []string
 	Phrases []string
 }
 
+// NewTextAnalyzer creates a new text analyzer with default settings.
 func NewTextAnalyzer() *TextAnalyzer {
 	return NewTextAnalyzerWithStopWords(nil)
 }
@@ -63,6 +66,7 @@ func NewTextAnalyzerWithStopWords(customStopWords []string) *TextAnalyzer {
 	}
 }
 
+// AnalyzeLine analyzes a log line and extracts words and phrases.
 func (ta *TextAnalyzer) AnalyzeLine(line string) *AnalysisResult {
 	result := &AnalysisResult{
 		Words:   make([]string, 0),

@@ -1,0 +1,68 @@
+@startuml gonzo_docker_plugin
+hide footbox
+
+title Docker Plugin - Detailed Flow
+
+actor User
+participant "Docker Plugin" as docker
+database "Docker\nDaemon" as daemon
+participant "Adapter" as adapter
+participant "Gonzo\nPipeline" as gonzo
+
+== Configuration ==
+User -> docker: --source='docker:{"follow":["nginx","apache"]}'
+docker -> docker: Parse config:\n- endpoint: unix:///var/run/docker.sock\n- followFilters: ["nginx", "apache"]\n- interval: 10s
+
+== Startup ==
+docker -> daemon: Connect via Docker API
+daemon --> docker: Connection established
+docker -> docker: Get hostname & version
+docker -> docker: Start containerDiscoveryLoop()
+
+== Container Discovery Loop ==
+loop Every 10 seconds
+    docker -> daemon: ContainerList(running only)
+    daemon --> docker: List of containers
+    
+    alt New container matching filter
+        docker -> docker: Start tailContainerLogs(container)
+        create "Log Tailer" as tailer
+        docker -> tailer: Start goroutine
+        tailer -> daemon: ContainerLogs(follow=true)
+    end
+end
+
+== Log Processing ==
+tailer -> daemon: Read log stream
+daemon --> tailer: Log lines with Docker metadata
+tailer -> tailer: Parse Docker log format\n(remove timestamps, prefixes)
+tailer -> docker: createLogEntry(container, line)
+docker -> docker: Create LogEntry with:\n- Source.Type = "docker"\n- Source.Identifier = container_name\n- Attributes: container.id, container.name, etc.
+docker -> adapter: LogEntry via channel
+
+== Adapter Conversion ==
+adapter -> adapter: convertToJSON(LogEntry)
+note right
+{
+  "timestamp": 1234567890,
+  "message": "nginx log line",
+  "severity": "INFO",
+  "_source": {
+    "type": "docker",
+    "identifier": "nginx"
+  },
+  "attributes": {
+    "container.name": "nginx",
+    "container.id": "abc123..."
+  }
+}
+end note
+adapter -> gonzo: JSON string
+
+== Gonzo Processing ==
+gonzo -> gonzo: extractSourceInfo(json)
+note right: Finds _source.type="docker"\nMaps to "D"\nAssigns ID=1 for first nginx
+gonzo -> gonzo: Create tui.LogEntry:\n- SourceType = "D"\n- SourceID = 1
+gonzo -> User: Display "D1" in log view
+
+@enduml

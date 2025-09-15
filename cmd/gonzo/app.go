@@ -1,16 +1,17 @@
+// Package main provides the Gonzo log viewer application.
 package main
 
 import (
 	"bufio"
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/control-theory/gonzo/internal/analyzer"
 	"github.com/control-theory/gonzo/internal/filereader"
+	"github.com/control-theory/gonzo/internal/logger"
 	"github.com/control-theory/gonzo/internal/memory"
 	"github.com/control-theory/gonzo/internal/otlplog"
 	"github.com/control-theory/gonzo/internal/otlpreceiver"
@@ -33,7 +34,7 @@ func runApp(cmd *cobra.Command, args []string) error {
 	configDir := os.Getenv("HOME") + "/.config/gonzo"
 	if err := tui.InitializeSkin(cfg.Skin, configDir); err != nil {
 		// Log warning but continue with default skin
-		log.Printf("Warning: Failed to load skin '%s': %v (using default)", cfg.Skin, err)
+		logger.Warnf("Failed to load skin '%s': %v (using default)", cfg.Skin, err)
 	}
 
 	// Initialize components
@@ -115,7 +116,7 @@ type simpleTuiModel struct {
 
 	// File reading support
 	fileReader   *filereader.FileReader // File reader for file input mode
-	inputChan    chan string            // Unified input channel (from stdin or files)
+	inputChan    chan string            // Experimental input channel (from stdin or files)
 	hasFileInput bool                   // Whether we're reading from files
 
 	// OTLP receiver support
@@ -126,10 +127,13 @@ type simpleTuiModel struct {
 	vmlogsReceiver *vmlogs.Receiver // Victoria Logs receiver for streaming logs
 	hasVmlogsInput bool             // Whether we're receiving Victoria Logs data
 
+	// Plugin support
+	hasPluginInput bool            // Whether we're receiving data from a plugin
+
 	// JSON accumulation for multi-line OTLP support
 	jsonBuffer   strings.Builder // Buffer for accumulating multi-line JSON
 	jsonDepth    int             // Track JSON object/array nesting depth
-	inJsonObject bool            // Whether we're currently accumulating a JSON object
+	inJSONObject bool            // Whether we're currently accumulating a JSON object
 }
 
 // Init initializes the TUI model
@@ -140,8 +144,10 @@ func (m *simpleTuiModel) Init() tea.Cmd {
 	// Initialize frequency reset timer
 	m.lastFreqReset = time.Now()
 
-	// Check if Victoria Logs receiver is enabled
-	if cfg.VmlogsURL != "" {
+	// Plugin input mode is now handled through experimental architecture with --source flag
+
+	// Check if Victoria Logs receiver is enabled (only if plugin is not enabled)
+	if !m.hasPluginInput && cfg.VmlogsURL != "" {
 		// Victoria Logs input mode
 		m.hasVmlogsInput = true
 		m.inputChan = make(chan string, 100)
@@ -151,7 +157,7 @@ func (m *simpleTuiModel) Init() tea.Cmd {
 		// Add any default parameters here if needed
 		m.vmlogsReceiver = vmlogs.NewReceiver(cfg.VmlogsURL, cfg.VmlogsUser, cfg.VmlogsPassword, cfg.VmlogsQuery, params)
 		if err := m.vmlogsReceiver.Start(); err != nil {
-			log.Printf("Error starting Victoria Logs receiver: %v", err)
+			logger.Errorf("Error starting Victoria Logs receiver: %v", err)
 			// Fall back to other input methods if Victoria Logs fails
 			m.hasVmlogsInput = false
 		} else {
@@ -160,8 +166,8 @@ func (m *simpleTuiModel) Init() tea.Cmd {
 		}
 	}
 
-	// Check if OTLP receiver is enabled (only if Victoria Logs is not enabled)
-	if !m.hasVmlogsInput && cfg.OTLPEnabled {
+	// Check if OTLP receiver is enabled (only if plugin and Victoria Logs are not enabled)
+	if !m.hasPluginInput && !m.hasVmlogsInput && cfg.OTLPEnabled {
 		// OTLP input mode
 		m.hasOTLPInput = true
 		m.inputChan = make(chan string, 100)
@@ -169,7 +175,7 @@ func (m *simpleTuiModel) Init() tea.Cmd {
 		// Create and start OTLP receiver
 		m.otlpReceiver = otlpreceiver.NewReceiver(cfg.OTLPGRPCPort, cfg.OTLPHTTPPort)
 		if err := m.otlpReceiver.Start(); err != nil {
-			log.Printf("Error starting OTLP receiver: %v", err)
+			logger.Errorf("Error starting OTLP receiver: %v", err)
 			// Fall back to other input methods if OTLP fails
 			m.hasOTLPInput = false
 		} else {
@@ -178,8 +184,8 @@ func (m *simpleTuiModel) Init() tea.Cmd {
 		}
 	}
 
-	// Check if we have file inputs specified (only if Victoria Logs and OTLP are not enabled)
-	if !m.hasVmlogsInput && !m.hasOTLPInput && len(cfg.Files) > 0 {
+	// Check if we have file inputs specified (only if plugin, Victoria Logs and OTLP are not enabled)
+	if !m.hasPluginInput && !m.hasVmlogsInput && !m.hasOTLPInput && len(cfg.Files) > 0 {
 		// File input mode
 		m.hasFileInput = true
 		m.inputChan = make(chan string, 100)
@@ -188,7 +194,7 @@ func (m *simpleTuiModel) Init() tea.Cmd {
 		var err error
 		m.fileReader, err = filereader.New(cfg.Files, cfg.Follow)
 		if err != nil {
-			log.Printf("Error setting up file reader: %v", err)
+			logger.Errorf("Error setting up file reader: %v", err)
 			// Fall back to stdin if file reading fails
 			m.hasFileInput = false
 		} else {
@@ -197,8 +203,8 @@ func (m *simpleTuiModel) Init() tea.Cmd {
 		}
 	}
 
-	// If no Victoria Logs, no OTLP, no file input or file input failed, check stdin
-	if !m.hasVmlogsInput && !m.hasOTLPInput && !m.hasFileInput {
+	// If no plugin, no Victoria Logs, no OTLP, no file input or file input failed, check stdin
+	if !m.hasPluginInput && !m.hasVmlogsInput && !m.hasOTLPInput && !m.hasFileInput {
 		// Check if stdin has data available (not a terminal)
 		stat, _ := os.Stdin.Stat()
 		if (stat.Mode() & os.ModeCharDevice) == 0 {
@@ -219,7 +225,7 @@ func (m *simpleTuiModel) Init() tea.Cmd {
 	cmds = append(cmds, m.periodicUpdate())
 
 	// Start checking for input data if we have any input source
-	if m.hasStdinData || m.hasFileInput || m.hasOTLPInput || m.hasVmlogsInput {
+	if m.hasStdinData || m.hasFileInput || m.hasOTLPInput || m.hasVmlogsInput || m.hasPluginInput {
 		cmds = append(cmds, m.checkInputChannel())
 	}
 
@@ -367,7 +373,7 @@ func (m *simpleTuiModel) readStdinAsync() {
 	}
 }
 
-// checkInputChannel checks for data from the unified input channel
+// checkInputChannel checks for data from the experimental input channel
 func (m *simpleTuiModel) checkInputChannel() tea.Cmd {
 	return func() tea.Msg {
 		select {
@@ -440,7 +446,7 @@ func (m *simpleTuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.processLogLine(string(msg))
 
 		// Continue checking for more data if we have input sources
-		if (m.hasStdinData || m.hasFileInput || m.hasOTLPInput || m.hasVmlogsInput) && !m.finished {
+		if (m.hasStdinData || m.hasFileInput || m.hasOTLPInput || m.hasVmlogsInput || m.hasPluginInput) && !m.finished {
 			cmds = append(cmds, m.checkInputChannel())
 		}
 
@@ -471,7 +477,7 @@ func (m *simpleTuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if m.testMode {
 			// In test mode, quit after showing results briefly
-			cmds = append(cmds, tea.Tick(2*time.Second, func(t time.Time) tea.Msg {
+			cmds = append(cmds, tea.Tick(2*time.Second, func(_ time.Time) tea.Msg {
 				return tea.Quit()
 			}))
 		}

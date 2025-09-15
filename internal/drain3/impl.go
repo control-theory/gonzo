@@ -1,3 +1,4 @@
+// Package drain3 implements the Drain3 log template extraction algorithm.
 package drain3
 
 import (
@@ -43,11 +44,13 @@ import (
 	- Precision critical: Higher depth and similarity
 */
 
+// Drain provides log template extraction using the Drain3 algorithm.
 type Drain struct {
 	*goDrain.Drain         // Embedded Drain instance for log processing
 	config         *Config // Store config for reset
 }
 
+// Config holds configuration parameters for the Drain3 algorithm.
 type Config struct {
 	Depth        int64   // Parse tree depth
 	SimilarityTh float64 // Similarity threshold
@@ -93,6 +96,7 @@ func (d *Drain) GetClusters() []*goDrain.LogCluster {
 	return d.Drain.GetClusters()
 }
 
+// Reset reinitializes the Drain instance with the stored configuration.
 func (d *Drain) Reset() error {
 	// Reset the Drain instance by reinitializing with stored config
 	newDrain, err := goDrain.NewDrain(

@@ -1,0 +1,171 @@
+@startuml gonzo_experimental_interfaces
+hide footbox
+
+title Gonzo Experimental - Key Interfaces & Data Contracts
+
+package "Core Interfaces" #LightYellow {
+    interface "plugin.LogSource" as LogSource {
+        ' Required methods for all plugins
+        + Name() string
+        + Description() string
+        + Configure(config map[string]interface{}) error
+        + Validate() error
+        + Start(ctx context.Context) (<-chan LogEntry, error)
+        + Stop() error
+        + GetMetrics() Metrics
+    }
+    
+    interface "Configurable" as Config {
+        ' Optional interface for config schema
+        + GetConfigSchema() ConfigSchema
+    }
+    
+    interface "Reconnectable" as Reconnect {
+        ' Optional for sources with reconnection
+        + SetReconnectPolicy(policy ReconnectPolicy)
+    }
+}
+
+package "Data Structures" #LightCyan {
+    class "plugin.LogEntry" as PluginEntry {
+        ' Plugin output format
+        + Timestamp: int64
+        + Raw: string
+        + Message: string
+        + Severity: string
+        + Attributes: map[string]string
+        + Resource: map[string]string
+        + Source: SourceInfo
+        + TraceID: string
+        + SpanID: string
+    }
+    
+    class "SourceInfo" as SourceInfo {
+        ' Critical for source tracking
+        + Type: string // "docker", "loki", etc
+        + Identifier: string // container name, query
+        + Metadata: map[string]string
+    }
+    
+    class "JSON Wire Format" as JSONWire {
+        ' Adapter output format
+        timestamp: 1234567890
+        message: "log line"
+        severity: "INFO"
+        _source: {type, identifier}
+        attributes: {...}
+    }
+    
+    class "tui.LogEntry" as TUIEntry {
+        ' Dashboard display format
+        + Timestamp: time.Time
+        + Message: string
+        + Severity: string
+        + SourceType: string // "D", "L", "V"
+        + SourceID: int // 1, 2, 3...
+        + Attributes: map[string]string
+    }
+}
+
+package "Configuration Flow" #LightGreen {
+    class "CLI Args" as CLI {
+        source: docker:config
+        source: multi-config
+        use-experimental: true
+    }
+    
+    class "Source Config" as SrcConfig {
+        Type: "docker"
+        Config: map[string]interface{}
+    }
+    
+    class "Plugin Config" as PluginConfig {
+        ' Plugin-specific config
+        Docker: follow, interval, endpoint
+        Loki: url, query, limit, since
+        VMLogs: url, query, limit, labels
+    }
+}
+
+package "Processing Stages" #LightPink {
+    class "Stage 1: Collection" as S1 {
+        Plugin connects to source
+        Streams raw logs
+        Creates LogEntry with Source
+    }
+    
+    class "Stage 2: Adaptation" as S2 {
+        Adapter receives LogEntry
+        Converts to JSON with _source
+        Sends via channel
+    }
+    
+    class "Stage 3: Extraction" as S3 {
+        TuiModel receives JSON
+        extractSourceInfo() parses _source
+        Maps type → letter code
+        Assigns instance ID
+    }
+    
+    class "Stage 4: Display" as S4 {
+        Creates tui.LogEntry
+        Sets SourceType & SourceID
+        Renders as "D1", "L2", etc
+    }
+}
+
+' Critical relationships
+
+LogSource --> PluginEntry : produces
+note on link: "MUST set Source field\nfor tracking"
+
+PluginEntry --> SourceInfo : contains
+note on link: "Type identifies plugin\nIdentifier is instance"
+
+PluginEntry --> JSONWire : "Adapter.convertToJSON()"
+note on link: "Preserves Source as\n_source field"
+
+JSONWire --> TUIEntry : "extractSourceInfo()"
+note on link: "Maps docker→D\nloki→L, etc"
+
+CLI --> SrcConfig : parsed
+SrcConfig --> PluginConfig : "Manager.StartPlugin()"
+PluginConfig --> LogSource : "Configure()"
+
+S1 --> S2 : LogEntry channel
+S2 --> S3 : JSON string channel
+S3 --> S4 : TUI update
+
+' Important notes
+
+note top of LogSource
+**Plugin Contract**
+All plugins MUST implement LogSource
+Source field MUST be populated
+Type determines indicator letter
+end note
+
+note right of JSONWire
+**Critical: convertOTLP=false**
+When true: loses _source field
+When false: preserves metadata
+Experimental REQUIRES false
+end note
+
+note bottom of TUIEntry
+**Source Indicator Logic**
+SourceType: Single letter code
+- "D" = Docker
+- "L" = Loki  
+- "V" = VMLogs
+- "O" = OTLP
+- "F" = Files
+- "I" = Stdin
+
+SourceID: Instance number
+- 0 for stdin (special case)
+- 1+ for all others
+- Increments per unique identifier
+end note
+
+@enduml

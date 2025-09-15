@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/control-theory/gonzo/internal/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -38,6 +38,10 @@ type Config struct {
 	VmlogsQuery    string        `mapstructure:"vmlogs-query"`
 	Skin           string        `mapstructure:"skin"`
 	StopWords      []string      `mapstructure:"stop-words"`
+	Source         string        `mapstructure:"source"`
+	UseExperimental bool          `mapstructure:"use-experimental"`
+	Verbose        string        `mapstructure:"verbose"`
+	LogFile        string        `mapstructure:"logfile"`
 }
 
 var (
@@ -47,68 +51,98 @@ var (
 		Use:   "gonzo",
 		Short: "Real-time log analysis terminal UI",
 		Long: `Gonzo - A powerful, real-time log analysis terminal UI inspired by k9s.
-		
+
 Analyze log streams with beautiful charts, AI-powered insights, and advanced filtering - all from your terminal.
 
 Supports OTLP (OpenTelemetry) format natively, with automatic detection of JSON, logfmt, and plain text logs.`,
 		Example: `  # Analyze logs from stdin
   cat application.log | gonzo
-  
+
   # Read logs directly from files
   gonzo -f application.log -f error.log
-  
+
   # Follow log files in real-time (like tail -f)
   gonzo -f /var/log/app.log --follow
-  
+
   # Use glob patterns to read multiple files
   gonzo -f "/var/log/*.log" --follow
-  
-  # Stream logs from kubectl  
+
+  # Stream logs from kubectl
   kubectl logs -f deployment/my-app | gonzo
-  
+
   # With custom settings
   gonzo -f logs.json --update-interval=2s --log-buffer=2000
-  
+
   # With AI analysis (auto-selects best model)
   export OPENAI_API_KEY=sk-your-key-here
   gonzo -f application.log --ai-model="gpt-4"
-  
+
   # With local AI server (auto-selects available model)
   export OPENAI_API_BASE="http://127.0.0.1:1234/v1"
   export OPENAI_API_KEY="local-key"
   gonzo -f logs.json --follow
-  
+
   # With OTLP listener (both gRPC and HTTP)
   gonzo --otlp-enabled
-  
+
   # With custom ports
   gonzo --otlp-enabled --otlp-grpc-port=4317 --otlp-http-port=4318
-  
+
   # Stream logs from Victoria Logs
   gonzo --vmlogs-url="http://localhost:9428" --vmlogs-query="*"
-  
+
   # With authentication and custom query
   gonzo --vmlogs-url="https://vmlogs.example.com" --vmlogs-user="myuser" --vmlogs-password="mypass" --vmlogs-query='level:error'
-  
+
   # Using environment variables for authentication
   export GONZO_VMLOGS_USER="myuser"
-  export GONZO_VMLOGS_PASSWORD="mypass"  
+  export GONZO_VMLOGS_PASSWORD="mypass"
   gonzo --vmlogs-url="https://vmlogs.example.com" --vmlogs-query='service:"myapp"'
 
   # Using a custom color scheme/skin
   gonzo --skin=dracula
-  
+
   # Or via environment variable
   export GONZO_SKIN=monokai
-  gonzo -f application.log`,
-		RunE: runApp,
+  gonzo -f application.log
+
+  # Using Loki to stream logs
+  gonzo --source='loki:{"url":"http://localhost:3100","query":"{job=\"myapp\"}"}'
+
+  # With authentication
+  gonzo --source='loki:{"url":"http://loki.example.com","user":"admin","password":"secret","query":"{env=\"prod\"}"}'
+
+  # Multiple sources simultaneously
+  gonzo --source='stdin:;files:{"files":["/var/log/*.log"]}'
+
+  # Multiple remote sources
+  gonzo --source='[{"name":"prod","type":"loki","config":{"url":"http://loki:3100"}},{"name":"local","type":"files","config":{"files":["app.log"]}}]'
+
+  # With verbose logging
+  gonzo -f application.log --verbose=debug
+  gonzo -f application.log --verbose=json:info --logfile=/tmp/gonzo.log
+  gonzo -f application.log --verbose=console:debug`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// Initialize logger
+			if err := logger.Initialize(cfg.Verbose, cfg.LogFile); err != nil {
+				// Fall back to standard log if logger initialization fails
+				fmt.Fprintf(os.Stderr, "Warning: Failed to initialize logger: %v\n", err)
+			}
+			defer func() { _ = logger.Sync() }()
+
+			// Choose between experimental and legacy architecture
+			if cfg.UseExperimental || cfg.Source != "" {
+				return runAppExperimental(cmd, args)
+			}
+			return runApp(cmd, args)
+		},
 	}
 
 	versionCmd = &cobra.Command{
 		Use:   "version",
 		Short: "Print version information",
 		Long:  `Print detailed version information about Gonzo.`,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			fmt.Printf("Gonzo - Log Analysis TUI\n")
 			fmt.Printf("  Version:    %s\n", version)
 			fmt.Printf("  Commit:     %s\n", commit)
@@ -140,24 +174,32 @@ func init() {
 	rootCmd.Flags().String("vmlogs-query", "*", "Victoria Logs query (LogsQL) to use for streaming (default: '*' for all logs)")
 	rootCmd.Flags().StringP("skin", "s", "default", "Color scheme/skin to use (default, or name of a skin file in ~/.config/gonzo/skins/)")
 	rootCmd.Flags().StringSlice("stop-words", []string{}, "Additional stop words to filter out from analysis (adds to built-in list)")
+	rootCmd.Flags().String("source", "", "Input source configuration (JSON array for multiple sources or type:config format)")
+	rootCmd.Flags().Bool("use-experimental", false, "Use experimental plugin architecture (beta)")
+	rootCmd.Flags().String("verbose", "", "Enable verbose logging: level (debug/info/warn/error) or format:level (json:debug, console:info)")
+	rootCmd.Flags().String("logfile", "", "Log file path (defaults to .gonzo.log in current directory if verbose is set)")
 
 	// Bind flags to viper
-	viper.BindPFlag("memory-size", rootCmd.Flags().Lookup("memory-size"))
-	viper.BindPFlag("update-interval", rootCmd.Flags().Lookup("update-interval"))
-	viper.BindPFlag("log-buffer", rootCmd.Flags().Lookup("log-buffer"))
-	viper.BindPFlag("test-mode", rootCmd.Flags().Lookup("test-mode"))
-	viper.BindPFlag("ai-model", rootCmd.Flags().Lookup("ai-model"))
-	viper.BindPFlag("files", rootCmd.Flags().Lookup("file"))
-	viper.BindPFlag("follow", rootCmd.Flags().Lookup("follow"))
-	viper.BindPFlag("otlp-enabled", rootCmd.Flags().Lookup("otlp-enabled"))
-	viper.BindPFlag("otlp-grpc-port", rootCmd.Flags().Lookup("otlp-grpc-port"))
-	viper.BindPFlag("otlp-http-port", rootCmd.Flags().Lookup("otlp-http-port"))
-	viper.BindPFlag("vmlogs-url", rootCmd.Flags().Lookup("vmlogs-url"))
-	viper.BindPFlag("vmlogs-user", rootCmd.Flags().Lookup("vmlogs-user"))
-	viper.BindPFlag("vmlogs-password", rootCmd.Flags().Lookup("vmlogs-password"))
-	viper.BindPFlag("vmlogs-query", rootCmd.Flags().Lookup("vmlogs-query"))
-	viper.BindPFlag("skin", rootCmd.Flags().Lookup("skin"))
-	viper.BindPFlag("stop-words", rootCmd.Flags().Lookup("stop-words"))
+	_ = viper.BindPFlag("memory-size", rootCmd.Flags().Lookup("memory-size"))
+	_ = viper.BindPFlag("update-interval", rootCmd.Flags().Lookup("update-interval"))
+	_ = viper.BindPFlag("log-buffer", rootCmd.Flags().Lookup("log-buffer"))
+	_ = viper.BindPFlag("test-mode", rootCmd.Flags().Lookup("test-mode"))
+	_ = viper.BindPFlag("ai-model", rootCmd.Flags().Lookup("ai-model"))
+	_ = viper.BindPFlag("files", rootCmd.Flags().Lookup("file"))
+	_ = viper.BindPFlag("follow", rootCmd.Flags().Lookup("follow"))
+	_ = viper.BindPFlag("otlp-enabled", rootCmd.Flags().Lookup("otlp-enabled"))
+	_ = viper.BindPFlag("otlp-grpc-port", rootCmd.Flags().Lookup("otlp-grpc-port"))
+	_ = viper.BindPFlag("otlp-http-port", rootCmd.Flags().Lookup("otlp-http-port"))
+	_ = viper.BindPFlag("vmlogs-url", rootCmd.Flags().Lookup("vmlogs-url"))
+	_ = viper.BindPFlag("vmlogs-user", rootCmd.Flags().Lookup("vmlogs-user"))
+	_ = viper.BindPFlag("vmlogs-password", rootCmd.Flags().Lookup("vmlogs-password"))
+	_ = viper.BindPFlag("vmlogs-query", rootCmd.Flags().Lookup("vmlogs-query"))
+	_ = viper.BindPFlag("skin", rootCmd.Flags().Lookup("skin"))
+	_ = viper.BindPFlag("stop-words", rootCmd.Flags().Lookup("stop-words"))
+	_ = viper.BindPFlag("source", rootCmd.Flags().Lookup("source"))
+	_ = viper.BindPFlag("use-experimental", rootCmd.Flags().Lookup("use-experimental"))
+	_ = viper.BindPFlag("verbose", rootCmd.Flags().Lookup("verbose"))
+	_ = viper.BindPFlag("logfile", rootCmd.Flags().Lookup("logfile"))
 
 	// Add version command
 	rootCmd.AddCommand(versionCmd)
@@ -171,7 +213,8 @@ func initConfig() {
 		// Find XDG config directory
 		home, err := os.UserHomeDir()
 		if err != nil {
-			log.Printf("Error finding home directory: %v", err)
+			// Can't use logger here as it's not initialized yet
+			fmt.Fprintf(os.Stderr, "Error finding home directory: %v\n", err)
 		} else {
 			configDir := home + "/.config/gonzo"
 			viper.AddConfigPath(configDir)
@@ -187,12 +230,14 @@ func initConfig() {
 
 	// Read config file if it exists
 	if err := viper.ReadInConfig(); err == nil {
-		log.Printf("Using config file: %s", viper.ConfigFileUsed())
+		// Store config file path for later logging after logger is initialized
+		// Don't print here as it interferes with TUI
 	}
 
 	// Unmarshal config
 	if err := viper.Unmarshal(&cfg); err != nil {
-		log.Fatalf("Unable to decode config: %v", err)
+		fmt.Fprintf(os.Stderr, "Unable to decode config: %v\n", err)
+		os.Exit(1)
 	}
 }
 

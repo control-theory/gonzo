@@ -2,7 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -10,8 +9,28 @@ import (
 
 // formatLogEntry formats a log entry with colors
 func (m *DashboardModel) formatLogEntry(entry LogEntry, availableWidth int, isSelected bool) string {
-	// Use receive time for display
-	timestamp := entry.Timestamp.Format("15:04:05")
+	// Format source indicator (2 chars + 2 spaces for alignment)
+	sourceIndicator := fmt.Sprintf("%s%d  ", entry.SourceType, entry.SourceID)
+	if entry.SourceType == "" {
+		sourceIndicator = "??  "
+	}
+
+	// Use original timestamp if available, otherwise use receive time
+	var timestamp string
+	var timeFormat string
+	if m.showFullDate {
+		// Full date format: MM/DD/YYYY HH:MM:SS (24hr)
+		timeFormat = "01/02/2006 15:04:05"
+	} else {
+		// Time only format: HH:MM:SS
+		timeFormat = "15:04:05"
+	}
+
+	if !entry.OrigTimestamp.IsZero() {
+		timestamp = entry.OrigTimestamp.Format(timeFormat)
+	} else {
+		timestamp = entry.Timestamp.Format(timeFormat)
+	}
 
 	// If selected, apply selection style to entire row
 	if isSelected {
@@ -21,8 +40,15 @@ func (m *DashboardModel) formatLogEntry(entry LogEntry, availableWidth int, isSe
 		var logLine string
 		if m.showColumns {
 			// Extract host.name and service.name from OTLP attributes
+			// Try both dot and underscore versions (different sources use different conventions)
 			host := entry.Attributes["host.name"]
+			if host == "" {
+				host = entry.Attributes["host_name"]
+			}
 			service := entry.Attributes["service.name"]
+			if service == "" {
+				service = entry.Attributes["service_name"]
+			}
 
 			// Truncate to fit column width
 			if len(host) > 12 {
@@ -37,9 +63,16 @@ func (m *DashboardModel) formatLogEntry(entry LogEntry, availableWidth int, isSe
 			serviceCol := fmt.Sprintf("%-16s", service)
 
 			// Calculate remaining space for message
-			// Use same calculation as non-selected: availableWidth - 18 - columnsWidth
+			// Adjust for timestamp width: 8 chars for time only, 19 chars for full date
+			timestampWidth := 8
+			if m.showFullDate {
+				timestampWidth = 19
+			}
+			// Account for source indicator (2 chars + 1 space)
+			// Use same calculation as non-selected: availableWidth - sourceWidth - (timestampWidth + 10) - columnsWidth
+			sourceWidth := 3
 			columnsWidth := 30 // 12 + 16 + 2 spaces
-			maxMessageLen := availableWidth - 18 - columnsWidth
+			maxMessageLen := availableWidth - sourceWidth - (timestampWidth + 10) - columnsWidth
 			if maxMessageLen < 10 {
 				maxMessageLen = 10
 			}
@@ -49,10 +82,16 @@ func (m *DashboardModel) formatLogEntry(entry LogEntry, availableWidth int, isSe
 				message = message[:maxMessageLen-3] + "..."
 			}
 
-			logLine = fmt.Sprintf("%s %-5s %s %s %s", timestamp, severity, hostCol, serviceCol, message)
+			logLine = fmt.Sprintf("%s%s %-5s %s %s %s", sourceIndicator, timestamp, severity, hostCol, serviceCol, message)
 		} else {
-			// Calculate space for message - use same as non-selected: availableWidth - 18
-			maxMessageLen := availableWidth - 18
+			// Calculate space for message - adjust for timestamp width
+			timestampWidth := 8
+			if m.showFullDate {
+				timestampWidth = 19
+			}
+			// Account for source indicator (2 chars + 1 space)
+			sourceWidth := 3
+			maxMessageLen := availableWidth - sourceWidth - (timestampWidth + 10)
 			if maxMessageLen < 10 {
 				maxMessageLen = 10
 			}
@@ -62,7 +101,7 @@ func (m *DashboardModel) formatLogEntry(entry LogEntry, availableWidth int, isSe
 				message = message[:maxMessageLen-3] + "..."
 			}
 
-			logLine = fmt.Sprintf("%s %-5s %s", timestamp, severity, message)
+			logLine = fmt.Sprintf("%s%s %-5s %s", sourceIndicator, timestamp, severity, message)
 		}
 
 		// Apply selection style to entire line
@@ -74,6 +113,27 @@ func (m *DashboardModel) formatLogEntry(entry LogEntry, availableWidth int, isSe
 
 	// Normal (non-selected) formatting with individual component colors
 	severityColor := GetSeverityColor(entry.Severity)
+
+	// Style the source indicator with a distinct color
+	sourceColor := lipgloss.AdaptiveColor{Light: "#666666", Dark: "#999999"}
+	switch entry.SourceType {
+	case "L":
+		sourceColor = lipgloss.AdaptiveColor{Light: "#00AA00", Dark: "#00FF00"} // Green for Loki
+	case "D":
+		sourceColor = lipgloss.AdaptiveColor{Light: "#0066CC", Dark: "#0099FF"} // Blue for Docker
+	case "V":
+		sourceColor = lipgloss.AdaptiveColor{Light: "#AA00AA", Dark: "#FF00FF"} // Magenta for VMLogs
+	case "O":
+		sourceColor = lipgloss.AdaptiveColor{Light: "#AA6600", Dark: "#FFAA00"} // Orange for OTLP
+	case "F":
+		sourceColor = lipgloss.AdaptiveColor{Light: "#666600", Dark: "#AAAA00"} // Yellow for Files
+	case "I":
+		sourceColor = lipgloss.AdaptiveColor{Light: "#666666", Dark: "#AAAAAA"} // Gray for stdin
+	}
+
+	styledSource := lipgloss.NewStyle().
+		Foreground(sourceColor).
+		Render(sourceIndicator)
 
 	styledSeverity := lipgloss.NewStyle().
 		Foreground(severityColor).
@@ -89,8 +149,15 @@ func (m *DashboardModel) formatLogEntry(entry LogEntry, availableWidth int, isSe
 	columnsWidth := 0
 	if m.showColumns {
 		// Extract host.name and service.name from OTLP attributes
+		// Try both dot and underscore versions (different sources use different conventions)
 		host := entry.Attributes["host.name"]
+		if host == "" {
+			host = entry.Attributes["host_name"]
+		}
 		service := entry.Attributes["service.name"]
+		if service == "" {
+			service = entry.Attributes["service_name"]
+		}
 
 		// Truncate to fit column width (12 chars / 16 chars)
 		if len(host) > 12 {
@@ -115,7 +182,14 @@ func (m *DashboardModel) formatLogEntry(entry LogEntry, availableWidth int, isSe
 	// Truncate message if too long
 	message := entry.Message
 
-	maxMessageLen := availableWidth - 18 - columnsWidth // Account for timestamp, severity, and columns
+	// Adjust for timestamp width
+	timestampWidth := 8
+	if m.showFullDate {
+		timestampWidth = 19
+	}
+	// Account for source indicator (2 chars + 1 space)
+	sourceWidth := 3
+	maxMessageLen := availableWidth - sourceWidth - (timestampWidth + 10) - columnsWidth // Account for source, timestamp, severity, and columns
 	if maxMessageLen < 10 {
 		maxMessageLen = 10 // Absolute minimum
 	}
@@ -131,9 +205,9 @@ func (m *DashboardModel) formatLogEntry(entry LogEntry, availableWidth int, isSe
 	// Create the complete log line
 	var logLine string
 	if m.showColumns {
-		logLine = fmt.Sprintf("%s %s %s %s %s", styledTimestamp, styledSeverity, hostCol, serviceCol, message)
+		logLine = fmt.Sprintf("%s%s %s %s %s %s", styledSource, styledTimestamp, styledSeverity, hostCol, serviceCol, message)
 	} else {
-		logLine = fmt.Sprintf("%s %s %s", styledTimestamp, styledSeverity, message)
+		logLine = fmt.Sprintf("%s%s %s %s", styledSource, styledTimestamp, styledSeverity, message)
 	}
 
 	return logLine
@@ -184,26 +258,6 @@ func (m *DashboardModel) highlightText(text, searchTerm string) string {
 
 // containsWord checks if a word appears in text using word boundary matching
 // This matches how words are extracted for frequency analysis
-func (m *DashboardModel) containsWord(text, word string) bool {
-	if word == "" {
-		return false
-	}
-
-	// Convert both to lowercase for case-insensitive matching
-	lowerText := strings.ToLower(text)
-	lowerWord := strings.ToLower(word)
-
-	// Use regex to match word boundaries - this ensures we match whole words
-	// even when they're surrounded by punctuation
-	pattern := `\b` + regexp.QuoteMeta(lowerWord) + `\b`
-	matched, err := regexp.MatchString(pattern, lowerText)
-	if err != nil {
-		// Fallback to simple contains if regex fails
-		return strings.Contains(lowerText, lowerWord)
-	}
-
-	return matched
-}
 
 // wrapTextToWidth wraps text to fit within the specified width
 func (m *DashboardModel) wrapTextToWidth(text string, width int) string {

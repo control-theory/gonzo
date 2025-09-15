@@ -30,9 +30,8 @@ func (m *DashboardModel) renderModalOverlay() string {
 
 	if isLogDetailsModal {
 		return m.renderSplitModal()
-	} else {
-		return m.renderSingleModal()
 	}
+	return m.renderSingleModal()
 }
 
 // renderSplitModal renders log details modal with proper Bubbles split layout
@@ -384,6 +383,7 @@ ACTIONS:
   f              - Open fullscreen log viewer modal
   Space          - Pause/unpause UI updates
   c              - Toggle Host/Service columns in log view
+  d              - Toggle full date display (MM/DD/YYYY HH:MM:SS)
   r              - Reset all data (manual reset)
   u/U            - Cycle update intervals (forward/backward)
   i              - Show comprehensive statistics modal

@@ -222,7 +222,7 @@ func (m *DashboardModel) formatAttributeValuesModal(entry *memory.AttributeStats
 
 	// Table header
 	headerStyle := lipgloss.NewStyle().Foreground(ColorWhite).Bold(true)
-	header := fmt.Sprintf("%-*s │ %s", maxValueLength, "Value", "Count")
+	header := fmt.Sprintf("%-*s │ %s", maxValueLength, "Value", "Count (%)")
 	modal.WriteString(headerStyle.Render(header) + "\n")
 
 	// Divider line

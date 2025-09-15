@@ -1,3 +1,4 @@
+// Package vmlogs provides a client for streaming logs from Victoria Metrics Logs.
 package vmlogs
 
 import (
@@ -136,6 +137,7 @@ func (r *Receiver) Start() error {
 		if err := r.client.Tail(r.ctx, r.query, r.params, onLine); err != nil && !errors.Is(err, context.Canceled) {
 			// Silently ignore streaming errors to avoid UI interference
 			// The receiver will stop gracefully
+			_ = err
 		}
 	}()
 
