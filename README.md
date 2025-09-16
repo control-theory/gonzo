@@ -669,7 +669,7 @@ gonzo --skin=controltheory-dark     # Dark theme
 
 ### Creating Custom Themes
 
-See **[SKINS.md](SKINS.md)** for complete documentation on:
+See **[SKINS.md](guides/SKINS.md)** for complete documentation on:
 
 - 📖 How to create custom color schemes
 - 🎯 Color reference and semantic naming
