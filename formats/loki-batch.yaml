@@ -1,32 +1,83 @@
+# Loki Batch Format (Streams Array)
+# This format handles Loki's batch format where each line contains multiple log entries
+# in a streams array structure with automatic batch expansion.
+#
+# Example from lokiwssample.json:
+# {"streams":[{"stream":{"detected_level":"Error","host_name":"node-1",...},"values":[["1757868645952371585","Log 94: Error phase: processing"]]}]}
+#
+# Structure:
+# - streams: Array of stream objects
+# - stream: Object containing metadata/labels for the stream
+# - values: Array of [timestamp, message] pairs
+#
+# This format automatically expands each batch line into individual log entries,
+# preserving the stream metadata for each entry.
+
 name: loki-batch
-description: Loki batch format with streams array
+description: Loki batch format with automatic expansion
 author: Gonzo Community
 type: json
 
-# For Loki's batch format: {"streams":[{"stream":{...},"values":[["timestamp","message"]]}]}
-json:
-  array_path: streams
+# Batch processing configuration - Generic system for handling multi-entry log lines
+batch:
+  # Enable batch processing for this format
+  enabled: true
+
+  # Path pattern for array expansion - tells the system which arrays to expand
+  # "streams[].values[]" means: expand the 'streams' array, then expand the 'values' array within each stream
+  # Each combination creates a separate log entry (e.g., 2 streams × 3 values = 6 individual log entries)
+  expand_path: "streams[].values[]"
+
+  # Context paths - data to preserve/copy for each expanded entry
+  # "streams[].stream" means: copy the 'stream' metadata from each stream to its expanded entries
+  # This ensures each individual log entry retains its associated metadata
+  context_paths: ["streams[].stream"]
+
+  # How it works:
+  # 1. Original: {"streams":[{"stream":{...},"values":[["ts1","msg1"],["ts2","msg2"]]}]}
+  # 2. Expands to: Two separate entries with the same stream metadata but different timestamp/message
+  # 3. Each expanded entry: {"streams":[{"stream":{...},"values":[["ts1","msg1"]]}]} (and similar for ts2/msg2)
 
 mapping:
-  # Special handling for values array - each entry is [timestamp, message]
+  # Extract timestamp from the first value pair
+  # values[0][0] = timestamp (as Unix nanoseconds string)
   timestamp:
-    field: values[0]
+    field: streams[0].values[0][0]
     time_format: unix_ns
 
+  # Extract message from the first value pair
+  # values[0][1] = log message
   body:
-    field: values[1]
+    field: streams[0].values[0][1]
 
+  # Extract severity from stream labels
   severity:
-    field: stream.severity
+    field: streams[0].stream.detected_level
     transform: uppercase
     default: INFO
 
+  # Auto-map all unmapped fields from stream metadata as attributes
+  # This ensures ALL fields in streams[0].stream become attributes
+  auto_map_remaining: true
+
+  # Explicitly map a few key attributes (these will get friendly names)
   attributes:
-    container:
-      field: stream.k8s_container_name
-    namespace:
-      field: stream.k8s_namespace_name
-    pod:
-      field: stream.k8s_pod_name
     service:
-      field: stream.service_name
+      field: streams[0].stream.service_name
+
+    container:
+      field: streams[0].stream.k8s_container_name
+
+    namespace:
+      field: streams[0].stream.k8s_namespace_name
+
+    pod:
+      field: streams[0].stream.k8s_pod_name
+
+    host:
+      field: streams[0].stream.host_name
+  # Note: All other fields in streams[0].stream will be automatically
+  # extracted as attributes due to auto_map_remaining: true
+  # This includes: detected_level, host_name, http_method, http_status_code,
+  # http_target, observed_timestamp, phase, scope_name, severity_number,
+  # severity_text, span_id, trace_flags, trace_id, worker_id, etc.

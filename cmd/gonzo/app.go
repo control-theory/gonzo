@@ -84,6 +84,7 @@ func runApp(cmd *cobra.Command, args []string) error {
 	tuiModel := &simpleTuiModel{
 		formatDetector: formatDetector,
 		logConverter:   logConverter,
+		customParser:   customParser,
 		textAnalyzer:   textAnalyzer,
 		otlpAnalyzer:   otlpAnalyzer,
 		freqMemory:     freqMemory,
@@ -133,6 +134,7 @@ type (
 type simpleTuiModel struct {
 	formatDetector *otlplog.FormatDetector
 	logConverter   *otlplog.LogConverter
+	customParser   *formats.Parser
 	textAnalyzer   *analyzer.TextAnalyzer
 	otlpAnalyzer   *analyzer.OTLPAnalyzer
 	freqMemory     *memory.FrequencyMemory

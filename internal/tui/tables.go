@@ -122,13 +122,13 @@ func (m *DashboardModel) formatLogDetails(entry LogEntry, maxWidth int) string {
 	// Basic information - show both timestamps
 	details.WriteString(labelStyle.Render("Received:") + " " +
 		valueStyle.Render(entry.Timestamp.Format("2006-01-02 15:04:05.000")) + "\n")
-	
+
 	// Show original timestamp if available and different from receive time
 	if !entry.OrigTimestamp.IsZero() {
 		details.WriteString(labelStyle.Render("Log Time:") + " " +
 			valueStyle.Render(entry.OrigTimestamp.Format("2006-01-02 15:04:05.000")) + "\n")
 	}
-	
+
 	details.WriteString(labelStyle.Render("Severity:") + " " +
 		severityStyle.Render(entry.Severity) + "\n")
 	details.WriteString(labelStyle.Render("Message:") + "\n" +

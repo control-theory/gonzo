@@ -2,77 +2,48 @@
 # This format handles Loki's streaming format where each line is a JSON object
 # containing labels and the log line.
 #
-# Example log lines:
-# {"labels":{"detected_level":"Trace","host_name":"node-1","http_method":"PUT",...},"line":"Log message","timestamp":"2025-09-13T14:27:00.66110671-05:00"}
-# {"labels":{"k8s_container_name":"app","service_name":"api"},"line":"Error occurred","timestamp":"2025-09-13T14:28:00.123Z"}
+# Example log lines from lokiclisample.json:
+# {"labels":{"detected_level":"Error","host_name":"node-1","http_method":"GET",...},"line":"Log 79: Error phase: finish","timestamp":"2025-09-14T11:48:24.736589923-05:00"}
 #
 # Structure:
-# - labels: Object containing metadata about the log
+# - labels: Object containing metadata about the log (nested object)
+#   ALL fields from labels are automatically extracted as attributes
 # - line: The actual log message
 # - timestamp: When the log was generated (RFC3339 format)
-#
-# This format is commonly used when streaming logs from Loki or when
-# logs are exported in Loki's native format.
 
 name: loki-stream
-description: Loki log stream format with nested JSON
+description: Loki log stream format with automatic labels extraction
 author: Gonzo Community
 type: json  # 'json' type for JSON-structured logs
 
-# JSON-specific configuration
-json:
-  # Direct field mappings from JSON structure
-  # These paths are relative to the root of the JSON object
-  fields:
-    timestamp: timestamp     # Maps JSON field 'timestamp' to our timestamp
-    message: line           # Maps JSON field 'line' to our message
-    labels: labels          # Maps the entire 'labels' object
+# No json.fields mapping - use the raw JSON structure
+# This preserves all the original fields for direct access
 
 mapping:
   # Extract and parse the timestamp
   timestamp:
     field: timestamp
-    time_format: rfc3339    # Loki uses RFC3339 format (e.g., 2025-09-13T14:27:00.661Z)
+    time_format: rfc3339    # Loki uses RFC3339 format
 
   # The 'line' field contains the actual log message
   body:
-    field: message          # Uses the 'message' field we mapped from 'line'
+    field: line
 
-  # Try to extract severity from labels if present
+  # Extract severity from labels.detected_level or labels.severity_text
   severity:
-    field: labels.detected_level    # Nested field access using dot notation
+    field: labels.detected_level    # First try detected_level
     transform: uppercase            # Normalize to uppercase
     default: INFO                   # Default to INFO if not present
 
-  # Map Loki labels to OTLP attributes
-  # These attributes help with filtering and searching in the TUI
+  # Auto-map all unmapped fields as attributes (including all labels)
+  auto_map_remaining: true
+
+  # Attributes are automatically extracted from the labels object
+  # All fields in labels.* will become attributes
+  # You can still explicitly map specific fields if you need transforms
   attributes:
-    # Kubernetes-related attributes
-    host:
-      field: labels.host_name       # The host/node where the pod is running
-
-    container:
-      field: labels.k8s_container_name  # Kubernetes container name
-
-    namespace:
-      field: labels.k8s_namespace_name  # Kubernetes namespace
-
-    pod:
-      field: labels.k8s_pod_name        # Kubernetes pod name
-
-    service:
-      field: labels.service_name        # Service/application name
-
-    # HTTP-related attributes (if present)
-    http_method:
-      field: labels.http_method          # GET, POST, PUT, etc.
-
-    http_status:
-      field: labels.http_status_code     # 200, 404, 500, etc.
-
-    # Tracing attributes for correlation
-    trace_id:
-      field: labels.trace_id             # OpenTelemetry trace ID
-
-    span_id:
-      field: labels.span_id              # OpenTelemetry span ID
+    # Example of explicit mapping with transform (optional)
+    # Most fields will be auto-extracted from labels
+    http_status_severity:
+      field: labels.http_status_code
+      transform: status_to_severity

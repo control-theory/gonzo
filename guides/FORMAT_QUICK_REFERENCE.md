@@ -15,6 +15,11 @@ json:     # For json
   fields:
     internal_name: json_field_path
 
+batch:    # For multi-entry logs (optional)
+  enabled: true
+  expand_path: "streams[].values[]"    # Array expansion pattern
+  context_paths: ["streams[].stream"]  # Metadata to preserve
+
 mapping:
   timestamp:
     field: field_name
@@ -72,6 +77,22 @@ gonzo --format=myformat -f app.log --test-mode
 - **`text`**: Plain text with regex patterns
 - **`json`**: JSON logs with field extraction
 - **`structured`**: Fixed-position logs (like Apache)
+
+## Batch Processing
+
+For logs where one line contains multiple entries:
+
+```yaml
+batch:
+  enabled: true
+  expand_path: "streams[].values[]"    # Which arrays to expand
+  context_paths: ["streams[].stream"]  # Metadata to preserve
+```
+
+**Common patterns:**
+- `logs[]` - Expand top-level array
+- `streams[].values[]` - Expand nested arrays (Loki format)
+- `events[].entries[]` - Multi-level expansion
 
 ## Transforms
 

@@ -2,6 +2,7 @@ package otlplog
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/control-theory/gonzo/internal/formats"
@@ -91,6 +92,8 @@ func (lc *LogConverter) convertCustomToOTLP(line string) (*logspb.LogRecord, err
 	}
 
 	// Add any remaining fields from parsed data as attributes (if not already mapped)
+	autoMapRemaining := format.Mapping.AutoMapRemaining
+
 	mappedFields := make(map[string]bool)
 	if format.Mapping.Timestamp.Field != "" {
 		mappedFields[format.Mapping.Timestamp.Field] = true
@@ -107,15 +110,65 @@ func (lc *LogConverter) convertCustomToOTLP(line string) (*logspb.LogRecord, err
 		}
 	}
 
-	// Add unmapped fields as attributes
+	// Add unmapped fields as attributes (if auto-mapping is enabled)
+	if autoMapRemaining {
+		// Extract all unmapped fields recursively, flattening nested structures
+		lc.extractUnmappedFields(data, "", mappedFields, record)
+	}
+
+	return record, nil
+}
+
+// extractUnmappedFields recursively extracts all unmapped fields from nested structures
+// and flattens them into attributes. This is a generic approach that works with any JSON structure
+func (lc *LogConverter) extractUnmappedFields(data map[string]interface{}, prefix string, mappedFields map[string]bool, record *logspb.LogRecord) {
 	for key, value := range data {
-		if !mappedFields[key] && key != "raw" {
+		// Build the full path for this field
+		fullPath := key
+		if prefix != "" {
+			fullPath = prefix + "." + key
+		}
+
+		// Skip if this field was already explicitly mapped or is the "raw" field
+		if mappedFields[fullPath] || key == "raw" {
+			continue
+		}
+
+		// Handle different value types
+		switch v := value.(type) {
+		case map[string]interface{}:
+			// For nested objects, recursively extract their fields
+			// This flattens the structure, so nested.field becomes an attribute named "field"
+			lc.extractUnmappedFields(v, fullPath, mappedFields, record)
+
+		case []interface{}:
+			// For arrays, we could optionally extract first element if it's an object
+			// This preserves some compatibility with the old Loki-specific behavior
+			if len(v) > 0 {
+				if nestedMap, ok := v[0].(map[string]interface{}); ok {
+					arrayPrefix := fmt.Sprintf("%s[0]", fullPath)
+					lc.extractUnmappedFields(nestedMap, arrayPrefix, mappedFields, record)
+				}
+			}
+
+		default:
+			// For simple values, add them as attributes
+			// Use just the leaf key name (not the full path) for cleaner attribute names
+			attributeKey := key
+
+			// If this is a nested field, we might want to use just the leaf name
+			// or keep some parent context. For now, using just the leaf name for simplicity.
+			// You could make this configurable if needed.
+			if prefix != "" && strings.Contains(prefix, ".") {
+				// For deeply nested fields, you might want different logic
+				// For now, just use the field name itself
+				attributeKey = key
+			}
+
 			record.Attributes = append(record.Attributes, &commonpb.KeyValue{
-				Key:   key,
+				Key:   attributeKey,
 				Value: lc.convertToAnyValue(value),
 			})
 		}
 	}
-
-	return record, nil
 }

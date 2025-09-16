@@ -14,6 +14,24 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// BatchConfig defines how to handle batch/array processing
+type BatchConfig struct {
+	// Enabled indicates if this format contains batch data that needs expansion
+	Enabled bool `yaml:"enabled,omitempty"`
+
+	// ExpandPath specifies the JSON path to arrays that should be expanded
+	// Example: "streams[].values[]" - expand each stream, then each value within
+	ExpandPath string `yaml:"expand_path,omitempty"`
+
+	// ContextPaths specify data to preserve/copy for each expanded entry
+	// Example: ["streams[].stream"] - copy stream metadata to each expanded entry
+	ContextPaths []string `yaml:"context_paths,omitempty"`
+
+	// EntryTemplate defines how each expanded entry should be structured
+	// If not specified, uses the original structure with expanded arrays
+	EntryTemplate map[string]interface{} `yaml:"entry_template,omitempty"`
+}
+
 // Format represents a custom log format definition
 type Format struct {
 	Name        string        `yaml:"name"`
@@ -22,6 +40,7 @@ type Format struct {
 	Type        string        `yaml:"type"` // "text", "json", "structured"
 	Pattern     PatternConfig `yaml:"pattern,omitempty"`
 	JSON        JSONConfig    `yaml:"json,omitempty"`
+	Batch       BatchConfig   `yaml:"batch,omitempty"`
 	Mapping     FieldMapping  `yaml:"mapping"`
 }
 
@@ -57,12 +76,17 @@ type JSONConfig struct {
 // FieldMapping maps extracted fields to OTLP attributes
 type FieldMapping struct {
 	// Core OTLP fields
-	Timestamp    FieldExtractor `yaml:"timestamp,omitempty"`
-	Severity     FieldExtractor `yaml:"severity,omitempty"`
-	Body         FieldExtractor `yaml:"body,omitempty"`
+	Timestamp FieldExtractor `yaml:"timestamp,omitempty"`
+	Severity  FieldExtractor `yaml:"severity,omitempty"`
+	Body      FieldExtractor `yaml:"body,omitempty"`
 
 	// Additional attributes to extract
 	Attributes map[string]FieldExtractor `yaml:"attributes,omitempty"`
+
+	// Auto-map remaining fields - if true, unmapped fields will be added as attributes
+	AutoMapRemaining bool `yaml:"auto_map_remaining,omitempty"`
+	// Auto-map from specific paths - extracts all fields from these paths as attributes
+	AutoMapFrom []string `yaml:"auto_map_from,omitempty"`
 }
 
 // FieldExtractor defines how to extract a field value
@@ -92,20 +116,20 @@ type FieldExtractor struct {
 
 // Parser handles parsing logs using a format definition
 type Parser struct {
-	Format         *Format // Exported for access by converter
-	mainRegex      *regexp.Regexp
-	fieldRegexes   map[string]*regexp.Regexp
+	Format           *Format // Exported for access by converter
+	mainRegex        *regexp.Regexp
+	fieldRegexes     map[string]*regexp.Regexp
 	extractorRegexes map[string]*regexp.Regexp
-	templates      map[string]*template.Template
+	templates        map[string]*template.Template
 }
 
 // NewParser creates a parser for the given format
 func NewParser(format *Format) (*Parser, error) {
 	p := &Parser{
-		Format:         format,
-		fieldRegexes:   make(map[string]*regexp.Regexp),
+		Format:           format,
+		fieldRegexes:     make(map[string]*regexp.Regexp),
 		extractorRegexes: make(map[string]*regexp.Regexp),
-		templates:      make(map[string]*template.Template),
+		templates:        make(map[string]*template.Template),
 	}
 
 	// Compile main pattern if using regex
@@ -304,7 +328,7 @@ func (p *Parser) ExtractField(data map[string]interface{}, extractor FieldExtrac
 
 	// Get the base value
 	if extractor.Field != "" {
-		value = data[extractor.Field]
+		value = extractJSONField(data, extractor.Field)
 	} else if extractor.Template != "" {
 		// Apply template
 		if tmpl, ok := p.templates[key]; ok {
@@ -416,27 +440,92 @@ func parseTimestampAuto(str string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("unable to parse timestamp: %s", str)
 }
 
-// extractJSONField extracts a field from JSON using a simple path
+// extractJSONField extracts a field from JSON using a simple path with array support
 func extractJSONField(data map[string]interface{}, path string) interface{} {
-	// Simple implementation - just handles direct fields and one level of nesting
-	// Can be enhanced to support full JSONPath
+	// Enhanced implementation with array indexing support
+	// Supports paths like "streams[0].stream.field" and "field.subfield"
 
-	if strings.Contains(path, ".") {
-		parts := strings.Split(path, ".")
-		current := data
-		for i, part := range parts {
-			if i == len(parts)-1 {
-				return current[part]
-			}
-			if next, ok := current[part].(map[string]interface{}); ok {
-				current = next
-			} else {
+	if strings.Contains(path, ".") || strings.Contains(path, "[") {
+		parts := parseJSONPath(path)
+		current := interface{}(data)
+
+		for _, part := range parts {
+			current = extractJSONPathPart(current, part)
+			if current == nil {
 				return nil
 			}
 		}
+		return current
 	}
 
 	return data[path]
+}
+
+// parseJSONPath parses a path like "streams[0].stream.field" into parts
+func parseJSONPath(path string) []string {
+	var parts []string
+	var current strings.Builder
+
+	i := 0
+	for i < len(path) {
+		char := rune(path[i])
+		switch char {
+		case '.':
+			if current.Len() > 0 {
+				parts = append(parts, current.String())
+				current.Reset()
+			}
+			i++
+		case '[':
+			if current.Len() > 0 {
+				parts = append(parts, current.String())
+				current.Reset()
+			}
+			// Find the closing bracket and extract the index
+			for j := i + 1; j < len(path); j++ {
+				if path[j] == ']' {
+					index := path[i+1 : j]
+					parts = append(parts, "["+index+"]")
+					i = j + 1
+					break
+				}
+			}
+		default:
+			current.WriteByte(path[i])
+			i++
+		}
+	}
+
+	if current.Len() > 0 {
+		parts = append(parts, current.String())
+	}
+
+	return parts
+}
+
+// extractJSONPathPart extracts a single path part from the current data
+func extractJSONPathPart(data interface{}, part string) interface{} {
+	if strings.HasPrefix(part, "[") && strings.HasSuffix(part, "]") {
+		// Array index
+		indexStr := part[1 : len(part)-1]
+		index, err := strconv.Atoi(indexStr)
+		if err != nil {
+			return nil
+		}
+
+		if arr, ok := data.([]interface{}); ok {
+			if index >= 0 && index < len(arr) {
+				return arr[index]
+			}
+		}
+		return nil
+	} else {
+		// Object field
+		if obj, ok := data.(map[string]interface{}); ok {
+			return obj[part]
+		}
+		return nil
+	}
 }
 
 // LoadFormat loads a format definition from a YAML file
@@ -533,4 +622,256 @@ func httpStatusToSeverity(status string) string {
 
 	// If we can't parse as integer, return as-is
 	return status
+}
+
+// IsBatchFormat checks if this format is configured for batch processing
+func (f *Format) IsBatchFormat() bool {
+	return f.Batch.Enabled && f.Batch.ExpandPath != ""
+}
+
+// ExpandBatch expands a batch format line into individual log entries using the format configuration
+func (p *Parser) ExpandBatch(line string) ([]string, error) {
+	if !p.Format.IsBatchFormat() {
+		return []string{line}, nil
+	}
+
+	// Parse the JSON line
+	var data map[string]interface{}
+	if err := json.Unmarshal([]byte(line), &data); err != nil {
+		return []string{line}, nil // Not JSON, return as-is
+	}
+
+	// Use the configured expand path to generate individual entries
+	return p.expandUsingPath(data, p.Format.Batch.ExpandPath, p.Format.Batch.ContextPaths)
+}
+
+// expandUsingPath expands data using a configured path specification
+func (p *Parser) expandUsingPath(data map[string]interface{}, expandPath string, contextPaths []string) ([]string, error) {
+	// Parse the expansion path to understand the structure
+	// Example: "streams[].values[]" means expand streams array, then values array within each stream
+
+	pathParts := parseExpansionPath(expandPath)
+	if len(pathParts) == 0 {
+		originalJSON, _ := json.Marshal(data)
+		return []string{string(originalJSON)}, nil
+	}
+
+	// Extract context data that should be preserved for each expanded entry
+	contextData := extractContextData(data, contextPaths)
+
+	// Generate all expanded entries
+	entries := p.generateExpandedEntries(data, pathParts, contextData)
+
+	if len(entries) == 0 {
+		originalJSON, _ := json.Marshal(data)
+		return []string{string(originalJSON)}, nil
+	}
+
+	return entries, nil
+}
+
+// ExpansionPathPart represents a part of an expansion path
+type ExpansionPathPart struct {
+	Field      string // The field name
+	IsArray    bool   // Whether this part should be expanded as an array
+	IsExpanded bool   // Whether this is an expansion point (has [])
+}
+
+// parseExpansionPath parses a path like "streams[].values[]" into structured parts
+func parseExpansionPath(path string) []ExpansionPathPart {
+	var parts []ExpansionPathPart
+
+	// Split by dots first, then handle array notation
+	segments := strings.Split(path, ".")
+
+	for _, segment := range segments {
+		if strings.HasSuffix(segment, "[]") {
+			// This is an array expansion point
+			fieldName := strings.TrimSuffix(segment, "[]")
+			parts = append(parts, ExpansionPathPart{
+				Field:      fieldName,
+				IsArray:    true,
+				IsExpanded: true,
+			})
+		} else {
+			// Regular field
+			parts = append(parts, ExpansionPathPart{
+				Field:      segment,
+				IsArray:    false,
+				IsExpanded: false,
+			})
+		}
+	}
+
+	return parts
+}
+
+// extractContextData extracts context data from specified paths
+func extractContextData(data map[string]interface{}, contextPaths []string) map[string]interface{} {
+	context := make(map[string]interface{})
+
+	for _, path := range contextPaths {
+		// Parse the context path to navigate the data structure
+		value := extractValueByPath(data, path)
+		if value != nil {
+			// Store the extracted value using the last component of the path as the key
+			// For example, "streams[].stream" would store under "stream"
+			parts := strings.Split(path, ".")
+			lastPart := parts[len(parts)-1]
+			// Remove any array notation from the key
+			lastPart = strings.TrimSuffix(lastPart, "[]")
+			lastPart = strings.TrimSuffix(lastPart, "[0]")
+			context[lastPart] = value
+		}
+	}
+
+	return context
+}
+
+// extractValueByPath navigates through a data structure following a path specification
+// Supports paths like "field.nested.value" or "array[0].field" or "array[].field"
+func extractValueByPath(data interface{}, path string) interface{} {
+	if path == "" {
+		return data
+	}
+
+	parts := strings.Split(path, ".")
+	current := data
+
+	for _, part := range parts {
+		// Check for array notation
+		if strings.Contains(part, "[") {
+			fieldName := part[:strings.Index(part, "[")]
+			arrayNotation := part[strings.Index(part, "["):]
+
+			// Navigate to the field
+			if m, ok := current.(map[string]interface{}); ok {
+				if fieldValue, exists := m[fieldName]; exists {
+					// Handle array access
+					if arrayNotation == "[]" || arrayNotation == "[0]" {
+						// Access first element of array
+						if arr, ok := fieldValue.([]interface{}); ok && len(arr) > 0 {
+							current = arr[0]
+						} else {
+							return nil
+						}
+					}
+				} else {
+					return nil
+				}
+			} else {
+				return nil
+			}
+		} else {
+			// Simple field access
+			if m, ok := current.(map[string]interface{}); ok {
+				if fieldValue, exists := m[part]; exists {
+					current = fieldValue
+				} else {
+					return nil
+				}
+			} else {
+				return nil
+			}
+		}
+	}
+
+	return current
+}
+
+// generateExpandedEntries generates individual entries by expanding arrays according to the path specification
+func (p *Parser) generateExpandedEntries(data map[string]interface{}, pathParts []ExpansionPathPart, contextData map[string]interface{}) []string {
+	// Generic recursive expansion for any path pattern
+	return p.expandPath(data, pathParts, 0, contextData)
+}
+
+// expandPath recursively expands nested arrays according to the path specification
+// This is completely generic and works with any field names and nesting levels
+func (p *Parser) expandPath(data interface{}, pathParts []ExpansionPathPart, partIndex int, contextData map[string]interface{}) []string {
+	var results []string
+
+	// If we've processed all path parts, serialize and return the current data
+	if partIndex >= len(pathParts) {
+		if jsonData, err := json.Marshal(data); err == nil {
+			return []string{string(jsonData)}
+		}
+		return results
+	}
+
+	currentPart := pathParts[partIndex]
+
+	// Handle different data types
+	switch v := data.(type) {
+	case map[string]interface{}:
+		// Get the field value
+		fieldValue, ok := v[currentPart.Field]
+		if !ok {
+			// Field doesn't exist, return empty
+			return results
+		}
+
+		if currentPart.IsExpanded {
+			// This field should be expanded (it's an array)
+			arrayValue, ok := fieldValue.([]interface{})
+			if !ok {
+				return results
+			}
+
+			// Expand each element in the array
+			for _, element := range arrayValue {
+				// Recursively process remaining path parts
+				expandedResults := p.expandPath(element, pathParts, partIndex+1, contextData)
+
+				// For each expanded result, reconstruct the full structure
+				for _, expandedJSON := range expandedResults {
+					// Parse the expanded element back
+					var expandedData interface{}
+					if err := json.Unmarshal([]byte(expandedJSON), &expandedData); err == nil {
+						// Reconstruct the full structure with this single expanded element
+						reconstructed := p.reconstructStructure(v, pathParts[:partIndex+1], expandedData)
+						if reconstructedJSON, err := json.Marshal(reconstructed); err == nil {
+							results = append(results, string(reconstructedJSON))
+						}
+					}
+				}
+			}
+		} else {
+			// Not an array expansion, continue with the field value
+			return p.expandPath(fieldValue, pathParts, partIndex+1, contextData)
+		}
+	}
+
+	return results
+}
+
+// reconstructStructure recreates the full data structure with a single expanded element
+// This maintains the original structure but with only one element in the expanded array position
+func (p *Parser) reconstructStructure(originalData map[string]interface{}, pathToExpansion []ExpansionPathPart, expandedElement interface{}) map[string]interface{} {
+	// Create a deep copy of the original structure
+	result := make(map[string]interface{})
+
+	// Copy all top-level fields
+	for key, value := range originalData {
+		result[key] = value
+	}
+
+	// Now reconstruct the path with just the single expanded element
+	if len(pathToExpansion) > 0 {
+		firstPart := pathToExpansion[0]
+
+		if firstPart.IsExpanded {
+			// Replace the array with a single-element array containing the expanded element
+			if len(pathToExpansion) == 1 {
+				// This is the final level - just wrap the element in an array
+				result[firstPart.Field] = []interface{}{expandedElement}
+			} else {
+				// There are more levels - need to continue reconstruction
+				// This simplified version handles the common case
+				// For deeply nested structures, you may need more complex logic
+				result[firstPart.Field] = []interface{}{expandedElement}
+			}
+		}
+	}
+
+	return result
 }

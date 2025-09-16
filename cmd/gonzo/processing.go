@@ -14,15 +14,15 @@ func (m *simpleTuiModel) processLogLine(line string) {
 	if isOTLPSignalLog(line) {
 		return // Skip processing this line entirely
 	}
-	
+
 	// Handle multi-line JSON accumulation
 	if m.tryAccumulateJSON(line) {
 		return // Line was accumulated, wait for complete JSON
 	}
-	
+
 	// Count only lines that pass the filter
 	m.logCount++
-	
+
 	// Detect format
 	format := m.formatDetector.DetectFormat(line)
 
@@ -40,19 +40,19 @@ func (m *simpleTuiModel) processLogLine(line string) {
 				result = m.textAnalyzer.AnalyzeLine(line)
 				attributes = make(map[string]string)
 				logEntry = createFallbackLogEntry(line)
-				
+
 				// Process the single fallback entry
 				m.processSingleLogEntry(result, attributes, logEntry)
 			} else {
 				// Extract ALL log entries from the batch
 				logEntries := extractAllLogEntriesFromOTLPBatch(logsData)
-				
+
 				// Process each log entry individually
 				for _, entry := range logEntries {
 					// Analyze each log entry for frequency data
 					entryResult := m.otlpAnalyzer.AnalyzeOTLPRecord(convertLogEntryToOTLPRecord(entry))
 					entryAttributes := entry.Attributes // Already includes resource + record attributes
-					
+
 					m.processSingleLogEntry(entryResult, entryAttributes, entry)
 				}
 			}
@@ -70,8 +70,58 @@ func (m *simpleTuiModel) processLogLine(line string) {
 				logEntry = extractLogEntryFromOTLPRecord(record)
 			}
 		}
+	} else if format == otlplog.FormatCustom {
+
+		// Handle custom format - check if it's a batch format that needs expansion
+		if m.logConverter != nil && m.customParser != nil {
+			// Check if this is a batch format using the format configuration
+			if expandedLines, err := m.customParser.ExpandBatch(line); err == nil && len(expandedLines) > 1 {
+				// This is a batch format - process each expanded entry
+				for _, expandedLine := range expandedLines {
+					// Process each expanded entry
+					otlpRecord, err := m.logConverter.ConvertToOTLP(expandedLine, format)
+					if err != nil {
+						continue // Skip entries that fail to parse
+					}
+					result = m.otlpAnalyzer.AnalyzeOTLPRecord(otlpRecord)
+					attributes = m.otlpAnalyzer.ExtractAttributesFromOTLPRecord(otlpRecord)
+					logEntry = extractLogEntryFromOTLPRecord(otlpRecord)
+
+					// Note: logEntry already contains all attributes from OTLP record extraction
+					// Process each entry individually
+					m.processSingleLogEntry(result, attributes, logEntry)
+				}
+				return // All entries processed, exit early
+			} else {
+				// Regular custom format processing (single entry or batch expansion failed)
+				otlpRecord, err := m.logConverter.ConvertToOTLP(line, format)
+				if err != nil {
+					result = m.textAnalyzer.AnalyzeLine(line)
+					attributes = make(map[string]string)
+					logEntry = createFallbackLogEntry(line)
+				} else {
+					result = m.otlpAnalyzer.AnalyzeOTLPRecord(otlpRecord)
+					attributes = m.otlpAnalyzer.ExtractAttributesFromOTLPRecord(otlpRecord)
+					logEntry = extractLogEntryFromOTLPRecord(otlpRecord)
+					// Note: logEntry already contains all attributes from OTLP record extraction
+				}
+			}
+		} else {
+			// No custom parser available - fallback to regular processing
+			otlpRecord, err := m.logConverter.ConvertToOTLP(line, format)
+			if err != nil {
+				result = m.textAnalyzer.AnalyzeLine(line)
+				attributes = make(map[string]string)
+				logEntry = createFallbackLogEntry(line)
+			} else {
+				result = m.otlpAnalyzer.AnalyzeOTLPRecord(otlpRecord)
+				attributes = m.otlpAnalyzer.ExtractAttributesFromOTLPRecord(otlpRecord)
+				logEntry = extractLogEntryFromOTLPRecord(otlpRecord)
+				// Note: logEntry already contains all attributes from OTLP record extraction
+			}
+		}
 	} else {
-		// Convert non-OTLP format to OTLP
+		// Convert other non-OTLP formats to OTLP
 		otlpRecord, err := m.logConverter.ConvertToOTLP(line, format)
 		if err != nil {
 			result = m.textAnalyzer.AnalyzeLine(line)
@@ -81,6 +131,7 @@ func (m *simpleTuiModel) processLogLine(line string) {
 			result = m.otlpAnalyzer.AnalyzeOTLPRecord(otlpRecord)
 			attributes = m.otlpAnalyzer.ExtractAttributesFromOTLPRecord(otlpRecord)
 			logEntry = extractLogEntryFromOTLPRecord(otlpRecord)
+			// Note: logEntry already contains all attributes from OTLP record extraction
 		}
 	}
 
@@ -99,7 +150,7 @@ func (m *simpleTuiModel) processSingleLogEntry(result *analyzer.AnalysisResult, 
 	if logEntry != nil {
 		// Count severity for this interval
 		m.severityCounts.AddCount(logEntry.Severity)
-		
+
 		updateMsg := tui.UpdateMsg{NewLogEntry: logEntry}
 		m.dashboard.Update(updateMsg)
 	}
@@ -110,7 +161,7 @@ func (m *simpleTuiModel) processSingleLogEntry(result *analyzer.AnalysisResult, 
 func isOTLPSignalLog(message string) bool {
 	// Convert to lowercase for case-insensitive matching
 	msg := strings.ToLower(message)
-	
+
 	// Filter out OTLP collector logs that show up as separate columns with "Logs/Metrics/Traces"
 	// These follow the pattern: "timestamp\tinfo\tLogs\t{json data}"
 	// The tab-separated format creates the column appearance in the UI
@@ -118,7 +169,7 @@ func isOTLPSignalLog(message string) bool {
 		strings.Contains(msg, "otelcol.component") {
 		return true
 	}
-	
+
 	// Skip OTLP collector logs about signal processing
 	if strings.Contains(msg, "otelcol.signal") {
 		// Check if it's about traces or metrics (keep actual log entries)
@@ -126,12 +177,12 @@ func isOTLPSignalLog(message string) bool {
 			return true
 		}
 	}
-	
-	// Filter out OTLP collector operational logs about signal processing  
+
+	// Filter out OTLP collector operational logs about signal processing
 	if strings.Contains(msg, "otelcol.component") {
 		patterns := []string{
 			"resource metrics",
-			"resource traces", 
+			"resource traces",
 			"data points",
 			"metrics exported",
 			"traces exported",
@@ -143,7 +194,7 @@ func isOTLPSignalLog(message string) bool {
 			}
 		}
 	}
-	
+
 	return false
 }
 
@@ -151,7 +202,7 @@ func isOTLPSignalLog(message string) bool {
 func (m *simpleTuiModel) tryAccumulateJSON(line string) bool {
 	// Check if this line could be part of a JSON object
 	trimmed := strings.TrimSpace(line)
-	
+
 	// If we're not currently accumulating JSON, check if this line starts a JSON object
 	if !m.inJsonObject {
 		if trimmed == "{" || strings.HasPrefix(trimmed, "{") {
@@ -161,10 +212,10 @@ func (m *simpleTuiModel) tryAccumulateJSON(line string) bool {
 			m.jsonDepth = 0
 			m.jsonBuffer.WriteString(line)
 			m.jsonBuffer.WriteString("\n")
-			
+
 			// Count braces in this line
 			m.jsonDepth += countJSONDepth(line)
-			
+
 			// If depth is already 0, we have a complete single-line JSON
 			if m.jsonDepth <= 0 {
 				completeJSON := strings.TrimSpace(m.jsonBuffer.String())
@@ -172,20 +223,20 @@ func (m *simpleTuiModel) tryAccumulateJSON(line string) bool {
 				m.processCompleteJSON(completeJSON)
 				return true
 			}
-			
+
 			return true // Line was accumulated
 		}
 		// Not starting JSON, process normally
 		return false
 	}
-	
+
 	// We're already accumulating JSON, add this line
 	m.jsonBuffer.WriteString(line)
 	m.jsonBuffer.WriteString("\n")
-	
+
 	// Update depth count
 	m.jsonDepth += countJSONDepth(line)
-	
+
 	// If depth reaches 0 or below, we have a complete JSON object
 	if m.jsonDepth <= 0 {
 		completeJSON := strings.TrimSpace(m.jsonBuffer.String())
@@ -193,7 +244,7 @@ func (m *simpleTuiModel) tryAccumulateJSON(line string) bool {
 		m.processCompleteJSON(completeJSON)
 		return true
 	}
-	
+
 	return true // Line was accumulated, waiting for more
 }
 
@@ -202,13 +253,13 @@ func countJSONDepth(line string) int {
 	depth := 0
 	inString := false
 	escaped := false
-	
+
 	for _, char := range line {
 		if escaped {
 			escaped = false
 			continue
 		}
-		
+
 		switch char {
 		case '\\':
 			if inString {
@@ -226,7 +277,7 @@ func countJSONDepth(line string) int {
 			}
 		}
 	}
-	
+
 	return depth
 }
 
@@ -241,10 +292,10 @@ func (m *simpleTuiModel) resetJSONAccumulation() {
 func (m *simpleTuiModel) processCompleteJSON(jsonStr string) {
 	// Count this as a log entry
 	m.logCount++
-	
+
 	// Detect format of the complete JSON
 	format := m.formatDetector.DetectFormat(jsonStr)
-	
+
 	var result *analyzer.AnalysisResult
 	var attributes map[string]string
 	var logEntry *tui.LogEntry
@@ -259,19 +310,19 @@ func (m *simpleTuiModel) processCompleteJSON(jsonStr string) {
 				result = m.textAnalyzer.AnalyzeLine(jsonStr)
 				attributes = make(map[string]string)
 				logEntry = createFallbackLogEntry(jsonStr)
-				
+
 				// Process the single fallback entry
 				m.processSingleLogEntry(result, attributes, logEntry)
 			} else {
 				// Extract ALL log entries from the batch
 				logEntries := extractAllLogEntriesFromOTLPBatch(logsData)
-				
+
 				// Process each log entry individually
 				for _, entry := range logEntries {
 					// Analyze each log entry for frequency data
 					entryResult := m.otlpAnalyzer.AnalyzeOTLPRecord(convertLogEntryToOTLPRecord(entry))
 					entryAttributes := entry.Attributes // Already includes resource + record attributes
-					
+
 					m.processSingleLogEntry(entryResult, entryAttributes, entry)
 				}
 			}
@@ -287,6 +338,7 @@ func (m *simpleTuiModel) processCompleteJSON(jsonStr string) {
 				result = m.otlpAnalyzer.AnalyzeOTLPRecord(record)
 				attributes = m.otlpAnalyzer.ExtractAttributesFromOTLPRecord(record)
 				logEntry = extractLogEntryFromOTLPRecord(record)
+				// Note: logEntry already contains all attributes from OTLP record extraction
 			}
 		}
 	} else {
@@ -300,6 +352,7 @@ func (m *simpleTuiModel) processCompleteJSON(jsonStr string) {
 			result = m.otlpAnalyzer.AnalyzeOTLPRecord(otlpRecord)
 			attributes = m.otlpAnalyzer.ExtractAttributesFromOTLPRecord(otlpRecord)
 			logEntry = extractLogEntryFromOTLPRecord(otlpRecord)
+			// Note: logEntry already contains all attributes from OTLP record extraction
 		}
 	}
 

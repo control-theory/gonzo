@@ -350,6 +350,57 @@ mapping:
 
 ## Advanced Features
 
+### Batch Processing
+
+For log formats where a single line contains multiple log entries (like Loki's batch format), use the batch processing configuration:
+
+```yaml
+# Enable batch processing
+batch:
+  # Enable batch processing for this format
+  enabled: true
+
+  # Path pattern for array expansion - tells the system which arrays to expand
+  # "streams[].values[]" means: expand the 'streams' array, then expand the 'values' array within each stream
+  # Each combination creates a separate log entry (e.g., 2 streams × 3 values = 6 individual log entries)
+  expand_path: "streams[].values[]"
+
+  # Context paths - data to preserve/copy for each expanded entry
+  # "streams[].stream" means: copy the 'stream' metadata from each stream to its expanded entries
+  # This ensures each individual log entry retains its associated metadata
+  context_paths: ["streams[].stream"]
+```
+
+**How batch processing works:**
+
+1. **Original batch line:**
+   ```json
+   {"streams":[{"stream":{"service":"app","level":"ERROR"},"values":[["1234567890","Message 1"],["1234567891","Message 2"]]}]}
+   ```
+
+2. **Gets expanded to individual entries:**
+   ```json
+   {"streams":[{"stream":{"service":"app","level":"ERROR"},"values":[["1234567890","Message 1"]]}]}
+   {"streams":[{"stream":{"service":"app","level":"ERROR"},"values":[["1234567891","Message 2"]]}]}
+   ```
+
+3. **Each entry is then processed normally** using the format's mapping configuration
+
+**Batch configuration fields:**
+
+- `enabled`: Set to `true` to enable batch processing
+- `expand_path`: Specifies which arrays to expand (uses `[]` notation for arrays)
+- `context_paths`: Metadata to preserve for each expanded entry
+- `entry_template`: (Optional) Custom template for expanded entries
+
+**Common batch patterns:**
+
+| Pattern | Description | Example Use Case |
+|---------|-------------|------------------|
+| `streams[].values[]` | Expand streams, then values within each | Loki batch format |
+| `logs[]` | Expand top-level logs array | Simple batch logs |
+| `events[].entries[]` | Expand events, then entries within each | Event batch format |
+
 ### Nested JSON Fields
 
 Access nested fields using dot notation:
@@ -489,10 +540,13 @@ Gonzo includes several built-in formats in the `formats/` directory:
 
 - `nodejs.yaml` - Node.js application logs
 - `common-log.yaml` - Generic timestamp/level/message format
-- `loki-stream.yaml` - Loki streaming format
+- `loki-stream.yaml` - Loki streaming format (individual entries)
+- `loki-batch.yaml` - Loki batch format with automatic expansion
 - `apache-combined.yaml` - Apache/Nginx access logs
 
 Copy and modify these as starting points for your custom formats.
+
+**Note**: The `loki-batch.yaml` format demonstrates the batch processing system for handling multi-entry log lines. Use it as a reference for creating other batch formats.
 
 ## Contributing
 
