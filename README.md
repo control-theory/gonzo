@@ -32,6 +32,7 @@ A powerful, real-time log analysis terminal UI inspired by k9s. Analyze log stre
 - **OTLP native** - First-class support for OpenTelemetry log format
 - **OTLP receiver** - Built-in gRPC server to receive logs via OpenTelemetry protocol
 - **Format detection** - Automatically detects JSON, logfmt, and plain text
+- **Custom formats** - Define your own log formats with YAML configuration
 - **Severity tracking** - Color-coded severity levels with distribution charts
 
 ### 📈 Interactive Dashboard
@@ -139,6 +140,33 @@ docker logs -f my-container 2>&1 | gonzo
 export OPENAI_API_KEY=sk-your-key-here
 gonzo -f application.log --ai-model="gpt-4"
 ```
+
+### Custom Log Formats
+
+Gonzo supports custom log formats through YAML configuration files. This allows you to parse any structured log format without modifying the source code.
+
+Some example custom formats are included in the repo, simply download, copy, or modify as you like!
+In order for the commands below to work, you must first download them and put them in the Gonzo config directory.
+
+```bash
+# Use a built-in custom format
+gonzo --format=loki-stream -f loki_logs.json
+
+# List available custom formats
+ls ~/.config/gonzo/formats/
+
+# Use your own custom format
+gonzo --format=my-custom-format -f custom_logs.txt
+```
+
+Custom formats support:
+- **Flexible field mapping** - Map any JSON/text fields to timestamp, severity, body, and attributes
+- **Batch processing** - Automatically expand batch formats (like Loki) into individual log entries
+- **Auto-mapping** - Automatically extract all unmapped fields as attributes
+- **Nested field extraction** - Extract fields from deeply nested JSON structures
+- **Pattern-based parsing** - Use regex patterns for unstructured text logs
+
+For detailed information on creating custom formats, see the [Custom Formats Guide](guides/CUSTOM_FORMATS.md).
 
 ### OTLP Network Receiver
 
@@ -341,16 +369,17 @@ Commands:
 
 Flags:
   -f, --file stringArray           Files or file globs to read logs from (can specify multiple)
-  --follow                     Follow log files like 'tail -f' (watch for new lines in real-time)
+  --follow                         Follow log files like 'tail -f' (watch for new lines in real-time)
+  --format string                  Log format to use (auto-detect if not specified). Can be: otlp, json, text, or a custom format name
   -u, --update-interval duration   Dashboard update interval (default: 1s)
   -b, --log-buffer int             Maximum log entries to keep (default: 1000)
   -m, --memory-size int            Maximum frequency entries (default: 10000)
-  --ai-model string            AI model for analysis (auto-selects best available if not specified)
+  --ai-model string                AI model for analysis (auto-selects best available if not specified)
   -s, --skin string                Color scheme/skin to use (default, or name of a skin file)
-  --stop-words strings         Additional stop words to filter out from analysis (adds to built-in list)
+  --stop-words strings             Additional stop words to filter out from analysis (adds to built-in list)
   -t, --test-mode                  Run without TTY for testing
   -v, --version                    Print version information
-  --config string              Config file (default: $HOME/.config/gonzo/config.yml)
+  --config string                  Config file (default: $HOME/.config/gonzo/config.yml)
   -h, --help                       Show help message
 ```
 
