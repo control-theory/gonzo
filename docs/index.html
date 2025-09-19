@@ -18,11 +18,7 @@
             --gray: #BCBEC0;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Inter', sans-serif;
@@ -31,11 +27,7 @@
             background-color: var(--white);
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
 
         header {
             background: linear-gradient(135deg, var(--dark-blue) 0%, var(--light-blue) 100%);
@@ -45,432 +37,112 @@
             position: relative;
         }
 
-        .hero {
-            padding: 1.5rem 0;
+        .slack-button {
+            position: absolute; top: 1rem; right: 1rem;
+            display: flex; align-items: center; gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.1); color: var(--white);
+            text-decoration: none; padding: 0.5rem 1rem; border-radius: 8px;
+            font-weight: 500; font-size: 0.9rem; border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px); transition: all 0.3s ease; z-index: 10;
         }
+        .slack-button:hover { background: rgba(255, 255, 255, 0.2); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
+        .slack-icon { width: 18px; height: 18px; fill: currentColor; }
 
-        .hero-content {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
+        .hero { padding: 1.5rem 0; }
+        .hero-content { display: flex; align-items: center; justify-content: center; gap: 2rem; margin-bottom: 2rem; }
+        .mascot-gif-container { display: flex; align-items: center; justify-content: center; gap: 2rem; }
+        .mascot img { width: auto; height: auto; max-width: clamp(240px, 22vw, 360px); max-height: clamp(240px, 22vw, 360px); object-fit: contain; }
+        .hero-gif { width: auto; height: auto; max-width: clamp(240px, 22vw, 360px); max-height: clamp(240px, 22vw, 360px); display: block; border-radius: 8px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); }
 
-        .mascot-gif-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 2rem;
-        }
-
-        .mascot img {
-            width: auto;
-            height: auto;
-            max-width: clamp(240px, 22vw, 360px);
-            max-height: clamp(240px, 22vw, 360px);
-            object-fit: contain;
-        }
-
-        .hero-gif {
-            width: auto;
-            height: auto;
-            max-width: clamp(240px, 22vw, 360px);
-            max-height: clamp(240px, 22vw, 360px);
-            display: block;
-            border-radius: 8px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        }
-
-        .hero h1 {
-            font-size: 3rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
+        .hero h1 { font-size: 3rem; font-weight: 700; margin-bottom: 1rem;
             background: linear-gradient(45deg, var(--white), var(--green));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .hero .subtitle { font-size: 1.25rem; margin-bottom: 2rem; opacity: 0.9; max-width: 600px; margin-left: auto; margin-right: auto; }
 
-        .hero .subtitle {
-            font-size: 1.25rem;
-            margin-bottom: 2rem;
-            opacity: 0.9;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
+        .github-stats { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 2rem; opacity: 0.9; }
+        .star-count { display: flex; align-items: center; gap: 0.5rem; background: rgba(255, 255, 255, 0.1); padding: 0.5rem 1rem; border-radius: 20px; backdrop-filter: blur(10px); font-weight: 500; }
+        .star-icon { color: var(--green); }
 
-        .github-stats {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            opacity: 0.9;
-        }
+        .cta-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; align-items: flex-start; margin-top: 2rem; }
+        .cta-group { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+        .cta-microcopy { font-size: 0.85rem; opacity: 0.7; font-weight: 400; }
+        .btn { display: inline-block; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s ease; border: 2px solid transparent; }
+        .btn-primary { background-color: var(--green); color: var(--black); }
+        .btn-primary:hover { background-color: var(--white); transform: translateY(-2px); }
+        .btn-secondary { background-color: transparent; color: var(--white); border-color: var(--white); }
+        .btn-secondary:hover { background-color: var(--white); color: var(--dark-blue); }
 
-        .star-count {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
-            font-weight: 500;
-        }
+        .scroll-indicator { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); }
+        .learn-more { display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 1rem; opacity: 0.8; cursor: pointer; transition: all 0.3s ease; text-decoration: none; color: var(--white); text-shadow: 0 2px 8px rgba(0,0,0,0.35); }
+        .learn-more:hover { opacity: 1; transform: translateY(2px); color: var(--green); }
+        .learn-more .arrow { font-size: 1.2rem; animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px); } 60% { transform: translateY(-3px); } }
 
-        .star-icon {
-            color: var(--green);
-        }
+        .features { padding: 4rem 0; background-color: #f8f9fa; }
+        .features h2 { text-align: center; font-size: 2.5rem; margin-bottom: 1rem; color: var(--dark-blue); }
+        .features-tagline { text-align: center; font-size: 1.25rem; color: var(--gray); margin-bottom: 3rem; font-style: italic; }
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; }
+        .feature-card { background: var(--white); padding: 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); transition: transform 0.3s ease; }
+        .feature-card:hover { transform: translateY(-5px); }
+        .feature-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+        .feature-card h3 { color: var(--dark-blue); margin-bottom: 1rem; font-size: 1.5rem; }
 
-        .cta-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-            align-items: flex-start;
-            margin-top: 2rem;
-        }
+        .screenshot-section { padding: 4rem 0; text-align: center; }
+        .screenshot-section h2 { font-size: 2.5rem; margin-bottom: 2rem; color: var(--dark-blue); }
+        .screenshot { max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); }
 
-        .cta-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-        }
+        .installation { background: var(--dark-blue); color: var(--white); padding: 4rem 0; }
+        .installation h2 { text-align: center; font-size: 2.5rem; margin-bottom: 3rem; }
+        .install-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; align-items: start; }
+        .install-box { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.5rem; min-height: 200px; }
+        .install-box h3 { color: var(--green); margin-bottom: 1rem; font-size: 1.25rem; }
+        .install-box p { margin-bottom: 1.5rem; opacity: 0.9; }
 
-        .cta-microcopy {
-            font-size: 0.85rem;
-            opacity: 0.7;
-            font-weight: 400;
-        }
+        .terminal { background: #000; color: var(--green); border-radius: 8px; padding: 1rem; font-family: 'Monaco', 'Menlo', 'Consolas', monospace; font-size: 0.9rem; position: relative; margin-top: auto; }
+        .terminal-content { white-space: pre-line; line-height: 1.4; }
 
-        .btn {
-            display: inline-block;
-            padding: 12px 24px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
-        }
-
-        .btn-primary {
-            background-color: var(--green);
-            color: var(--black);
-        }
-
-        .btn-primary:hover {
-            background-color: var(--white);
-            transform: translateY(-2px);
-        }
-
-        .btn-secondary {
-            background-color: transparent;
-            color: var(--white);
-            border-color: var(--white);
-        }
-
-        .btn-secondary:hover {
-            background-color: var(--white);
-            color: var(--dark-blue);
-        }
-
-        .scroll-indicator {
-            position: absolute;
-            left: 50%;
-            bottom: 16px;
-            transform: translateX(-50%);
-        }
-
-        .learn-more {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            font-size: 1rem;
-            opacity: 0.8;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            color: var(--white);
-            text-shadow: 0 2px 8px rgba(0,0,0,0.35);
-        }
-
-        .learn-more:hover {
-            opacity: 1;
-            transform: translateY(2px);
-            color: var(--green);
-        }
-
-        .learn-more .arrow {
-            font-size: 1.2rem;
-            animation: bounce 2s infinite;
-        }
-
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% {
-                transform: translateY(0);
-            }
-            40% {
-                transform: translateY(-5px);
-            }
-            60% {
-                transform: translateY(-3px);
-            }
-        }
-
-        .features {
-            padding: 4rem 0;
-            background-color: #f8f9fa;
-        }
-
-        .features h2 {
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            color: var(--dark-blue);
-        }
-
-        .features-tagline {
-            text-align: center;
-            font-size: 1.25rem;
-            color: var(--gray);
-            margin-bottom: 3rem;
-            font-style: italic;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .feature-card {
-            background: var(--white);
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .feature-icon {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .feature-card h3 {
-            color: var(--dark-blue);
-            margin-bottom: 1rem;
-            font-size: 1.5rem;
-        }
-
-        .screenshot-section {
-            padding: 4rem 0;
-            text-align: center;
-        }
-
-        .screenshot-section h2 {
-            font-size: 2.5rem;
-            margin-bottom: 2rem;
-            color: var(--dark-blue);
-        }
-
-        .screenshot {
-            max-width: 100%;
-            height: auto;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-        }
-
-        .installation {
-            background: var(--dark-blue);
-            color: var(--white);
-            padding: 4rem 0;
-        }
-
-        .installation h2 {
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 3rem;
-        }
-
-        .install-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            align-items: start;
-        }
-
-        .install-box {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 1.5rem;
-            min-height: 200px;
-        }
-
-        .install-box h3 {
-            color: var(--green);
-            margin-bottom: 1rem;
-            font-size: 1.25rem;
-        }
-
-        .install-box p {
-            margin-bottom: 1.5rem;
-            opacity: 0.9;
-        }
-
-        /* Terminal code blocks */
-        .terminal {
-            background: #000;
-            color: var(--green);
-            border-radius: 8px;
-            padding: 1rem;
-            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
-            font-size: 0.9rem;
-            position: relative;
-            margin-top: auto;
-        }
-
-        .terminal-content {
-            white-space: pre-line;
-            line-height: 1.4;
-        }
-
-        /* Download link styling */
-        .download-link {
-            background: #000;
-            color: var(--green);
-            border-radius: 8px;
-            padding: 1rem;
-            text-align: center;
-            margin-top: auto;
-        }
-
-        .download-link a {
-            color: var(--green);
-            text-decoration: none;
-            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
-            font-size: 0.95rem;
-        }
-
-        .download-link a:hover {
-            text-decoration: underline;
-        }
+        .download-link { background: #000; color: var(--green); border-radius: 8px; padding: 1rem; text-align: center; margin-top: auto; }
+        .download-link a { color: var(--green); text-decoration: none; font-family: 'Monaco', 'Menlo', 'Consolas', monospace; font-size: 0.95rem; }
+        .download-link a:hover { text-decoration: underline; }
 
         .copy-btn {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            width: 32px;
-            height: 32px;
-            border: none;
-            background: rgba(255,255,255,0.1);
-            border-radius: 6px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s;
+            position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border: none;
+            background: rgba(255,255,255,0.1); border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;
         }
+        .copy-btn:hover { background: rgba(255, 255, 255, 0.2); }
+        .copy-btn svg { width: 16px; height: 16px; fill: var(--white); }
 
-        .copy-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
+        .quickstart { margin-top: 3rem; text-align: center; }
+        .quickstart h3 { color: var(--green); margin-bottom: 1rem; }
+        .quickstart .terminal { display: inline-block; text-align: left; max-width: 600px; margin-top: 1rem; }
 
-        .copy-btn svg {
-            width: 16px;
-            height: 16px;
-            fill: var(--white);
-        }
-
-        .quickstart {
-            margin-top: 3rem;
-            text-align: center;
-        }
-
-        .quickstart h3 {
-            color: var(--green);
-            margin-bottom: 1rem;
-        }
-
-        .quickstart .terminal {
-            display: inline-block;
-            text-align: left;
-            max-width: 600px;
-            margin-top: 1rem;
-        }
-
-        footer {
-            background: var(--black);
-            color: var(--white);
-            padding: 3rem 0;
-            text-align: center;
-        }
-
-        .footer-links {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .footer-links a {
-            color: var(--light-blue);
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .footer-links a:hover {
-            color: var(--green);
-        }
-
-        .heart {
-            color: var(--green);
-        }
+        footer { background: var(--black); color: var(--white); padding: 3rem 0; text-align: center; }
+        .footer-links { display: flex; justify-content: center; gap: 2rem; margin-bottom: 2rem; flex-wrap: wrap; }
+        .footer-links a { color: var(--light-blue); text-decoration: none; font-weight: 500; }
+        .footer-links a:hover { color: var(--green); }
+        .heart { color: var(--green); }
 
         @media (max-width: 768px) {
-            .mascot-gif-container {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            .mascot img,
-            .hero-gif {
-                height: 250px;
-            }
-            
-            .hero h1 {
-                font-size: 2rem;
-            }
-            
-            .hero .subtitle {
-                font-size: 1rem;
-            }
-            
-            .cta-buttons {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .btn {
-                width: 200px;
-                text-align: center;
-            }
+            .slack-button { position: relative; top: auto; right: auto; margin: 0 auto 1rem; display: inline-flex; }
+            .mascot-gif-container { flex-direction: column; gap: 1rem; }
+            .mascot img, .hero-gif { height: 250px; }
+            .hero h1 { font-size: 2rem; }
+            .hero .subtitle { font-size: 1rem; }
+            .cta-buttons { flex-direction: column; align-items: center; }
+            .btn { width: 200px; text-align: center; }
         }
     </style>
 </head>
 <body>
     <header>
         <div class="container">
+            <a href="https://join.slack.com/t/ctrltheorycommunity/shared_invite/zt-3dr6rke5w-GlcRaW2bvn4zcSaV8byZgA" class="slack-button" target="_blank" rel="noopener">
+                <svg class="slack-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.521-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.523 2.521h-2.521V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.521A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.523v-2.521h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z"/>
+                </svg>
+                Join our Slack
+            </a>
+
             <div class="hero">
                 <div class="hero-content">
                     <div class="mascot-gif-container">
@@ -482,21 +154,21 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <h1>Gonzo</h1>
                 <p class="subtitle">
-                    A powerful, real-time log analysis terminal UI inspired by k9s. 
+                    A powerful, real-time log analysis terminal UI inspired by k9s.
                     Analyze log streams with beautiful charts, AI-powered insights, and advanced filtering - all from your terminal.
                 </p>
-                
-                <div class="github-stats">
+
+                <div class="github-stats" aria-live="polite">
                     <div class="star-count" id="starCount">
-                        <span class="star-icon">⭐</span>
-                        <span id="starNumber">Loading...</span>
+                        <span class="star-icon" aria-hidden="true">⭐</span>
+                        <span id="starNumber">Loading…</span>
                         <span>stars</span>
                     </div>
                 </div>
-                
+
                 <div class="cta-buttons">
                     <div class="cta-group">
                         <a href="https://github.com/control-theory/gonzo" class="btn btn-primary">Star on GitHub</a>
@@ -590,8 +262,8 @@
                     <h3>Using Go</h3>
                     <p>Install directly with Go (requires Go 1.21+)</p>
                     <div class="terminal" id="code-go">
-                        <button class="copy-btn" type="button" data-target="code-go">
-                            <svg viewBox="0 0 24 24"><path d="M16 4h-1.18A3 3 0 0012 2a3 3 0 00-2.82 2H8a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V6a2 2 0 00-2-2zm-4-1a1 1 0 011 1h-2a1 1 0 011-1zm4 15H8V6h1.18A3 3 0 0012 8a3 3 0 002.82-2H16v12z"/></svg>
+                        <button class="copy-btn" type="button" data-target="code-go" aria-label="Copy Go install command">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 4h-1.18A3 3 0 0012 2a3 3 0 00-2.82 2H8a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V6a2 2 0 00-2-2zm-4-1a1 1 0 011 1h-2a1 1 0 011-1zm4 15H8V6h1.18A3 3 0 0012 8a3 3 0 002.82-2H16v12z"/></svg>
                         </button>
                         <div class="terminal-content">go install github.com/control-theory/gonzo/cmd/gonzo@latest</div>
                     </div>
@@ -601,8 +273,8 @@
                     <h3>Using Homebrew</h3>
                     <p>Available on macOS and Linux</p>
                     <div class="terminal" id="code-brew">
-                        <button class="copy-btn" type="button" data-target="code-brew">
-                            <svg viewBox="0 0 24 24"><path d="M16 4h-1.18A3 3 0 0012 2a3 3 0 00-2.82 2H8a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V6a2 2 0 00-2-2zm-4-1a1 1 0 011 1h-2a1 1 0 011-1zm4 15H8V6h1.18A3 3 0 0012 8a3 3 0 002.82-2H16v12z"/></svg>
+                        <button class="copy-btn" type="button" data-target="code-brew" aria-label="Copy Homebrew install command">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 4h-1.18A3 3 0 0012 2a3 3 0 00-2.82 2H8a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V6a2 2 0 00-2-2zm-4-1a1 1 0 011 1h-2a1 1 0 011-1zm4 15H8V6h1.18A3 3 0 0012 8a3 3 0 002.82-2H16v12z"/></svg>
                         </button>
                         <div class="terminal-content">brew install gonzo</div>
                     </div>
@@ -612,7 +284,7 @@
                     <h3>Download Binary</h3>
                     <p>Get the latest release for your platform</p>
                     <div class="download-link">
-                        <a href="https://github.com/control-theory/gonzo/releases">-> Download from GitHub Releases</a>
+                        <a href="https://github.com/control-theory/gonzo/releases">-&gt; Download from GitHub Releases</a>
                     </div>
                 </div>
 
@@ -620,8 +292,8 @@
                     <h3>Build from Source</h3>
                     <p>Clone and build the project yourself</p>
                     <div class="terminal" id="code-build">
-                        <button class="copy-btn" type="button" data-target="code-build">
-                            <svg viewBox="0 0 24 24"><path d="M16 4h-1.18A3 3 0 0012 2a3 3 0 00-2.82 2H8a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V6a2 2 0 00-2-2zm-4-1a1 1 0 011 1h-2a1 1 0 011-1zm4 15H8V6h1.18A3 3 0 0012 8a3 3 0 002.82-2H16v12z"/></svg>
+                        <button class="copy-btn" type="button" data-target="code-build" aria-label="Copy build commands">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 4h-1.18A3 3 0 0012 2a3 3 0 00-2.82 2H8a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V6a2 2 0 00-2-2zm-4-1a1 1 0 011 1h-2a1 1 0 011-1zm4 15H8V6h1.18A3 3 0 0012 8a3 3 0 002.82-2H16v12z"/></svg>
                         </button>
                         <div class="terminal-content">git clone https://github.com/control-theory/gonzo.git
 cd gonzo
@@ -629,7 +301,7 @@ make build</div>
                     </div>
                 </div>
             </div>
-            
+
             <div class="quickstart">
                 <h3>Quick Start</h3>
                 <p>Start analyzing logs in seconds:</p>
@@ -664,116 +336,112 @@ $ cat logs.json | gonzo</div>
                 <a href="https://github.com/control-theory/gonzo/issues">Report Issues</a>
             </div>
             <p style="margin-bottom: 1rem;">
-                Built with <span class="heart">❤️</span> by 
+                Built with <span class="heart">❤️</span> by
                 <a href="https://controltheory.com" style="color: var(--light-blue); text-decoration: none;">ControlTheory</a>
             </p>
             <p style="color: var(--gray); font-size: 0.9rem;">
-                Open source software licensed under MIT. 
+                Open source software licensed under MIT.
                 <a href="https://github.com/control-theory/gonzo/blob/main/LICENSE" style="color: var(--gray);">View License</a>
             </p>
         </div>
     </footer>
 
     <script>
-        // Fetch GitHub star count
+        // ---------- GitHub star count (with timeout + fallback) ----------
         async function fetchStarCount() {
+            const starEl = document.getElementById('starNumber');
+            if (!starEl) return;
+            const controller = new AbortController();
+            const t = setTimeout(() => controller.abort(), 4000); // 4s timeout to avoid hanging
+
             try {
-                const response = await fetch('https://api.github.com/repos/control-theory/gonzo');
-                if (response.ok) {
-                    const data = await response.json();
-                    const starCount = data.stargazers_count || 0;
-                    document.getElementById('starNumber').textContent = starCount.toLocaleString();
-                } else {
-                    document.getElementById('starNumber').textContent = '★';
-                    console.log('Could not fetch star count: HTTP', response.status);
+                const res = await fetch('https://api.github.com/repos/control-theory/gonzo', {
+                    headers: { 'Accept': 'application/vnd.github+json' },
+                    cache: 'no-store',
+                    signal: controller.signal
+                });
+                clearTimeout(t);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                const stars = (data && typeof data.stargazers_count === 'number') ? data.stargazers_count : null;
+                if (stars !== null) {
+                    starEl.textContent = stars.toLocaleString();
+                    return;
                 }
-            } catch (error) {
-                document.getElementById('starNumber').textContent = '★';
-                console.log('Could not fetch star count:', error);
+                throw new Error('No stargazers_count in response');
+            } catch (e) {
+                // Fallback: try shields.io JSON endpoint (CORS enabled)
+                try {
+                    const res2 = await fetch('https://img.shields.io/github/stars/control-theory/gonzo.json', { cache: 'no-store' });
+                    if (!res2.ok) throw new Error('HTTP ' + res2.status);
+                    const json = await res2.json();
+                    // json.value is a string like "1.2k"; prefer numeric if possible
+                    starEl.textContent = json.value || '—';
+                } catch (e2) {
+                    starEl.textContent = '—';
+                    console.log('Star count fetch failed:', e, e2);
+                }
             }
         }
 
-        // Smooth scrolling for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
+        // ---------- Smooth scrolling for same-page anchors ----------
+        document.addEventListener('click', function (e) {
+            const a = e.target.closest('a[href^="#"]');
+            if (!a) return;
+            const href = a.getAttribute('href');
+            if (href.length > 1) {
                 e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
+                const target = document.querySelector(href);
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         });
 
-        // Copy functionality
-        function copyToClipboard(text) {
+        // ---------- Copy to clipboard (with fallback) ----------
+        function copyText(text) {
             if (navigator.clipboard && window.isSecureContext) {
                 return navigator.clipboard.writeText(text);
-            } else {
-                const textArea = document.createElement('textarea');
-                textArea.value = text;
-                textArea.style.position = 'fixed';
-                textArea.style.left = '-999999px';
-                textArea.style.top = '-999999px';
-                document.body.appendChild(textArea);
-                textArea.focus();
-                textArea.select();
-                
-                return new Promise((resolve, reject) => {
-                    try {
-                        const successful = document.execCommand('copy');
-                        document.body.removeChild(textArea);
-                        if (successful) {
-                            resolve();
-                        } else {
-                            reject();
-                        }
-                    } catch (err) {
-                        document.body.removeChild(textArea);
-                        reject(err);
-                    }
-                });
             }
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'fixed';
+            ta.style.top = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); } finally { document.body.removeChild(ta); }
+            return Promise.resolve();
         }
 
         function getTextFromTerminal(elementId) {
-            const element = document.getElementById(elementId);
-            if (!element) return '';
-            
-            const terminalContent = element.querySelector('.terminal-content');
-            if (!terminalContent) return '';
-            
-            return terminalContent.textContent.trim();
+            const el = document.getElementById(elementId);
+            if (!el) return '';
+            const content = el.querySelector('.terminal-content');
+            return content ? content.textContent.trim() : '';
         }
 
-        // Add click event listeners to copy buttons
-        document.addEventListener('click', function(e) {
-            const copyBtn = e.target.closest('.copy-btn');
-            if (!copyBtn) return;
-            
-            const targetId = copyBtn.getAttribute('data-target');
-            if (!targetId) return;
-            
-            const textToCopy = getTextFromTerminal(targetId);
-            
-            copyToClipboard(textToCopy).then(() => {
-                // Visual feedback
-                copyBtn.style.transform = 'scale(0.95)';
-                copyBtn.style.background = 'rgba(76, 175, 80, 0.4)';
-                
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.copy-btn');
+            if (!btn) return;
+            const targetId = btn.getAttribute('data-target');
+            const text = getTextFromTerminal(targetId);
+            if (!text) return;
+
+            copyText(text).then(() => {
+                btn.setAttribute('aria-label', 'Copied!');
+                btn.style.transform = 'scale(0.95)';
+                btn.style.background = 'rgba(76, 175, 80, 0.4)';
                 setTimeout(() => {
-                    copyBtn.style.transform = '';
-                    copyBtn.style.background = '';
-                }, 200);
+                    btn.style.transform = '';
+                    btn.style.background = '';
+                    btn.setAttribute('aria-label', btn.getAttribute('data-aria-label') || 'Copy');
+                }, 600);
             }).catch((err) => {
                 console.error('Copy failed:', err);
                 alert('Copy failed. Please select and copy the text manually.');
             });
         });
 
-        // Load star count when page loads
+        // ---------- Init ----------
         document.addEventListener('DOMContentLoaded', fetchStarCount);
     </script>
 </body>
