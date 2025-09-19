@@ -737,7 +737,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 💬 Slack Community
 
-- [Invite/Join](https://join.slack.com/t/controltheory-l994510/shared_invite/zt-3dr6rke5w-GlcRaW2bvn4zcSaV8byZgA)
+- [Invite/Join](https://join.slack.com/t/ctrltheorycommunity/shared_invite/zt-3dr6rke5w-GlcRaW2bvn4zcSaV8byZgA)
 - [Channel Link](https://ctrltheorycommunity.slack.com)
 
 ## 🐛 Reporting Issues
