@@ -79,7 +79,7 @@ func (c *Checker) CheckInBackground() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		// Get anonymous ID for analytics
+		// Get anonymous ID for caching uniqueness
 		anonID := getOrCreateAnonID()
 
 		// Determine channel (stable for tagged releases, edge for local builds)
