@@ -16,6 +16,7 @@ import (
 	"github.com/control-theory/gonzo/internal/otlplog"
 	"github.com/control-theory/gonzo/internal/otlpreceiver"
 	"github.com/control-theory/gonzo/internal/tui"
+	versioncheck "github.com/control-theory/gonzo/internal/version"
 	"github.com/control-theory/gonzo/internal/vmlogs"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -28,6 +29,14 @@ func runApp(cmd *cobra.Command, args []string) error {
 	if v, _ := cmd.Flags().GetBool("version"); v {
 		versionCmd.Run(cmd, args)
 		return nil
+	}
+
+	// Start version checking in background (if not disabled)
+	var versionChecker *versioncheck.Checker
+	if !cfg.DisableVersionCheck {
+		currentVersion, currentCommit := GetVersionInfo()
+		versionChecker = versioncheck.NewChecker(currentVersion, currentCommit)
+		versionChecker.CheckInBackground()
 	}
 
 	// Initialize skin/color scheme
@@ -81,6 +90,11 @@ func runApp(cmd *cobra.Command, args []string) error {
 	freqMemory := memory.NewFrequencyMemory(cfg.MemorySize)
 
 	// Initialize TUI model with components
+	dashboard := tui.NewDashboardModel(cfg.LogBuffer, cfg.UpdateInterval, cfg.AIModel, textAnalyzer.GetStopWords())
+	if versionChecker != nil {
+		dashboard.SetVersionChecker(versionChecker)
+	}
+
 	tuiModel := &simpleTuiModel{
 		formatDetector: formatDetector,
 		logConverter:   logConverter,
@@ -88,9 +102,10 @@ func runApp(cmd *cobra.Command, args []string) error {
 		textAnalyzer:   textAnalyzer,
 		otlpAnalyzer:   otlpAnalyzer,
 		freqMemory:     freqMemory,
-		dashboard:      tui.NewDashboardModel(cfg.LogBuffer, cfg.UpdateInterval, cfg.AIModel, textAnalyzer.GetStopWords()),
+		dashboard:      dashboard,
 		updateInterval: cfg.UpdateInterval,
 		testMode:       cfg.TestMode,
+		versionChecker: versionChecker,
 	}
 
 	var p *tea.Program
@@ -143,6 +158,7 @@ type simpleTuiModel struct {
 	testMode       bool
 	ctx            context.Context
 	cancelFunc     context.CancelFunc
+	versionChecker *versioncheck.Checker
 
 	// Internal state
 	finished       bool

@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 )
@@ -110,6 +111,15 @@ func (m *DashboardModel) renderStatusLine() string {
 
 	// Build right section (status info and branding)
 	var statusInfo string
+
+	// Check for version updates (only if version checker is enabled)
+	var versionUpdateInfo string
+	if m.versionChecker != nil {
+		if updateInfo := m.versionChecker.GetUpdateInfoNonBlocking(); updateInfo != nil && updateInfo.UpdateAvailable {
+			versionUpdateInfo = fmt.Sprintf("🔄 v%s available", updateInfo.LatestVersion)
+		}
+	}
+
 	if !m.filterActive && !m.searchActive && !m.showModal && !m.showHelp {
 		if m.viewPaused {
 			statusInfo = "⏸"
@@ -129,12 +139,20 @@ func (m *DashboardModel) renderStatusLine() string {
 		branding = m.renderGonzoBranding()
 	}
 
-	if statusInfo != "" && branding != "" {
-		rightText = fmt.Sprintf("%s  %s", statusInfo, branding)
-	} else if statusInfo != "" {
-		rightText = statusInfo
-	} else {
-		rightText = branding
+	// Combine status info, version update, and branding
+	var rightParts []string
+	if statusInfo != "" {
+		rightParts = append(rightParts, statusInfo)
+	}
+	if versionUpdateInfo != "" {
+		rightParts = append(rightParts, versionUpdateInfo)
+	}
+	if branding != "" && m.width >= 30 {
+		rightParts = append(rightParts, branding)
+	}
+
+	if len(rightParts) > 0 {
+		rightText = strings.Join(rightParts, "  ")
 	}
 
 	// Calculate dynamic widths based on available space using visible width

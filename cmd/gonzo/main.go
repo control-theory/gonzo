@@ -19,26 +19,32 @@ var (
 	goVersion = "unknown"
 )
 
+// GetVersionInfo returns the current version and commit information
+func GetVersionInfo() (string, string) {
+	return version, commit
+}
+
 // Config struct for application configuration
 type Config struct {
-	MemorySize     int           `mapstructure:"memory-size"`
-	UpdateInterval time.Duration `mapstructure:"update-interval"`
-	LogBuffer      int           `mapstructure:"log-buffer"`
-	TestMode       bool          `mapstructure:"test-mode"`
-	ConfigFile     string        `mapstructure:"config"`
-	AIModel        string        `mapstructure:"ai-model"`
-	Files          []string      `mapstructure:"files"`
-	Follow         bool          `mapstructure:"follow"`
-	OTLPEnabled    bool          `mapstructure:"otlp-enabled"`
-	OTLPGRPCPort   int           `mapstructure:"otlp-grpc-port"`
-	OTLPHTTPPort   int           `mapstructure:"otlp-http-port"`
-	VmlogsURL      string        `mapstructure:"vmlogs-url"`
-	VmlogsUser     string        `mapstructure:"vmlogs-user"`
-	VmlogsPassword string        `mapstructure:"vmlogs-password"`
-	VmlogsQuery    string        `mapstructure:"vmlogs-query"`
-	Skin           string        `mapstructure:"skin"`
-	StopWords      []string      `mapstructure:"stop-words"`
-	Format         string        `mapstructure:"format"`
+	MemorySize           int           `mapstructure:"memory-size"`
+	UpdateInterval       time.Duration `mapstructure:"update-interval"`
+	LogBuffer            int           `mapstructure:"log-buffer"`
+	TestMode             bool          `mapstructure:"test-mode"`
+	ConfigFile           string        `mapstructure:"config"`
+	AIModel              string        `mapstructure:"ai-model"`
+	Files                []string      `mapstructure:"files"`
+	Follow               bool          `mapstructure:"follow"`
+	OTLPEnabled          bool          `mapstructure:"otlp-enabled"`
+	OTLPGRPCPort         int           `mapstructure:"otlp-grpc-port"`
+	OTLPHTTPPort         int           `mapstructure:"otlp-http-port"`
+	VmlogsURL            string        `mapstructure:"vmlogs-url"`
+	VmlogsUser           string        `mapstructure:"vmlogs-user"`
+	VmlogsPassword       string        `mapstructure:"vmlogs-password"`
+	VmlogsQuery          string        `mapstructure:"vmlogs-query"`
+	Skin                 string        `mapstructure:"skin"`
+	StopWords            []string      `mapstructure:"stop-words"`
+	Format               string        `mapstructure:"format"`
+	DisableVersionCheck  bool          `mapstructure:"disable-version-check"`
 }
 
 var (
@@ -149,6 +155,7 @@ func init() {
 	rootCmd.Flags().StringP("skin", "s", "default", "Color scheme/skin to use (default, or name of a skin file in ~/.config/gonzo/skins/)")
 	rootCmd.Flags().StringSlice("stop-words", []string{}, "Additional stop words to filter out from analysis (adds to built-in list)")
 	rootCmd.Flags().String("format", "", "Log format to use (auto-detect if not specified). Can be: otlp, json, text, or a custom format name from ~/.config/gonzo/formats/")
+	rootCmd.Flags().Bool("disable-version-check", false, "Disable automatic version checking on startup")
 
 	// Bind flags to viper
 	viper.BindPFlag("memory-size", rootCmd.Flags().Lookup("memory-size"))
@@ -168,6 +175,7 @@ func init() {
 	viper.BindPFlag("skin", rootCmd.Flags().Lookup("skin"))
 	viper.BindPFlag("stop-words", rootCmd.Flags().Lookup("stop-words"))
 	viper.BindPFlag("format", rootCmd.Flags().Lookup("format"))
+	viper.BindPFlag("disable-version-check", rootCmd.Flags().Lookup("disable-version-check"))
 
 	// Add version command
 	rootCmd.AddCommand(versionCmd)

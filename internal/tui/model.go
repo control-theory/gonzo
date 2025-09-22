@@ -7,6 +7,7 @@ import (
 
 	"github.com/control-theory/gonzo/internal/ai"
 	"github.com/control-theory/gonzo/internal/memory"
+	versioncheck "github.com/control-theory/gonzo/internal/version"
 
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -166,6 +167,9 @@ type DashboardModel struct {
 	lifetimeWordCounts     map[string]int64            // Total count per word (for charts)
 	lifetimeAttrKeyCounts  map[string]map[string]int64 // Per attribute key: value -> count (for charts)
 	stopWords              map[string]bool             // Stop words to filter from word counting
+
+	// Version checking
+	versionChecker *versioncheck.Checker // Version checker for update notifications
 }
 
 // UpdateMsg contains data updates for the dashboard
@@ -379,6 +383,11 @@ func (m *DashboardModel) getLifetimeAttributeEntries() []*memory.AttributeStatsE
 	})
 
 	return entries
+}
+
+// SetVersionChecker sets the version checker for update notifications
+func (m *DashboardModel) SetVersionChecker(checker *versioncheck.Checker) {
+	m.versionChecker = checker
 }
 
 // Init initializes the model
