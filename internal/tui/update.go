@@ -556,7 +556,16 @@ func (m *DashboardModel) updateFilteredView() {
 
 	// Apply filter to all entries
 	for _, entry := range m.allLogEntries {
-		if m.filterRegex == nil || m.filterRegex.MatchString(entry.RawLine) {
+		// Check regex filter (if any)
+		passesRegexFilter := m.filterRegex == nil || m.filterRegex.MatchString(entry.RawLine)
+
+		// Check severity filter (if active)
+		// Normalize severity to match filter keys
+		normalizedSeverity := normalizeSeverityLevel(entry.Severity)
+		passesSeverityFilter := !m.severityFilterActive || m.severityFilter[normalizedSeverity]
+
+		// Include entry only if it passes both filters
+		if passesRegexFilter && passesSeverityFilter {
 			m.logEntries = append(m.logEntries, entry)
 		}
 	}

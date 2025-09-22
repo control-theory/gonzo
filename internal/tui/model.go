@@ -67,7 +67,8 @@ type DashboardModel struct {
 	showPatternsModal  bool
 	showStatsModal     bool
 	showCountsModal    bool
-	showLogViewerModal bool
+	showLogViewerModal    bool
+	showSeverityFilterModal bool
 
 	// Data
 	snapshot      *memory.FrequencySnapshot
@@ -93,6 +94,11 @@ type DashboardModel struct {
 	searchInput  textinput.Model
 	searchActive bool
 	searchTerm   string // For 's' command - highlights just the term
+
+	// Severity Filter
+	severityFilter         map[string]bool // Which severity levels are enabled (true = show, false = hide)
+	severityFilterSelected int             // Selected index in severity filter modal
+	severityFilterActive   bool            // Whether severity filtering is active (any severity disabled)
 
 	// Charts data for rendering
 	chartsInitialized bool
@@ -292,6 +298,20 @@ func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiModel s
 		lifetimeWordCounts:     make(map[string]int64),
 		lifetimeAttrKeyCounts:  make(map[string]map[string]int64),
 		stopWords:              stopWords,
+
+		// Initialize severity filter (all levels enabled by default)
+		severityFilter: map[string]bool{
+			"TRACE":    true,
+			"DEBUG":    true,
+			"INFO":     true,
+			"WARN":     true,
+			"ERROR":    true,
+			"FATAL":    true,
+			"CRITICAL": true,
+			"UNKNOWN":  true,
+		},
+		severityFilterSelected: 0,
+		severityFilterActive:   false,
 	}
 
 	// Initialize AI status based on client validation

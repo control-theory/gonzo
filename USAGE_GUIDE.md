@@ -65,11 +65,69 @@ cat test.log | ./build/gonzo
 ```
 
 ### 3. Keyboard Shortcuts (Interactive Mode)
+
+#### Navigation & Control
 - `q` or `Ctrl+C` - Clean exit
-- `Tab`/`Shift+Tab` - Navigate sections (if implemented)  
-- `↑/↓` or `k/j` - Select items (if implemented)
-- `Enter` - Show details (if implemented)
-- `/` - Filter mode (if implemented)
+- `Tab`/`Shift+Tab` - Navigate between sections
+- `↑/↓` or `k/j` - Select items within sections
+- `Enter` - Show details for selected item
+- `Space` - Pause/unpause entire dashboard
+
+#### Filtering & Search
+- `/` - Enter regex filter mode
+- `s` - Search and highlight text in logs
+- `Ctrl+S` - Open severity filter modal
+
+#### Severity Filter Modal (`Ctrl+S`)
+- `↑/↓` or `k/j` - Navigate severity options
+- `Space` - Toggle selected severity level on/off
+- `Enter` - Apply filter and close modal
+- `ESC` - Cancel changes and close modal
+
+**Modal Features:**
+- Select All/None options for quick changes
+- Individual severity toggles (FATAL, ERROR, WARN, INFO, DEBUG, TRACE, etc.)
+- Color-coded severity levels
+- Real-time active count display
+
+#### Other Actions
+- `f` - Open fullscreen log viewer modal
+- `c` - Toggle Host/Service columns in log view
+- `r` - Reset all data (manual reset)
+- `u`/`U` - Cycle update intervals
+- `i` - AI analysis (when viewing log details)
+- `m` - Switch AI model
+- `?`/`h` - Show help
+
+### 4. Filtering Examples
+
+#### Using Severity Filter
+```bash
+# Start Gonzo with mixed severity logs
+./build/gonzo -f application.log
+
+# In the TUI:
+# 1. Press Ctrl+S to open severity filter modal
+# 2. Navigate to "Select None" and press Space to disable all
+# 3. Navigate to "ERROR" and press Space to enable only errors
+# 4. Navigate to "FATAL" and press Space to also show fatal logs
+# 5. Press Enter to apply filter
+# Now only ERROR and FATAL logs will be displayed
+```
+
+#### Combining Filters
+```bash
+# Start with logs that have various severities and content
+./build/gonzo -f /var/log/app.log
+
+# In the TUI:
+# 1. Press / to enter regex filter mode, type "database" and press Enter
+# 2. Press Ctrl+S to open severity filter
+# 3. Navigate to "Select None", press Space
+# 4. Enable only "ERROR" and "WARN" levels
+# 5. Press Enter to apply
+# Now you see only database-related errors and warnings
+```
 
 ## Command Line Options
 

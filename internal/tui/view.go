@@ -47,6 +47,11 @@ func (m *DashboardModel) View() string {
 		return m.renderModelSelectionModal()
 	}
 
+	// Show severity filter modal
+	if m.showSeverityFilterModal {
+		return m.renderSeverityFilterModal()
+	}
+
 	// Show detail modal - use lipgloss overlay
 	if m.showModal {
 		return m.renderModalOverlay()
