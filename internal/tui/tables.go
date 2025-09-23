@@ -44,25 +44,45 @@ func (m *DashboardModel) formatAttributesTable(attributes map[string]string, max
 
 	// Create table rows
 	rows := []table.Row{}
+	totalRows := 0
 	for _, key := range keys {
 		value := attributes[key]
-		// Truncate long values to fit
-		if len(value) > valueWidth-3 {
-			value = value[:valueWidth-3] + "..."
-		}
-		// Truncate long keys to fit
+
+		// Always truncate long keys to fit (keys are less important to see in full)
 		displayKey := key
 		if len(displayKey) > keyWidth-3 {
 			displayKey = displayKey[:keyWidth-3] + "..."
 		}
-		rows = append(rows, table.Row{displayKey, value})
+
+		// Handle value display based on wrapping setting
+		if m.attributeWrappingEnabled && len(value) > valueWidth {
+			// Wrap long values across multiple rows
+			wrappedLines := wrapText(value, valueWidth)
+			for i, line := range wrappedLines {
+				if i == 0 {
+					// First line shows the key
+					rows = append(rows, table.Row{displayKey, line})
+				} else {
+					// Subsequent lines have empty key column
+					rows = append(rows, table.Row{"", line})
+				}
+				totalRows++
+			}
+		} else {
+			// Truncate long values to fit (default behavior)
+			if len(value) > valueWidth-3 {
+				value = value[:valueWidth-3] + "..."
+			}
+			rows = append(rows, table.Row{displayKey, value})
+			totalRows++
+		}
 	}
 
 	// Create and configure table
 	t := table.New(
 		table.WithColumns(columns),
 		table.WithRows(rows),
-		table.WithHeight(len(rows)+2), // +2 for header and padding
+		table.WithHeight(totalRows+2), // +2 for header and padding
 		table.WithWidth(maxWidth),
 		table.WithFocused(false), // Disable focus to prevent selection
 	)
@@ -153,6 +173,43 @@ func (m *DashboardModel) formatLogDetails(entry LogEntry, maxWidth int) string {
 	// Chat history is now handled separately in the chat pane
 
 	return details.String()
+}
+
+// wrapText wraps text to fit within the specified width
+func wrapText(text string, width int) []string {
+	if len(text) <= width {
+		return []string{text}
+	}
+
+	var lines []string
+	for len(text) > width {
+		// Find the best break point (prefer spaces)
+		breakPoint := width
+
+		// Look for a space near the end to break on word boundary
+		for i := width - 1; i > width/2 && i < len(text); i-- {
+			if text[i] == ' ' {
+				breakPoint = i
+				break
+			}
+		}
+
+		// Add the line (excluding the space if we broke on one)
+		if breakPoint < len(text) && text[breakPoint] == ' ' {
+			lines = append(lines, text[:breakPoint])
+			text = text[breakPoint+1:] // Skip the space
+		} else {
+			lines = append(lines, text[:breakPoint])
+			text = text[breakPoint:]
+		}
+	}
+
+	// Add the remaining text
+	if len(text) > 0 {
+		lines = append(lines, text)
+	}
+
+	return lines
 }
 
 // formatAttributeValuesModal formats the attribute values modal showing individual values and their counts with full width layout

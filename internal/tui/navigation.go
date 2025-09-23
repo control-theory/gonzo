@@ -861,6 +861,16 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					}
 					return m, nil
 				}
+			case "w":
+				// Toggle attribute wrapping - only when not in chat mode
+				if !m.chatActive {
+					m.attributeWrappingEnabled = !m.attributeWrappingEnabled
+					// Refresh the modal content with new wrapping setting
+					if m.currentLogEntry != nil {
+						m.modalContent = m.formatLogDetails(*m.currentLogEntry, 60)
+					}
+					return m, nil
+				}
 			case "escape", "esc": // escape to close modal (only if not in chat mode)
 				m.showModal = false
 				m.modalContent = ""
@@ -898,6 +908,14 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				return m, nil
 			case "pgdown":
 				m.infoViewport.HalfPageDown()
+				return m, nil
+			case "w":
+				// Toggle attribute wrapping
+				m.attributeWrappingEnabled = !m.attributeWrappingEnabled
+				// Refresh the modal content with new wrapping setting
+				if m.currentLogEntry != nil {
+					m.modalContent = m.formatLogDetails(*m.currentLogEntry, 60)
+				}
 				return m, nil
 			case "escape", "esc":
 				m.showModal = false

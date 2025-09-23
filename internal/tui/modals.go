@@ -301,6 +301,12 @@ func (m *DashboardModel) renderModalStatusBar() string {
 			if m.aiClient != nil {
 				statusItems = append(statusItems, "i: AI Analysis")
 			}
+			// Add wrapping toggle for log details modal
+			if m.attributeWrappingEnabled {
+				statusItems = append(statusItems, "w: Disable wrapping")
+			} else {
+				statusItems = append(statusItems, "w: Enable wrapping")
+			}
 			statusItems = append(statusItems, "↑↓/Wheel: Scroll", "PgUp/PgDn: Page")
 		}
 	} else {

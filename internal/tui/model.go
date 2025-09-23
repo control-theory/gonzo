@@ -111,6 +111,9 @@ type DashboardModel struct {
 	logAutoScroll    bool // Auto-scroll to latest logs in log viewer
 	instructionsScrollOffset int // Scroll position for instructions/filter status screen
 
+	// Modal display options
+	attributeWrappingEnabled bool // Whether to wrap attribute values instead of truncating them
+
 	// Update interval management
 	availableIntervals []time.Duration
 	currentIntervalIdx int
@@ -283,6 +286,7 @@ func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiModel s
 		logAutoScroll:       true,               // Start with auto-scroll enabled
 		showColumns:         true,               // Show Host/Service columns by default
 		instructionsScrollOffset: 0,             // Start at top of instructions
+		attributeWrappingEnabled: false,         // Default to truncating (not wrapping)
 		// Initialize statistics tracking
 		statsStartTime:      time.Now(),
 		statsTotalBytes:     0,
