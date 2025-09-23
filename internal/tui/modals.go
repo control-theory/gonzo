@@ -414,7 +414,7 @@ SECTIONS:
 FILTER & SEARCH:
   Filter (/): Type regex patterns to filter displayed logs
   Search (s): Type text to highlight in displayed logs
-  Severity (Ctrl+F): Filter by log severity levels
+  Severity (Ctrl+f): Filter by log severity levels
   Examples: "error", "k8s.*pod", "severity.*INFO"
 
 AI ANALYSIS:

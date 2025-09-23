@@ -78,7 +78,7 @@ cat test.log | ./build/gonzo
 - `s` - Search and highlight text in logs
 - `Ctrl+F` - Open severity filter modal
 
-#### Severity Filter Modal (`Ctrl+F`)
+#### Severity Filter Modal (`Ctrl+f`)
 - `↑/↓` or `k/j` - Navigate severity options
 - `Space` - Toggle selected severity level on/off
 - `Enter` - Apply filter and close modal (or quick-select All/None)
