@@ -329,18 +329,170 @@ func (m *DashboardModel) renderLogScrollContent(height int, logWidth int) []stri
 			"  • Stream logs: kubectl logs -f pod | gonzo",
 			"  • From file: gonzo < application.log",
 			"",
+		}
+
+		// Add current filters section if any are applied
+		filterStatus := m.buildFilterStatus()
+		if len(filterStatus) > 0 {
+			instructions = append(instructions, "🔍 Current filters:")
+			instructions = append(instructions, filterStatus...)
+			instructions = append(instructions, "")
+		}
+
+		instructions = append(instructions, []string{
 			"📋 Key commands:",
 			"  • ?/h: Show help",
 			"  • /: Filter logs (regex)",
+			"  • Ctrl+f: Filter logs by severity",
 			"  • s: Search and highlight",
 			"  • Tab: Navigate sections",
 			"  • q: Quit",
+		}...)
+
+		// Handle scrolling for instructions if they exceed available height
+		availableLines := height - 1 // Reserve space for status line that's already added
+		if availableLines < 1 {
+			availableLines = 1
 		}
 
-		logLines = append(logLines, instructions...)
+		if len(instructions) > availableLines {
+			// Add scroll indicators and implement scrolling
+			maxScroll := len(instructions) - availableLines + 1 // +1 for scroll indicator space
+			if m.instructionsScrollOffset > maxScroll {
+				m.instructionsScrollOffset = maxScroll
+			}
+			if m.instructionsScrollOffset < 0 {
+				m.instructionsScrollOffset = 0
+			}
+
+			// Add scroll up indicator if not at top
+			if m.instructionsScrollOffset > 0 {
+				scrollUpIndicator := lipgloss.NewStyle().
+					Foreground(ColorGray).
+					Render(fmt.Sprintf("  ↑ %d more lines above", m.instructionsScrollOffset))
+				logLines = append(logLines, scrollUpIndicator)
+				availableLines-- // Use one line for indicator
+			}
+
+			// Show visible portion of instructions
+			endIdx := m.instructionsScrollOffset + availableLines
+			if endIdx > len(instructions) {
+				endIdx = len(instructions)
+			}
+
+			// Reserve space for bottom scroll indicator if needed
+			if endIdx < len(instructions) {
+				availableLines-- // Reserve space for bottom indicator
+				endIdx = m.instructionsScrollOffset + availableLines
+			}
+
+			// Add visible instructions
+			visibleInstructions := instructions[m.instructionsScrollOffset:endIdx]
+			logLines = append(logLines, visibleInstructions...)
+
+			// Add scroll down indicator if not at bottom
+			if endIdx < len(instructions) {
+				remaining := len(instructions) - endIdx
+				scrollDownIndicator := lipgloss.NewStyle().
+					Foreground(ColorGray).
+					Render(fmt.Sprintf("  ↓ %d more lines below (use ↑↓ or k/j to scroll)", remaining))
+				logLines = append(logLines, scrollDownIndicator)
+			}
+		} else {
+			// All instructions fit, no scrolling needed
+			logLines = append(logLines, instructions...)
+		}
 	}
 
 	return logLines
+}
+
+// buildFilterStatus returns a list of currently applied filters for display when no logs are shown
+func (m *DashboardModel) buildFilterStatus() []string {
+	var filters []string
+
+	// Check severity filter
+	if m.severityFilterActive {
+		disabledSeverities := []string{}
+		enabledSeverities := []string{}
+
+		severityLevels := []string{"FATAL", "CRITICAL", "ERROR", "WARN", "INFO", "DEBUG", "TRACE", "UNKNOWN"}
+		for _, severity := range severityLevels {
+			if enabled, exists := m.severityFilter[severity]; exists {
+				if enabled {
+					enabledSeverities = append(enabledSeverities, severity)
+				} else {
+					disabledSeverities = append(disabledSeverities, severity)
+				}
+			}
+		}
+
+		if len(enabledSeverities) > 0 && len(enabledSeverities) < len(severityLevels) {
+			if len(enabledSeverities) <= 3 {
+				filters = append(filters, "  • Severity: Only showing "+joinWithCommas(enabledSeverities))
+			} else {
+				filters = append(filters, "  • Severity: Hiding "+joinWithCommas(disabledSeverities))
+			}
+		} else if len(enabledSeverities) == 0 {
+			filters = append(filters, "  • Severity: All severities disabled (no logs will show)")
+		}
+	}
+
+	// Check regex filter
+	if m.filterRegex != nil {
+		pattern := m.filterInput.Value()
+		if pattern == "" && m.filterRegex != nil {
+			pattern = m.filterRegex.String()
+		}
+		if pattern != "" {
+			filters = append(filters, "  • Regex filter: "+pattern)
+		}
+	}
+
+	// Check search term
+	if m.searchTerm != "" {
+		filters = append(filters, "  • Search highlight: "+m.searchTerm)
+	}
+
+	// Add instructions for clearing filters if any are active
+	if len(filters) > 0 {
+		filters = append(filters, "")
+		filters = append(filters, "  💡 To clear filters:")
+		if m.severityFilterActive {
+			filters = append(filters, "    • Ctrl+F → Select All → Enter (enable all severities)")
+		}
+		if m.filterRegex != nil {
+			filters = append(filters, "    • / → Backspace/Delete → Enter (clear regex)")
+		}
+		if m.searchTerm != "" {
+			filters = append(filters, "    • s → Backspace/Delete → Enter (clear search)")
+		}
+	}
+
+	return filters
+}
+
+// joinWithCommas joins a slice of strings with commas and "and" before the last item
+func joinWithCommas(items []string) string {
+	if len(items) == 0 {
+		return ""
+	}
+	if len(items) == 1 {
+		return items[0]
+	}
+	if len(items) == 2 {
+		return items[0] + " and " + items[1]
+	}
+
+	result := ""
+	for i, item := range items {
+		if i == len(items)-1 {
+			result += "and " + item
+		} else {
+			result += item + ", "
+		}
+	}
+	return result
 }
 
 // renderLogScroll renders the scrolling log section

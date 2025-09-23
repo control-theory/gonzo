@@ -76,16 +76,16 @@ cat test.log | ./build/gonzo
 #### Filtering & Search
 - `/` - Enter regex filter mode
 - `s` - Search and highlight text in logs
-- `Ctrl+S` - Open severity filter modal
+- `Ctrl+F` - Open severity filter modal
 
-#### Severity Filter Modal (`Ctrl+S`)
+#### Severity Filter Modal (`Ctrl+F`)
 - `↑/↓` or `k/j` - Navigate severity options
 - `Space` - Toggle selected severity level on/off
-- `Enter` - Apply filter and close modal
+- `Enter` - Apply filter and close modal (or quick-select All/None)
 - `ESC` - Cancel changes and close modal
 
 **Modal Features:**
-- Select All/None options for quick changes
+- Select All/None options for quick changes (Enter to apply and close instantly)
 - Individual severity toggles (FATAL, ERROR, WARN, INFO, DEBUG, TRACE, etc.)
 - Color-coded severity levels
 - Real-time active count display
@@ -107,12 +107,14 @@ cat test.log | ./build/gonzo
 ./build/gonzo -f application.log
 
 # In the TUI:
-# 1. Press Ctrl+S to open severity filter modal
-# 2. Navigate to "Select None" and press Space to disable all
+# Quick shortcut:
+# 1. Press Ctrl+f to open severity filter modal
+# 2. Navigate to "Select None" and press Enter (applies and closes instantly)
 # 3. Navigate to "ERROR" and press Space to enable only errors
 # 4. Navigate to "FATAL" and press Space to also show fatal logs
 # 5. Press Enter to apply filter
 # Now only ERROR and FATAL logs will be displayed
+
 ```
 
 #### Combining Filters
@@ -122,10 +124,11 @@ cat test.log | ./build/gonzo
 
 # In the TUI:
 # 1. Press / to enter regex filter mode, type "database" and press Enter
-# 2. Press Ctrl+S to open severity filter
-# 3. Navigate to "Select None", press Space
-# 4. Enable only "ERROR" and "WARN" levels
-# 5. Press Enter to apply
+# 2. Press Ctrl+f to open severity filter
+# 3. Navigate to "Select None" and press Enter (quick clear)
+# 4. Press Ctrl+f again to reopen modal
+# 5. Enable only "ERROR" and "WARN" levels with Space
+# 6. Press Enter to apply
 # Now you see only database-related errors and warnings
 ```
 

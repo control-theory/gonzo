@@ -222,6 +222,12 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if m.showSeverityFilterModal {
+			// Restore original state (cancel changes)
+			for k, v := range m.severityFilterOriginal {
+				m.severityFilter[k] = v
+			}
+			m.updateSeverityFilterActiveStatus()
+			m.updateFilteredView()
 			m.showSeverityFilterModal = false
 			return m, nil
 		}
@@ -386,9 +392,14 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-	case "ctrl+s":
+	case "ctrl+f":
 		// Severity filter modal
 		if !m.showModal && !m.filterActive && !m.searchActive && !m.showHelp && !m.showPatternsModal && !m.showModelSelectionModal && !m.showStatsModal && !m.showCountsModal && !m.showLogViewerModal {
+			// Store original state for ESC cancellation
+			m.severityFilterOriginal = make(map[string]bool)
+			for k, v := range m.severityFilter {
+				m.severityFilterOriginal[k] = v
+			}
 			m.showSeverityFilterModal = true
 			m.severityFilterSelected = 0 // Start at the top
 			return m, nil
@@ -716,13 +727,30 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.updateSeverityFilterActiveStatus()
 			return m, nil
 		case "enter":
-			// Apply filter and close modal
+			// Special handling for Select All/None - apply action and close
+			if m.severityFilterSelected == 0 {
+				// Select All
+				for _, severity := range severityLevels {
+					m.severityFilter[severity] = true
+				}
+				m.showSeverityFilterModal = false
+				m.updateSeverityFilterActiveStatus()
+				m.updateFilteredView()
+				return m, nil
+			} else if m.severityFilterSelected == 1 {
+				// Select None
+				for _, severity := range severityLevels {
+					m.severityFilter[severity] = false
+				}
+				m.showSeverityFilterModal = false
+				m.updateSeverityFilterActiveStatus()
+				m.updateFilteredView()
+				return m, nil
+			}
+			// For other selections, just apply filter and close modal
 			m.showSeverityFilterModal = false
 			m.updateSeverityFilterActiveStatus()
 			m.updateFilteredView()
-			return m, nil
-		case "escape", "esc":
-			m.showSeverityFilterModal = false
 			return m, nil
 		}
 		return m, nil
@@ -896,16 +924,34 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case "up", "k":
+		// Special handling for instructions scrolling when in logs section but no logs are shown
+		if m.activeSection == SectionLogs && len(m.logEntries) <= 0 {
+			if m.instructionsScrollOffset > 0 {
+				m.instructionsScrollOffset--
+			}
+			return m, nil
+		}
 		m.moveSelection(-1)
 		return m, nil
 
 	case "down", "j":
+		// Special handling for instructions scrolling when in logs section but no logs are shown
+		if m.activeSection == SectionLogs && len(m.logEntries) <= 0 {
+			m.instructionsScrollOffset++
+			// The bounds checking will be handled in renderLogScrollContent
+			return m, nil
+		}
 		m.moveSelection(1)
 		return m, nil
 
 	case "home":
 		// Home key: In log viewer section, scroll to top and stop auto-scroll
 		if m.activeSection == SectionLogs {
+			if len(m.logEntries) <= 0 {
+				// Scroll instructions to top
+				m.instructionsScrollOffset = 0
+				return m, nil
+			}
 			m.selectedLogIndex = 0
 			m.logAutoScroll = false // Stop auto-scrolling when at top
 			return m, nil
@@ -914,6 +960,11 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "end":
 		// End key: In log viewer section, scroll to latest and resume auto-scroll
 		if m.activeSection == SectionLogs {
+			if len(m.logEntries) <= 0 {
+				// Scroll instructions to bottom (will be bounded in render function)
+				m.instructionsScrollOffset = 9999 // Large number, will be bounded
+				return m, nil
+			}
 			m.selectedLogIndex = max(0, len(m.logEntries)-1)
 			m.logAutoScroll = true // Resume auto-scrolling
 			return m, nil
@@ -922,6 +973,12 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "pgup":
 		// Page Up: In log viewer section, move up by page
 		if m.activeSection == SectionLogs {
+			if len(m.logEntries) <= 0 {
+				// Page up in instructions
+				pageSize := 5
+				m.instructionsScrollOffset = max(0, m.instructionsScrollOffset-pageSize)
+				return m, nil
+			}
 			pageSize := 10 // Move by 10 entries
 			m.selectedLogIndex = max(0, m.selectedLogIndex-pageSize)
 			if m.selectedLogIndex == 0 {
@@ -933,6 +990,13 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "pgdown", "pagedown":
 		// Page Down: In log viewer section, move down by page
 		if m.activeSection == SectionLogs {
+			if len(m.logEntries) <= 0 {
+				// Page down in instructions
+				pageSize := 5
+				m.instructionsScrollOffset += pageSize
+				// Bounds will be checked in render function
+				return m, nil
+			}
 			pageSize := 10 // Move by 10 entries
 			maxIndex := max(0, len(m.logEntries)-1)
 			m.selectedLogIndex = min(maxIndex, m.selectedLogIndex+pageSize)

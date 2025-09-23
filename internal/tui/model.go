@@ -99,6 +99,7 @@ type DashboardModel struct {
 	severityFilter         map[string]bool // Which severity levels are enabled (true = show, false = hide)
 	severityFilterSelected int             // Selected index in severity filter modal
 	severityFilterActive   bool            // Whether severity filtering is active (any severity disabled)
+	severityFilterOriginal map[string]bool // Original state when modal opened (for ESC cancellation)
 
 	// Charts data for rendering
 	chartsInitialized bool
@@ -108,6 +109,7 @@ type DashboardModel struct {
 	selectedLogIndex int  // For log section navigation
 	viewPaused       bool // Pause view updates when navigating logs
 	logAutoScroll    bool // Auto-scroll to latest logs in log viewer
+	instructionsScrollOffset int // Scroll position for instructions/filter status screen
 
 	// Update interval management
 	availableIntervals []time.Duration
@@ -280,6 +282,7 @@ func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiModel s
 		drain3LastProcessed: 0,                  // Initialize drain3 tracking
 		logAutoScroll:       true,               // Start with auto-scroll enabled
 		showColumns:         true,               // Show Host/Service columns by default
+		instructionsScrollOffset: 0,             // Start at top of instructions
 		// Initialize statistics tracking
 		statsStartTime:      time.Now(),
 		statsTotalBytes:     0,
@@ -312,6 +315,7 @@ func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiModel s
 		},
 		severityFilterSelected: 0,
 		severityFilterActive:   false,
+		severityFilterOriginal: make(map[string]bool), // Initialize empty map for modal state backup
 	}
 
 	// Initialize AI status based on client validation
