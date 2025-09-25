@@ -371,6 +371,26 @@ func (p *Parser) ExtractField(data map[string]interface{}, extractor FieldExtrac
 	return value
 }
 
+// parseUnixValue extracts an int64 from various types (handles JSON number conversion)
+func parseUnixValue(value interface{}, formatName string) (int64, error) {
+	switch v := value.(type) {
+	case float64:
+		return int64(v), nil
+	case int64:
+		return v, nil
+	case int:
+		return int64(v), nil
+	case string:
+		if i, err := strconv.ParseInt(v, 10, 64); err == nil {
+			return i, nil
+		} else {
+			return 0, fmt.Errorf("failed to parse %s timestamp: %s", formatName, v)
+		}
+	default:
+		return 0, fmt.Errorf("unsupported type for %s timestamp: %T", formatName, value)
+	}
+}
+
 // ParseTimestamp parses a timestamp field according to the format
 func (p *Parser) ParseTimestamp(value interface{}, format string) (time.Time, error) {
 	if value == nil {
@@ -385,60 +405,21 @@ func (p *Parser) ParseTimestamp(value interface{}, format string) (time.Time, er
 		return parseTimestampAuto(valueStr)
 	// Protect against numbers or strings for unix, unix_ms and unix_ns types
 	case "unix":
-		var seconds int64
-		switch v := value.(type) {
-		case float64:
-			seconds = int64(v)
-		case int64:
-			seconds = v
-		case int:
-			seconds = int64(v)
-		case string:
-			if i, err := strconv.ParseInt(v, 10, 64); err == nil {
-				seconds = i
-			} else {
-				return time.Time{}, fmt.Errorf("failed to parse unix timestamp: %s", v)
-			}
-		default:
-			return time.Time{}, fmt.Errorf("unsupported type for unix timestamp: %T", value)
+		seconds, err := parseUnixValue(value, "unix")
+		if err != nil {
+			return time.Time{}, err
 		}
 		return time.Unix(seconds, 0), nil
 	case "unix_ms":
-		var ms int64
-		switch v := value.(type) {
-		case float64:
-			ms = int64(v)
-		case int64:
-			ms = v
-		case int:
-			ms = int64(v)
-		case string:
-			if i, err := strconv.ParseInt(v, 10, 64); err == nil {
-				ms = i
-			} else {
-				return time.Time{}, fmt.Errorf("failed to parse unix_ms timestamp: %s", v)
-			}
-		default:
-			return time.Time{}, fmt.Errorf("unsupported type for unix_ms timestamp: %T", value)
+		ms, err := parseUnixValue(value, "unix_ms")
+		if err != nil {
+			return time.Time{}, err
 		}
 		return time.Unix(ms/1000, (ms%1000)*1e6), nil
 	case "unix_ns":
-		var ns int64
-		switch v := value.(type) {
-		case float64:
-			ns = int64(v)
-		case int64:
-			ns = v
-		case int:
-			ns = int64(v)
-		case string:
-			if i, err := strconv.ParseInt(v, 10, 64); err == nil {
-				ns = i
-			} else {
-				return time.Time{}, fmt.Errorf("failed to parse unix_ns timestamp: %s", v)
-			}
-		default:
-			return time.Time{}, fmt.Errorf("unsupported type for unix_ns timestamp: %T", value)
+		ns, err := parseUnixValue(value, "unix_ns")
+		if err != nil {
+			return time.Time{}, err
 		}
 		return time.Unix(0, ns), nil	
 	case "rfc3339":
@@ -448,7 +429,6 @@ func (p *Parser) ParseTimestamp(value interface{}, format string) (time.Time, er
 		return time.Parse(format, valueStr)
 	}
 
-	return time.Time{}, fmt.Errorf("failed to parse timestamp: %s", valueStr)
 }
 
 // parseTimestampAuto tries to automatically detect and parse timestamp format
