@@ -327,7 +327,7 @@ func (m *DashboardModel) renderLogScrollContent(height int, logWidth int) []stri
 			"💡 To get started:",
 			"  • Pipe logs: cat mylog.json | gonzo",
 			"  • Stream logs: kubectl logs -f pod | gonzo",
-			"  • From file: gonzo < application.log",
+			"  • From file: gonzo -f application.log -f other.log -f 'dir/*.globlog'",
 			"",
 		}
 
