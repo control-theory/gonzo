@@ -614,7 +614,7 @@ plugins:
     background: false
     args:
       - -c
-      - "kubectl logs -f $NAME -n $NAMESPACE --context $CONTEXT | gonzo"
+      - "kubectl logs -f --tail=0 $NAME -n $NAMESPACE --context $CONTEXT | gonzo"
 ```
 
 > ⚠️ NOTE: on `macOS` although it is not required, defining `XDG_CONFIG_HOME=~/.config` is recommended in order to maintain consistency with Linux configuration practices.
