@@ -211,50 +211,78 @@ func (m *DashboardModel) wrapTextToWidth(text string, width int) string {
 		return text
 	}
 
-	lines := strings.Split(text, "\n")
+	// Use visual width calculation to avoid ANSI escape sequence interference
+	visibleWidth := func(s string) int {
+		// lipgloss.Width ignores ANSI styles and calculates visual width
+		return lipgloss.Width(s)
+	}
+
 	var wrappedLines []string
+	lines := strings.Split(text, "\n")
 
 	for _, line := range lines {
-		// If line is shorter than width, add as-is
-		if len(line) <= width {
+		// If entire line visual width doesn't exceed limit, add directly
+		if visibleWidth(line) <= width {
 			wrappedLines = append(wrappedLines, line)
 			continue
 		}
 
-		// Wrap long lines
+		// Split by whitespace; but logs may have no spaces, so still need to handle long words
 		words := strings.Fields(line)
 		if len(words) == 0 {
-			wrappedLines = append(wrappedLines, line)
+			// Cannot split by words (possibly entire line has no spaces), perform hard wrap
+			runes := []rune(line)
+			start := 0
+			for start < len(runes) {
+				end := start
+				currentWidth := 0
+				for end < len(runes) && currentWidth < width {
+					currentWidth++
+					end++
+				}
+				wrappedLines = append(wrappedLines, string(runes[start:end]))
+				start = end
+			}
 			continue
 		}
 
 		currentLine := ""
 		for _, word := range words {
-			// If adding this word would exceed width, start new line
+			// If current line is not empty, try adding a space and word for testing
 			testLine := currentLine
 			if testLine != "" {
 				testLine += " "
 			}
 			testLine += word
 
-			if len(testLine) > width {
-				// If current line has content, save it and start new line with current word
+			if visibleWidth(testLine) > width {
+				// First commit current line
 				if currentLine != "" {
 					wrappedLines = append(wrappedLines, currentLine)
-					currentLine = word
-				} else {
-					// Single word is longer than width, truncate it
-					currentLine = word
-					if len(currentLine) > width {
-						currentLine = currentLine[:width-3] + "..."
+					currentLine = ""
+				}
+
+				// Handle oversized words: hard wrap, don't lose characters, don't add ellipsis
+				runes := []rune(word)
+				start := 0
+				for start < len(runes) {
+					end := start
+					currentWidth := 0
+					for end < len(runes) && currentWidth < width {
+						currentWidth++
+						end++
 					}
+					segment := string(runes[start:end])
+					// If segment exactly fills a line, output as independent line
+					wrappedLines = append(wrappedLines, segment)
+					start = end
 				}
 			} else {
 				currentLine = testLine
 			}
 		}
 
-		// Add remaining content
+		// Add the last segment
 		if currentLine != "" {
 			wrappedLines = append(wrappedLines, currentLine)
 		}
