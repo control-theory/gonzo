@@ -215,48 +215,35 @@ func (m *DashboardModel) wrapTextToWidth(text string, width int) string {
 	var wrappedLines []string
 
 	for _, line := range lines {
-		// If line is shorter than width, add as-is
-		if len(line) <= width {
+		// Use lipgloss.Width to get visual width (ignoring ANSI sequences)
+		if lipgloss.Width(line) <= width {
 			wrappedLines = append(wrappedLines, line)
 			continue
 		}
 
-		// Wrap long lines
-		words := strings.Fields(line)
-		if len(words) == 0 {
-			wrappedLines = append(wrappedLines, line)
-			continue
-		}
+		// Character-based wrapping - don't split by words for log content
+		remaining := line
+		for len(remaining) > 0 {
+			// Find the maximum characters that fit within width
+			maxChars := min(len(remaining), width)
 
-		currentLine := ""
-		for _, word := range words {
-			// If adding this word would exceed width, start new line
-			testLine := currentLine
-			if testLine != "" {
-				testLine += " "
+			// Adjust maxChars to fit within visual width
+			for maxChars > 0 && lipgloss.Width(remaining[:maxChars]) > width {
+				maxChars--
 			}
-			testLine += word
 
-			if len(testLine) > width {
-				// If current line has content, save it and start new line with current word
-				if currentLine != "" {
-					wrappedLines = append(wrappedLines, currentLine)
-					currentLine = word
-				} else {
-					// Single word is longer than width, truncate it
-					currentLine = word
-					if len(currentLine) > width {
-						currentLine = currentLine[:width-3] + "..."
-					}
-				}
-			} else {
-				currentLine = testLine
+			// Try to fit more characters if possible
+			for maxChars < len(remaining) && lipgloss.Width(remaining[:maxChars+1]) <= width {
+				maxChars++
 			}
-		}
 
-		// Add remaining content
-		if currentLine != "" {
-			wrappedLines = append(wrappedLines, currentLine)
+			if maxChars <= 0 {
+				maxChars = 1 // At least one character
+			}
+
+			chunk := remaining[:maxChars]
+			wrappedLines = append(wrappedLines, chunk)
+			remaining = remaining[maxChars:]
 		}
 	}
 
