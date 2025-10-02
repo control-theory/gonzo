@@ -45,6 +45,7 @@ type Config struct {
 	StopWords            []string      `mapstructure:"stop-words"`
 	Format               string        `mapstructure:"format"`
 	DisableVersionCheck  bool          `mapstructure:"disable-version-check"`
+	ReverseScrollWheel   bool          `mapstructure:"reverse-scroll-wheel"`
 }
 
 var (
@@ -156,6 +157,7 @@ func init() {
 	rootCmd.Flags().StringSlice("stop-words", []string{}, "Additional stop words to filter out from analysis (adds to built-in list)")
 	rootCmd.Flags().String("format", "", "Log format to use (auto-detect if not specified). Can be: otlp, json, text, or a custom format name from ~/.config/gonzo/formats/")
 	rootCmd.Flags().Bool("disable-version-check", false, "Disable automatic version checking on startup")
+	rootCmd.Flags().Bool("reverse-scroll-wheel", false, "Reverse scroll wheel direction (natural scrolling)")
 
 	// Bind flags to viper
 	viper.BindPFlag("memory-size", rootCmd.Flags().Lookup("memory-size"))
@@ -176,6 +178,7 @@ func init() {
 	viper.BindPFlag("stop-words", rootCmd.Flags().Lookup("stop-words"))
 	viper.BindPFlag("format", rootCmd.Flags().Lookup("format"))
 	viper.BindPFlag("disable-version-check", rootCmd.Flags().Lookup("disable-version-check"))
+	viper.BindPFlag("reverse-scroll-wheel", rootCmd.Flags().Lookup("reverse-scroll-wheel"))
 
 	// Add version command
 	rootCmd.AddCommand(versionCmd)

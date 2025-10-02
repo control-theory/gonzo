@@ -82,8 +82,9 @@ type DashboardModel struct {
 	servicesBySeverity map[string][]ServiceCount // Top services by severity level
 
 	// Configuration
-	maxLogBuffer   int
-	updateInterval time.Duration
+	maxLogBuffer       int
+	updateInterval     time.Duration
+	reverseScrollWheel bool
 
 	// Filter
 	filterInput  textinput.Model
@@ -223,7 +224,7 @@ func initializeDrain3BySeverity() map[string]*Drain3Manager {
 }
 
 // NewDashboardModel creates a new dashboard model with stop words
-func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiModel string, stopWords map[string]bool) *DashboardModel {
+func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiModel string, stopWords map[string]bool, reverseScrollWheel bool) *DashboardModel {
 	filterInput := textinput.New()
 	filterInput.Placeholder = "Filter logs (regex supported)..."
 	filterInput.CharLimit = 200
@@ -263,6 +264,7 @@ func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiModel s
 	m := &DashboardModel{
 		maxLogBuffer:        maxLogBuffer,
 		updateInterval:      updateInterval,
+		reverseScrollWheel:  reverseScrollWheel,
 		filterInput:         filterInput,
 		searchInput:         searchInput,
 		chatInput:           chatInput,

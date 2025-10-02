@@ -140,6 +140,7 @@ cat test.log | ./build/gonzo
 -b, --log-buffer=1000            # Maximum log buffer size
 -m, --memory-size=10000          # Maximum entries in memory
     --stop-words strings         # Additional stop words to filter from analysis
+    --reverse-scroll-wheel       # Reverse scroll wheel direction (natural scrolling)
     --config string              # Config file (default: ~/.gonzo.yaml)
 
 # Version and help
@@ -223,6 +224,54 @@ export GONZO_STOP_WORDS="debug info warning error"
 - Custom stop words are added to (not replacing) the built-in list
 - Stop words only affect word frequency analysis, not log display or filtering
 - Changes take effect immediately when logs are processed
+
+## Reverse Scroll Wheel Configuration
+
+### Overview
+By default, Gonzo uses traditional scroll wheel behavior (scroll up = content moves up). If you prefer natural/trackpad-style scrolling (scroll up = content moves down), you can enable reverse scroll wheel mode.
+
+### Enabling Reverse Scroll
+
+#### Via Command Line
+```bash
+# Enable reverse scroll wheel
+./build/gonzo -f app.log --reverse-scroll-wheel
+
+# Works with all input modes
+cat logs.json | ./build/gonzo --reverse-scroll-wheel
+./build/gonzo --otlp-enabled --reverse-scroll-wheel
+```
+
+#### Via Configuration File
+```yaml
+# ~/.config/gonzo/config.yml
+reverse-scroll-wheel: true
+```
+
+#### Via Environment Variable
+```bash
+# Set the environment variable
+export GONZO_REVERSE_SCROLL_WHEEL=true
+./build/gonzo -f app.log
+```
+
+### Behavior
+
+When reverse scroll wheel is enabled:
+- **Scroll wheel up** → Content moves down (viewport scrolls down)
+- **Scroll wheel down** → Content moves up (viewport scrolls up)
+
+This affects all scrollable areas:
+- Main dashboard log navigation
+- All modal windows (log details, patterns, statistics, etc.)
+- Chat viewport scrolling
+- Model selection
+- Help screen
+
+### Use Cases
+- **MacOS users**: Match trackpad natural scrolling behavior
+- **Consistency**: Keep same scroll direction across all applications
+- **Personal preference**: Use whichever feels more intuitive to you
 
 ### Supported Integrations
 

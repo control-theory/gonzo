@@ -165,13 +165,21 @@ func (m *DashboardModel) handleMouseEvent(msg tea.MouseMsg) (tea.Model, tea.Cmd)
 			return m.handleMouseClick(msg.X, msg.Y)
 
 		case tea.MouseButtonWheelUp:
-			// Scroll wheel up = move selection up (like up arrow)
-			m.moveSelection(1)
+			// Scroll wheel up = move selection up (like up arrow), or down if reversed
+			if m.reverseScrollWheel {
+				m.moveSelection(-1)
+			} else {
+				m.moveSelection(1)
+			}
 			return m, nil
 
 		case tea.MouseButtonWheelDown:
-			// Scroll wheel down = move selection down (like down arrow)
-			m.moveSelection(-1)
+			// Scroll wheel down = move selection down (like down arrow), or up if reversed
+			if m.reverseScrollWheel {
+				m.moveSelection(1)
+			} else {
+				m.moveSelection(-1)
+			}
 			return m, nil
 		}
 	}
@@ -187,13 +195,21 @@ func (m *DashboardModel) handleModalMouseEvent(msg tea.MouseMsg) (tea.Model, tea
 		case tea.MouseActionPress:
 			switch msg.Button {
 			case tea.MouseButtonWheelUp:
-				// Scroll up in single modal
-				m.infoViewport.ScrollUp(1)
+				// Scroll up in single modal, or down if reversed
+				if m.reverseScrollWheel {
+					m.infoViewport.ScrollDown(1)
+				} else {
+					m.infoViewport.ScrollUp(1)
+				}
 				return m, nil
 
 			case tea.MouseButtonWheelDown:
-				// Scroll down in single modal
-				m.infoViewport.ScrollDown(1)
+				// Scroll down in single modal, or up if reversed
+				if m.reverseScrollWheel {
+					m.infoViewport.ScrollUp(1)
+				} else {
+					m.infoViewport.ScrollDown(1)
+				}
 				return m, nil
 			}
 		}
@@ -210,22 +226,46 @@ func (m *DashboardModel) handleModalMouseEvent(msg tea.MouseMsg) (tea.Model, tea
 		case tea.MouseButtonWheelUp:
 			// Priority: if chat is active, always scroll chat viewport
 			if m.chatActive {
-				m.chatViewport.ScrollUp(1)
+				if m.reverseScrollWheel {
+					m.chatViewport.ScrollDown(1)
+				} else {
+					m.chatViewport.ScrollUp(1)
+				}
 			} else if m.modalActiveSection == "info" {
-				m.infoViewport.ScrollUp(1)
+				if m.reverseScrollWheel {
+					m.infoViewport.ScrollDown(1)
+				} else {
+					m.infoViewport.ScrollUp(1)
+				}
 			} else if m.modalActiveSection == "chat" {
-				m.chatViewport.ScrollUp(1)
+				if m.reverseScrollWheel {
+					m.chatViewport.ScrollDown(1)
+				} else {
+					m.chatViewport.ScrollUp(1)
+				}
 			}
 			return m, nil
 
 		case tea.MouseButtonWheelDown:
 			// Priority: if chat is active, always scroll chat viewport
 			if m.chatActive {
-				m.chatViewport.ScrollDown(1)
+				if m.reverseScrollWheel {
+					m.chatViewport.ScrollUp(1)
+				} else {
+					m.chatViewport.ScrollDown(1)
+				}
 			} else if m.modalActiveSection == "info" {
-				m.infoViewport.ScrollDown(1)
+				if m.reverseScrollWheel {
+					m.infoViewport.ScrollUp(1)
+				} else {
+					m.infoViewport.ScrollDown(1)
+				}
 			} else if m.modalActiveSection == "chat" {
-				m.chatViewport.ScrollDown(1)
+				if m.reverseScrollWheel {
+					m.chatViewport.ScrollUp(1)
+				} else {
+					m.chatViewport.ScrollDown(1)
+				}
 			}
 			return m, nil
 		}
@@ -292,13 +332,21 @@ func (m *DashboardModel) handleModelSelectionMouseEvent(msg tea.MouseMsg) (tea.M
 	case tea.MouseActionPress:
 		switch msg.Button {
 		case tea.MouseButtonWheelUp:
-			// Scroll up - move selection up by 1
-			m.selectedModelIndex = max(0, m.selectedModelIndex-1)
+			// Scroll up - move selection up by 1, or down if reversed
+			if m.reverseScrollWheel {
+				m.selectedModelIndex = min(len(m.availableModelsList)-1, m.selectedModelIndex+1)
+			} else {
+				m.selectedModelIndex = max(0, m.selectedModelIndex-1)
+			}
 			return m, nil
-			
+
 		case tea.MouseButtonWheelDown:
-			// Scroll down - move selection down by 1
-			m.selectedModelIndex = min(len(m.availableModelsList)-1, m.selectedModelIndex+1)
+			// Scroll down - move selection down by 1, or up if reversed
+			if m.reverseScrollWheel {
+				m.selectedModelIndex = max(0, m.selectedModelIndex-1)
+			} else {
+				m.selectedModelIndex = min(len(m.availableModelsList)-1, m.selectedModelIndex+1)
+			}
 			return m, nil
 		}
 	}
@@ -312,13 +360,21 @@ func (m *DashboardModel) handleHelpModalMouseEvent(msg tea.MouseMsg) (tea.Model,
 	case tea.MouseActionPress:
 		switch msg.Button {
 		case tea.MouseButtonWheelUp:
-			// Scroll up in help modal
-			m.infoViewport.ScrollUp(1)
+			// Scroll up in help modal, or down if reversed
+			if m.reverseScrollWheel {
+				m.infoViewport.ScrollDown(1)
+			} else {
+				m.infoViewport.ScrollUp(1)
+			}
 			return m, nil
 
 		case tea.MouseButtonWheelDown:
-			// Scroll down in help modal
-			m.infoViewport.ScrollDown(1)
+			// Scroll down in help modal, or up if reversed
+			if m.reverseScrollWheel {
+				m.infoViewport.ScrollUp(1)
+			} else {
+				m.infoViewport.ScrollDown(1)
+			}
 			return m, nil
 		}
 	}
@@ -332,13 +388,21 @@ func (m *DashboardModel) handlePatternsModalMouseEvent(msg tea.MouseMsg) (tea.Mo
 	case tea.MouseActionPress:
 		switch msg.Button {
 		case tea.MouseButtonWheelUp:
-			// Scroll up in patterns modal
-			m.infoViewport.ScrollUp(1)
+			// Scroll up in patterns modal, or down if reversed
+			if m.reverseScrollWheel {
+				m.infoViewport.ScrollDown(1)
+			} else {
+				m.infoViewport.ScrollUp(1)
+			}
 			return m, nil
 
 		case tea.MouseButtonWheelDown:
-			// Scroll down in patterns modal
-			m.infoViewport.ScrollDown(1)
+			// Scroll down in patterns modal, or up if reversed
+			if m.reverseScrollWheel {
+				m.infoViewport.ScrollUp(1)
+			} else {
+				m.infoViewport.ScrollDown(1)
+			}
 			return m, nil
 		}
 	}
@@ -352,13 +416,21 @@ func (m *DashboardModel) handleStatsModalMouseEvent(msg tea.MouseMsg) (tea.Model
 	case tea.MouseActionPress:
 		switch msg.Button {
 		case tea.MouseButtonWheelUp:
-			// Scroll up in statistics modal
-			m.infoViewport.ScrollUp(1)
+			// Scroll up in statistics modal, or down if reversed
+			if m.reverseScrollWheel {
+				m.infoViewport.ScrollDown(1)
+			} else {
+				m.infoViewport.ScrollUp(1)
+			}
 			return m, nil
 
 		case tea.MouseButtonWheelDown:
-			// Scroll down in statistics modal
-			m.infoViewport.ScrollDown(1)
+			// Scroll down in statistics modal, or up if reversed
+			if m.reverseScrollWheel {
+				m.infoViewport.ScrollUp(1)
+			} else {
+				m.infoViewport.ScrollDown(1)
+			}
 			return m, nil
 		}
 	}
@@ -372,13 +444,21 @@ func (m *DashboardModel) handleCountsModalMouseEvent(msg tea.MouseMsg) (tea.Mode
 	case tea.MouseActionPress:
 		switch msg.Button {
 		case tea.MouseButtonWheelUp:
-			// Scroll up in counts modal
-			m.infoViewport.ScrollUp(1)
+			// Scroll up in counts modal, or down if reversed
+			if m.reverseScrollWheel {
+				m.infoViewport.ScrollDown(1)
+			} else {
+				m.infoViewport.ScrollUp(1)
+			}
 			return m, nil
 
 		case tea.MouseButtonWheelDown:
-			// Scroll down in counts modal
-			m.infoViewport.ScrollDown(1)
+			// Scroll down in counts modal, or up if reversed
+			if m.reverseScrollWheel {
+				m.infoViewport.ScrollUp(1)
+			} else {
+				m.infoViewport.ScrollDown(1)
+			}
 			return m, nil
 		}
 	}
@@ -392,16 +472,28 @@ func (m *DashboardModel) handleLogViewerModalMouseEvent(msg tea.MouseMsg) (tea.M
 	case tea.MouseActionPress:
 		switch msg.Button {
 		case tea.MouseButtonWheelUp:
-			// Navigate up in log list
-			if m.selectedLogIndex > 0 {
-				m.selectedLogIndex--
+			// Navigate up in log list, or down if reversed
+			if m.reverseScrollWheel {
+				if m.selectedLogIndex < len(m.logEntries)-1 {
+					m.selectedLogIndex++
+				}
+			} else {
+				if m.selectedLogIndex > 0 {
+					m.selectedLogIndex--
+				}
 			}
 			return m, nil
 
 		case tea.MouseButtonWheelDown:
-			// Navigate down in log list
-			if m.selectedLogIndex < len(m.logEntries)-1 {
-				m.selectedLogIndex++
+			// Navigate down in log list, or up if reversed
+			if m.reverseScrollWheel {
+				if m.selectedLogIndex > 0 {
+					m.selectedLogIndex--
+				}
+			} else {
+				if m.selectedLogIndex < len(m.logEntries)-1 {
+					m.selectedLogIndex++
+				}
 			}
 			return m, nil
 		}
