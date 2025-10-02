@@ -121,8 +121,10 @@ func extractLogEntryFromOTLPRecord(record *logspb.LogRecord) *tui.LogEntry {
 
 // createFallbackLogEntry creates a basic LogEntry for unparseable lines
 func createFallbackLogEntry(line string) *tui.LogEntry {
-	// Replace tabs with spaces to prevent formatting issues
+	// Replace tabs and newlines with spaces to prevent formatting issues
 	cleanLine := strings.ReplaceAll(line, "\t", " ")
+	cleanLine = strings.ReplaceAll(cleanLine, "\n", " ")
+	cleanLine = strings.ReplaceAll(cleanLine, "\r", " ")
 
 	// Extract severity from the message text instead of defaulting to INFO
 	severity := extractSeverityFromText(cleanLine)
@@ -213,8 +215,11 @@ func extractMessageFromBody(body *commonpb.AnyValue) string {
 
 	switch v := body.Value.(type) {
 	case *commonpb.AnyValue_StringValue:
-		// Replace tabs with spaces to prevent formatting issues
-		return strings.ReplaceAll(v.StringValue, "\t", " ")
+		// Replace tabs and newlines with spaces to prevent formatting issues
+		msg := strings.ReplaceAll(v.StringValue, "\t", " ")
+		msg = strings.ReplaceAll(msg, "\n", " ")
+		msg = strings.ReplaceAll(msg, "\r", " ")
+		return msg
 	case *commonpb.AnyValue_IntValue:
 		return fmt.Sprintf("%d", v.IntValue)
 	case *commonpb.AnyValue_DoubleValue:
