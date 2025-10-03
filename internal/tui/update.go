@@ -472,27 +472,31 @@ func (m *DashboardModel) handleLogViewerModalMouseEvent(msg tea.MouseMsg) (tea.M
 	case tea.MouseActionPress:
 		switch msg.Button {
 		case tea.MouseButtonWheelUp:
-			// Navigate up in log list, or down if reversed
+			// Scroll up in log viewer - should behave like scrolling content up (move to later/newer logs)
 			if m.reverseScrollWheel {
-				if m.selectedLogIndex < len(m.logEntries)-1 {
-					m.selectedLogIndex++
-				}
-			} else {
+				// Reversed: wheel up goes to earlier logs
 				if m.selectedLogIndex > 0 {
 					m.selectedLogIndex--
+				}
+			} else {
+				// Normal: wheel up goes to later logs (like scrolling list up)
+				if m.selectedLogIndex < len(m.logEntries)-1 {
+					m.selectedLogIndex++
 				}
 			}
 			return m, nil
 
 		case tea.MouseButtonWheelDown:
-			// Navigate down in log list, or up if reversed
+			// Scroll down in log viewer - should behave like scrolling content down (move to earlier/older logs)
 			if m.reverseScrollWheel {
-				if m.selectedLogIndex > 0 {
-					m.selectedLogIndex--
-				}
-			} else {
+				// Reversed: wheel down goes to later logs
 				if m.selectedLogIndex < len(m.logEntries)-1 {
 					m.selectedLogIndex++
+				}
+			} else {
+				// Normal: wheel down goes to earlier logs (like scrolling list down)
+				if m.selectedLogIndex > 0 {
+					m.selectedLogIndex--
 				}
 			}
 			return m, nil
