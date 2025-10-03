@@ -342,7 +342,7 @@ func (m *DashboardModel) renderLogScrollContent(height int, logWidth int) []stri
 		instructions = append(instructions, []string{
 			"📋 Key commands:",
 			"  • ?/h: Show help",
-			"  • /: Filter logs (regex)",
+			"  • /: Filter logs (message & attributes)",
 			"  • Ctrl+f: Filter logs by severity",
 			"  • s: Search and highlight",
 			"  • Tab: Navigate sections",

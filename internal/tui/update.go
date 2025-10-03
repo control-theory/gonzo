@@ -652,8 +652,8 @@ func (m *DashboardModel) updateFilteredView() {
 
 	// Apply filter to all entries
 	for _, entry := range m.allLogEntries {
-		// Check regex filter (if any)
-		passesRegexFilter := m.filterRegex == nil || m.filterRegex.MatchString(entry.RawLine)
+		// Check regex filter (if any) - search in message, attributes keys, and attribute values
+		passesRegexFilter := m.filterRegex == nil || m.matchesFilter(entry)
 
 		// Check severity filter (if active)
 		// Normalize severity to match filter keys
@@ -781,6 +781,38 @@ func (m *DashboardModel) updateProcessingRateStats() {
 		m.statsRecentCounts = m.statsRecentCounts[1:]
 		m.statsRecentTimes = m.statsRecentTimes[1:]
 	}
+}
+
+// matchesFilter checks if a log entry matches the current regex filter
+// It searches in the message, attribute keys, and attribute values
+func (m *DashboardModel) matchesFilter(entry LogEntry) bool {
+	if m.filterRegex == nil {
+		return true
+	}
+
+	// Check the raw log line (message)
+	if m.filterRegex.MatchString(entry.RawLine) {
+		return true
+	}
+
+	// Check the processed message
+	if m.filterRegex.MatchString(entry.Message) {
+		return true
+	}
+
+	// Check all attribute keys and values
+	for key, value := range entry.Attributes {
+		// Check if the attribute key matches
+		if m.filterRegex.MatchString(key) {
+			return true
+		}
+		// Check if the attribute value matches
+		if m.filterRegex.MatchString(value) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // updateHeatmapData updates the minute-by-minute heatmap data for the counts modal

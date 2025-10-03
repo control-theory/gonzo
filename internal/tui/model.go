@@ -226,7 +226,7 @@ func initializeDrain3BySeverity() map[string]*Drain3Manager {
 // NewDashboardModel creates a new dashboard model with stop words
 func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiModel string, stopWords map[string]bool, reverseScrollWheel bool) *DashboardModel {
 	filterInput := textinput.New()
-	filterInput.Placeholder = "Filter logs (regex supported)..."
+	filterInput.Placeholder = "Filter logs by message or attributes (regex supported)..."
 	filterInput.CharLimit = 200
 
 	searchInput := textinput.New()

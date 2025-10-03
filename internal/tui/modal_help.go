@@ -98,10 +98,10 @@ SECTIONS:
   Logs           - Navigate and inspect individual log entries
 
 FILTER & SEARCH:
-  Filter (/): Type regex patterns to filter displayed logs
+  Filter (/): Type regex patterns to filter logs (searches message & attributes)
   Search (s): Type text to highlight in displayed logs
   Severity (Ctrl+f): Filter by log severity levels
-  Examples: "error", "k8s.*pod", "severity.*INFO"
+  Examples: "error", "k8s.*pod", "service.name", "host.name.*prod"
 
 AI ANALYSIS:
   Set environment variables for AI-powered log analysis:
