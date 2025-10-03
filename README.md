@@ -1,3 +1,8 @@
+
+<p align="center">
+<a href="https://controltheory.com"><img src="docs/sponsor-controltheory-dstl8.png" alt="Sponsored by ControlTheory: Dstl8"></a>
+</p>
+
 # Gonzo - The Go based TUI for log analysis
 
 <p align="center"><img src="docs/gonzo-mascot-smaller.png" width="250" alt="Gonzo Mascot"></p>
