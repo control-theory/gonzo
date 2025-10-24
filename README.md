@@ -10,8 +10,19 @@
 [![Go Version](https://img.shields.io/badge/go-%3E%3D1.21-blue)](https://go.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
+[![Docs](https://img.shields.io/badge/Docs-Getting%20Started-cyan.svg)](https://docs.controltheory.com/)
+
 
 A powerful, real-time log analysis terminal UI inspired by k9s. Analyze log streams with beautiful charts, AI-powered insights, and advanced filtering - all from your terminal.
+
+Here are some references to get you started:
+
+- **[Documentation](https://docs.controltheory.com/)** - Complete docs, getting started, reference guide
+- **[Usage Guide](USAGE_GUIDE.md)** - Detailed usage instructions and examples
+- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute to the project
+- **[Integration Examples](https://docs.controltheory.com/controltheory-documentation/gonzo-docs/integration-examples)** - Detailed itegrations and use cases
+- **[Advanced Features](https://docs.controltheory.com/controltheory-documentation/gonzo-docs/advanced-features)** - AI, OTel, Custom Log Formats
+- **[Releases](https://github.com/control-theory/gonzo/releases)** - Download the latest version
 
 ### See it in action
 
@@ -755,6 +766,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📚 Documentation
 
+- [Docs](https://docs.controltheory.com/) - Complete user guide, integration examples, advanced features (AI, OTel, custom log formats)
 - [Usage Guide](USAGE_GUIDE.md) - Detailed usage instructions
 - [AWS CloudWatch Logs Usage Guide](guides/CLOUDWATCH_USAGE_GUIDE.md) - Usage instructions for AWS CLI log tail and live tail with Gonzo
 - [Stern Usage Guide](guides/STERN_USAGE_GUIDE.md) - Usage and examples for using Stern with Gonzo
