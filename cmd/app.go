@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"bufio"
@@ -21,21 +21,15 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
+	goversion "github.com/caarlos0/go-version"
 )
 
 // runApp initializes and runs the application
-func runApp(cmd *cobra.Command, args []string) error {
-	// Check if version flag was used
-	if v, _ := cmd.Flags().GetBool("version"); v {
-		versionCmd.Run(cmd, args)
-		return nil
-	}
-
+func runApp(cmd *cobra.Command, args []string, versionInfo goversion.Info, cfg Config) error {
 	// Start version checking in background (if not disabled)
 	var versionChecker *versioncheck.Checker
 	if !cfg.DisableVersionCheck {
-		currentVersion, currentCommit := GetVersionInfo()
-		versionChecker = versioncheck.NewChecker(currentVersion, currentCommit)
+		versionChecker = versioncheck.NewChecker(versionInfo.GitVersion, versionInfo.GitCommit)
 		versionChecker.CheckInBackground()
 	}
 
@@ -96,6 +90,7 @@ func runApp(cmd *cobra.Command, args []string) error {
 	}
 
 	tuiModel := &simpleTuiModel{
+		cfg: cfg,
 		formatDetector: formatDetector,
 		logConverter:   logConverter,
 		customParser:   customParser,
@@ -157,6 +152,7 @@ type simpleTuiModel struct {
 	updateInterval time.Duration
 	testMode       bool
 	ctx            context.Context
+	cfg            Config
 	cancelFunc     context.CancelFunc
 	versionChecker *versioncheck.Checker
 
@@ -196,7 +192,7 @@ func (m *simpleTuiModel) Init() tea.Cmd {
 	m.lastFreqReset = time.Now()
 
 	// Check if Victoria Logs receiver is enabled
-	if cfg.VmlogsURL != "" {
+	if m.cfg.VmlogsURL != "" {
 		// Victoria Logs input mode
 		m.hasVmlogsInput = true
 		m.inputChan = make(chan string, 100)
@@ -204,7 +200,8 @@ func (m *simpleTuiModel) Init() tea.Cmd {
 		// Create and start Victoria Logs receiver
 		params := make(map[string]string)
 		// Add any default parameters here if needed
-		m.vmlogsReceiver = vmlogs.NewReceiver(cfg.VmlogsURL, cfg.VmlogsUser, cfg.VmlogsPassword, cfg.VmlogsQuery, params)
+		m.vmlogsReceiver = vmlogs.NewReceiver(m.cfg.VmlogsURL, m.cfg.VmlogsUser,
+			m.cfg.VmlogsPassword, m.cfg.VmlogsQuery, params)
 		if err := m.vmlogsReceiver.Start(); err != nil {
 			log.Printf("Error starting Victoria Logs receiver: %v", err)
 			// Fall back to other input methods if Victoria Logs fails
@@ -216,13 +213,13 @@ func (m *simpleTuiModel) Init() tea.Cmd {
 	}
 
 	// Check if OTLP receiver is enabled (only if Victoria Logs is not enabled)
-	if !m.hasVmlogsInput && cfg.OTLPEnabled {
+	if !m.hasVmlogsInput && m.cfg.OTLPEnabled {
 		// OTLP input mode
 		m.hasOTLPInput = true
 		m.inputChan = make(chan string, 100)
 
 		// Create and start OTLP receiver
-		m.otlpReceiver = otlpreceiver.NewReceiver(cfg.OTLPGRPCPort, cfg.OTLPHTTPPort)
+		m.otlpReceiver = otlpreceiver.NewReceiver(m.cfg.OTLPGRPCPort, m.cfg.OTLPHTTPPort)
 		if err := m.otlpReceiver.Start(); err != nil {
 			log.Printf("Error starting OTLP receiver: %v", err)
 			// Fall back to other input methods if OTLP fails
@@ -234,14 +231,14 @@ func (m *simpleTuiModel) Init() tea.Cmd {
 	}
 
 	// Check if we have file inputs specified (only if Victoria Logs and OTLP are not enabled)
-	if !m.hasVmlogsInput && !m.hasOTLPInput && len(cfg.Files) > 0 {
+	if !m.hasVmlogsInput && !m.hasOTLPInput && len(m.cfg.Files) > 0 {
 		// File input mode
 		m.hasFileInput = true
 		m.inputChan = make(chan string, 100)
 
 		// Create file reader
 		var err error
-		m.fileReader, err = filereader.New(cfg.Files, cfg.Follow)
+		m.fileReader, err = filereader.New(m.cfg.Files, m.cfg.Follow)
 		if err != nil {
 			log.Printf("Error setting up file reader: %v", err)
 			// Fall back to stdin if file reading fails

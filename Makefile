@@ -3,7 +3,6 @@
 
 # Project configuration
 BINARY_NAME := gonzo
-CMD_DIR := ./cmd/gonzo
 BUILD_DIR := ./build
 DIST_DIR := ./dist
 
@@ -58,7 +57,7 @@ build: deps ## Build the TUI binary
 	@echo "$(BLUE)Building TUI version...$(NC)"
 	@mkdir -p $(BUILD_DIR)
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) \
-		$(GO) build $(BUILD_FLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) $(CMD_DIR)
+		$(GO) build $(BUILD_FLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)
 	@echo "$(GREEN)✓ Built $(BUILD_DIR)/$(BINARY_NAME)$(NC)"
 
 # Cross-platform builds
@@ -70,25 +69,25 @@ cross-build: clean deps ## Build for multiple platforms
 	@echo "$(YELLOW)Building for linux/amd64...$(NC)"
 	@mkdir -p $(DIST_DIR)/linux-amd64
 	@CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 \
-		$(GO) build $(BUILD_FLAGS) -o $(DIST_DIR)/linux-amd64/$(BINARY_NAME) $(CMD_DIR)
+		$(GO) build $(BUILD_FLAGS) -o $(DIST_DIR)/linux-amd64/$(BINARY_NAME)
 	
 	# macOS amd64
 	@echo "$(YELLOW)Building for darwin/amd64...$(NC)"
 	@mkdir -p $(DIST_DIR)/darwin-amd64
 	@CGO_ENABLED=$(CGO_ENABLED) GOOS=darwin GOARCH=amd64 \
-		$(GO) build $(BUILD_FLAGS) -o $(DIST_DIR)/darwin-amd64/$(BINARY_NAME) $(CMD_DIR)
+		$(GO) build $(BUILD_FLAGS) -o $(DIST_DIR)/darwin-amd64/$(BINARY_NAME)
 	
 	# macOS arm64
 	@echo "$(YELLOW)Building for darwin/arm64...$(NC)"
 	@mkdir -p $(DIST_DIR)/darwin-arm64
 	@CGO_ENABLED=$(CGO_ENABLED) GOOS=darwin GOARCH=arm64 \
-		$(GO) build $(BUILD_FLAGS) -o $(DIST_DIR)/darwin-arm64/$(BINARY_NAME) $(CMD_DIR)
+		$(GO) build $(BUILD_FLAGS) -o $(DIST_DIR)/darwin-arm64/$(BINARY_NAME)
 	
 	# Windows amd64
 	@echo "$(YELLOW)Building for windows/amd64...$(NC)"
 	@mkdir -p $(DIST_DIR)/windows-amd64
 	@CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=amd64 \
-		$(GO) build $(BUILD_FLAGS) -o $(DIST_DIR)/windows-amd64/$(BINARY_NAME).exe $(CMD_DIR)
+		$(GO) build $(BUILD_FLAGS) -o $(DIST_DIR)/windows-amd64/$(BINARY_NAME).exe
 	
 	@echo "$(GREEN)✓ Cross-platform builds complete in $(DIST_DIR)/$(NC)"
 
@@ -157,7 +156,7 @@ lint: ## Run linter (requires golangci-lint)
 # Installation
 install: build ## Install binary to $GOPATH/bin
 	@echo "$(BLUE)Installing binary...$(NC)"
-	@$(GO) install $(BUILD_FLAGS) $(CMD_DIR)
+	@$(GO) install $(BUILD_FLAGS)
 	@echo "$(GREEN)✓ Installed $(BINARY_NAME) to $(shell go env GOPATH)/bin$(NC)"
 
 uninstall: ## Remove installed binary
