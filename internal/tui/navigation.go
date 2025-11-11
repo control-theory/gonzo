@@ -217,10 +217,6 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.showCountsModal = false
 			return m, nil
 		}
-		if m.showLogViewerModal {
-			m.showLogViewerModal = false
-			return m, nil
-		}
 		if m.showSeverityFilterModal {
 			// Restore original state (cancel changes)
 			for k, v := range m.severityFilterOriginal {
@@ -229,6 +225,10 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.updateSeverityFilterActiveStatus()
 			m.updateFilteredView()
 			m.showSeverityFilterModal = false
+			return m, nil
+		}
+		if m.showLogViewerModal {
+			m.showLogViewerModal = false
 			return m, nil
 		}
 		if m.showModal {
@@ -394,7 +394,7 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case "ctrl+f":
 		// Severity filter modal
-		if !m.showModal && !m.filterActive && !m.searchActive && !m.showHelp && !m.showPatternsModal && !m.showModelSelectionModal && !m.showStatsModal && !m.showCountsModal && !m.showLogViewerModal {
+		if !m.showModal && !m.filterActive && !m.searchActive && !m.showHelp && !m.showPatternsModal && !m.showModelSelectionModal && !m.showStatsModal && !m.showCountsModal {
 			// Store original state for ESC cancellation
 			m.severityFilterOriginal = make(map[string]bool)
 			for k, v := range m.severityFilter {
@@ -548,7 +548,7 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 	
 	// Log viewer modal keyboard navigation
-	if m.showLogViewerModal {
+	if m.showLogViewerModal && !m.showSeverityFilterModal {
 		// Save the previous active section and temporarily activate log section
 		previousSection := m.activeSection
 		m.activeSection = SectionLogs

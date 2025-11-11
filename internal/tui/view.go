@@ -37,6 +37,11 @@ func (m *DashboardModel) View() string {
 		return m.renderCountsModal()
 	}
 	
+	// Show severity filter modal (check before log viewer so it can overlay)
+	if m.showSeverityFilterModal {
+		return m.renderSeverityFilterModal()
+	}
+
 	// Show log viewer modal (fullscreen log viewer)
 	if m.showLogViewerModal {
 		return m.renderLogViewerModal()
@@ -45,11 +50,6 @@ func (m *DashboardModel) View() string {
 	// Show model selection modal
 	if m.showModelSelectionModal {
 		return m.renderModelSelectionModal()
-	}
-
-	// Show severity filter modal
-	if m.showSeverityFilterModal {
-		return m.renderSeverityFilterModal()
 	}
 
 	// Show detail modal - use lipgloss overlay
