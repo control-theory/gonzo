@@ -171,11 +171,11 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		case "ctrl+c":
 			// Allow ctrl+c to quit even in chat mode
 			return m, tea.Quit
-		case "up", "k":
+		case "up":
 			// Allow scrolling in chat viewport when in chat mode
 			m.chatViewport.ScrollUp(1)
 			return m, nil
-		case "down", "j":
+		case "down":
 			// Allow scrolling in chat viewport when in chat mode
 			m.chatViewport.ScrollDown(1)
 			return m, nil
