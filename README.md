@@ -45,6 +45,7 @@ Here are some references to get you started:
 ### 🎯 Real-Time Analysis
 
 - **Live streaming** - Process logs as they arrive from stdin, files, or network
+- **Kubernetes native** - Direct integration with Kubernetes clusters for pod log streaming
 - **OTLP native** - First-class support for OpenTelemetry log format
 - **OTLP receiver** - Built-in gRPC server to receive logs via OpenTelemetry protocol
 - **Format detection** - Automatically detects JSON, logfmt, and plain text
@@ -68,6 +69,7 @@ Here are some references to get you started:
 - **Regex support** - Filter logs with regular expressions
 - **Attribute search** - Find logs by specific attribute values
 - **Severity filtering** - Interactive modal to select specific log levels (Ctrl+f)
+- **Kubernetes filtering** - Filter by namespace and pod with interactive selection (Ctrl+k)
 - **Multi-level selection** - Enable/disable multiple severity levels at once
 - **Interactive selection** - Click or keyboard navigate to explore logs
 
@@ -144,7 +146,12 @@ gonzo -f "/var/log/*.log" --follow
 # Analyze logs from stdin (traditional way)
 cat application.log | gonzo
 
-# Stream logs from kubectl
+# Stream logs directly from Kubernetes clusters
+gonzo --k8s-enabled=true --k8s-namespace=default
+gonzo --k8s-enabled=true --k8s-namespace=production --k8s-namespace=staging
+gonzo --k8s-enabled=true --k8s-selector="app=my-app"
+
+# Stream logs from kubectl (traditional way)
 kubectl logs -f deployment/my-app | gonzo
 
 # Follow system logs
@@ -311,8 +318,9 @@ cat logs.json | gonzo --ai-model="gpt-4"
 | `/`            | Enter filter mode (regex supported)       |
 | `s`            | Search and highlight text in logs         |
 | `Ctrl+f`       | Open severity filter modal                |
+| `Ctrl+k`       | Open Kubernetes filter modal (k8s mode)   |
 | `f`            | Open fullscreen log viewer modal          |
-| `c`            | Toggle Host/Service columns in log view   |
+| `c`            | Toggle Namespace/Pod or Host/Service cols |
 | `r`            | Reset all data (manual reset)             |
 | `u` / `U`      | Cycle update intervals (forward/backward) |
 | `i`            | AI analysis (in detail view)              |
@@ -415,6 +423,16 @@ Flags:
   --ai-model string                AI model for analysis (auto-selects best available if not specified)
   -s, --skin string                Color scheme/skin to use (default, or name of a skin file)
   --stop-words strings             Additional stop words to filter out from analysis (adds to built-in list)
+
+Kubernetes Flags:
+  --k8s-enabled=true               Enable Kubernetes log streaming mode
+  --k8s-namespace stringArray      Kubernetes namespace(s) to watch (can specify multiple, default: all)
+  --k8s-selector string            Kubernetes label selector for filtering pods
+  --k8s-tail int                   Number of previous log lines to retrieve (default: 10)
+  --k8s-since int                  Only return logs newer than relative duration in seconds
+  --k8s-kubeconfig string          Path to kubeconfig file (default: $HOME/.kube/config)
+  --k8s-context string             Kubernetes context to use
+
   -t, --test-mode                  Run without TTY for testing
   -v, --version                    Print version information
   --config string                  Config file (default: $HOME/.config/gonzo/config.yml)
@@ -768,6 +786,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [Docs](https://docs.controltheory.com/) - Complete user guide, integration examples, advanced features (AI, OTel, custom log formats)
 - [Usage Guide](USAGE_GUIDE.md) - Detailed usage instructions
+- [Kubernetes Integration Guide](guides/KUBERNETES_USAGE.md) - Direct Kubernetes cluster integration, filtering, and usage examples
 - [AWS CloudWatch Logs Usage Guide](guides/CLOUDWATCH_USAGE_GUIDE.md) - Usage instructions for AWS CLI log tail and live tail with Gonzo
 - [Stern Usage Guide](guides/STERN_USAGE_GUIDE.md) - Usage and examples for using Stern with Gonzo
 - [Victoria Logs Integration](guides/VICTORIA_LOGS_USAGE.md) - Using Gonzo with Victoria Logs API

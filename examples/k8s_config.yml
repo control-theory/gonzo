@@ -1,0 +1,329 @@
+# Gonzo Kubernetes Configuration Example
+#
+# This file demonstrates all available Kubernetes integration options.
+# Save to ~/.config/gonzo/config.yml to use as default configuration.
+#
+# You can override any setting with command line flags:
+#   gonzo --k8s-enabled=true --k8s-namespace=production
+
+# ==========================================
+# Kubernetes Configuration
+# ==========================================
+
+k8s:
+  # Enable Kubernetes log streaming mode
+  # When true, Gonzo will connect to your Kubernetes cluster and stream pod logs
+  # Default: false
+  enabled: true
+
+  # Kubernetes namespaces to watch
+  # - Empty list or omit to watch ALL namespaces (requires cluster-wide permissions)
+  # - Specify one or more namespaces to limit scope
+  # - Can also use --k8s-namespace flag (can be specified multiple times)
+  # Examples:
+  #   []                          # Watch all namespaces
+  #   ["default"]                 # Watch only default namespace
+  #   ["production", "staging"]   # Watch multiple namespaces
+  namespaces:
+    - production
+    - staging
+
+  # Kubernetes label selector for filtering pods
+  # Uses standard Kubernetes label selector syntax
+  # - Empty string watches all pods (in selected namespaces)
+  # - Can also use --k8s-selector flag
+  # Examples:
+  #   ""                                    # All pods
+  #   "app=nginx"                           # Single label
+  #   "app=nginx,tier=frontend"             # Multiple labels (AND)
+  #   "environment in (production,staging)" # Set-based selector
+  #   "tier notin (test,dev)"               # Exclusion
+  #   "critical"                            # Label exists
+  #   "!experimental"                       # Label does not exist
+  selector: "app=nginx,tier=frontend"
+
+  # Number of previous log lines to retrieve per pod
+  # When Gonzo starts, it will fetch this many historical log lines from each pod
+  # - Set to 0 to only show new logs (no history)
+  # - Set to -1 to fetch all available logs (can be slow for long-running pods)
+  # - Can also use --k8s-tail flag
+  # Default: 10
+  tail: 50
+
+  # Only show logs newer than a relative duration (in seconds)
+  # Filters logs based on Kubernetes log timestamps
+  # - Set to 0 to show all logs (respects tail setting)
+  # - Useful for focusing on recent activity
+  # - Can also use --k8s-since flag
+  # Examples:
+  #   300     # Last 5 minutes
+  #   3600    # Last hour
+  #   86400   # Last 24 hours
+  # Default: 0 (no time filtering)
+  since: 3600
+
+  # Path to kubeconfig file
+  # - Defaults to $HOME/.kube/config if not specified
+  # - Can use KUBECONFIG environment variable
+  # - Supports standard kubeconfig merge semantics
+  # - Can also use --k8s-kubeconfig flag
+  # Examples:
+  #   ~/.kube/config              # Standard location
+  #   /path/to/custom/kubeconfig  # Custom location
+  #   ""                          # Use default or KUBECONFIG env var
+  kubeconfig: ~/.kube/config
+
+  # Kubernetes context to use from kubeconfig
+  # - Empty string uses current context from kubeconfig
+  # - Allows switching between clusters without changing kubeconfig
+  # - Can also use --k8s-context flag
+  # Examples:
+  #   ""                    # Use current context
+  #   "production-cluster"  # Specific cluster
+  #   "minikube"            # Local development
+  context: production-cluster
+
+# ==========================================
+# General Gonzo Configuration
+# ==========================================
+
+# Dashboard update interval
+# How often the TUI refreshes its display
+# Default: 1s
+update-interval: 1s
+
+# Maximum log entries to keep in buffer
+# Older logs are pruned when buffer is full
+# Higher values use more memory but keep more history
+# Default: 1000
+log-buffer: 2000
+
+# Maximum frequency analysis entries
+# Controls memory used for word/attribute frequency tracking
+# Default: 10000
+memory-size: 15000
+
+# ==========================================
+# UI Customization
+# ==========================================
+
+# Color scheme/theme
+# Available themes: default, dracula, nord, monokai, github-light, solarized-light, etc.
+# Custom themes can be placed in ~/.config/gonzo/skins/
+# Default: default
+skin: dracula
+
+# Reverse scroll wheel direction
+# When true, scroll wheel up = move selection down (natural scrolling)
+# Default: false
+reverse-scroll-wheel: false
+
+# ==========================================
+# AI Configuration
+# ==========================================
+
+# AI model for log analysis
+# - Requires OPENAI_API_KEY environment variable
+# - Auto-selects best available if not specified
+# - Supports OpenAI, LM Studio, Ollama, or any OpenAI-compatible API
+# Examples:
+#   ""              # Auto-select (recommended)
+#   "gpt-4"         # OpenAI GPT-4
+#   "gpt-3.5-turbo" # OpenAI GPT-3.5
+#   "llama3"        # Ollama
+#   "mistral"       # Ollama Mistral
+ai-model: "gpt-4"
+
+# ==========================================
+# Advanced Configuration
+# ==========================================
+
+# Additional stop words to filter from frequency analysis
+# These words will be excluded from the word frequency chart
+# Adds to built-in stop word list (common words like "the", "a", "is", etc.)
+stop-words:
+  - log
+  - message
+  - debug
+  - info
+  - error
+  - warn
+  - timestamp
+
+# Format specification for log parsing
+# - "auto" detects format automatically (JSON, OTLP, logfmt, plain text)
+# - Can specify custom format name from ~/.config/gonzo/formats/
+# - Kubernetes logs are typically auto-detected as JSON or plain text
+# Default: auto
+format: auto
+
+# Test mode (disable TTY requirements)
+# Useful for CI/CD or non-interactive environments
+# Default: false
+test-mode: false
+
+# ==========================================
+# Example Use Cases
+# ==========================================
+
+# Example 1: Production Monitoring
+# k8s:
+#   enabled: true
+#   namespaces: ["production"]
+#   selector: "tier=backend"
+#   tail: 100
+#   since: 3600  # Last hour only
+#   context: production-cluster
+# log-buffer: 5000
+# ai-model: "gpt-4"
+
+# Example 2: Multi-Environment Development
+# k8s:
+#   enabled: true
+#   namespaces: ["dev", "staging"]
+#   selector: "app=myapp"
+#   tail: 20
+#   context: dev-cluster
+# log-buffer: 1000
+
+# Example 3: Troubleshooting Specific Pod
+# k8s:
+#   enabled: true
+#   namespaces: ["production"]
+#   selector: "app=api,version=v2.0.0,critical=true"
+#   tail: 500
+#   since: 300  # Last 5 minutes
+#   context: production-cluster
+# log-buffer: 3000
+
+# Example 4: Cluster-Wide Monitoring (Requires Broad Permissions)
+# k8s:
+#   enabled: true
+#   namespaces: []  # All namespaces
+#   selector: "critical=true"  # Only critical pods across all namespaces
+#   tail: 50
+#   context: production-cluster
+# log-buffer: 10000
+
+# ==========================================
+# Command Line Override Examples
+# ==========================================
+
+# All settings can be overridden via command line flags:
+#
+# Watch specific namespace:
+#   gonzo --k8s --k8s-namespace=production
+#
+# Multiple namespaces:
+#   gonzo --k8s --k8s-namespace=prod --k8s-namespace=staging
+#
+# With label selector:
+#   gonzo --k8s --k8s-selector="app=nginx,tier=frontend"
+#
+# Recent logs only:
+#   gonzo --k8s --k8s-tail=100 --k8s-since=3600
+#
+# Different cluster:
+#   gonzo --k8s --k8s-context=staging-cluster
+#
+# Custom kubeconfig:
+#   gonzo --k8s --k8s-kubeconfig=/path/to/kubeconfig
+#
+# All options combined:
+#   gonzo --k8s \
+#     --k8s-namespace=production \
+#     --k8s-selector="app=api" \
+#     --k8s-tail=100 \
+#     --k8s-since=3600 \
+#     --k8s-context=prod-cluster \
+#     --log-buffer=5000 \
+#     --ai-model="gpt-4"
+
+# ==========================================
+# Environment Variables
+# ==========================================
+
+# Kubernetes-specific:
+#   KUBECONFIG              - Path to kubeconfig file
+#   KUBE_CONTEXT            - Default Kubernetes context
+#
+# Gonzo general:
+#   OPENAI_API_KEY          - API key for AI analysis
+#   OPENAI_API_BASE         - Custom API endpoint (for LM Studio, Ollama, etc.)
+#   GONZO_UPDATE_INTERVAL   - Override update interval
+#   GONZO_LOG_BUFFER        - Override log buffer size
+#   GONZO_AI_MODEL          - Override AI model
+#
+# Example usage:
+#   export KUBECONFIG=/path/to/kubeconfig
+#   export KUBE_CONTEXT=production-cluster
+#   export OPENAI_API_KEY=sk-your-key-here
+#   gonzo --k8s
+
+# ==========================================
+# Kubernetes RBAC Requirements
+# ==========================================
+
+# Your Kubernetes user/service account needs these permissions:
+#
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: ClusterRole
+# metadata:
+#   name: gonzo-log-reader
+# rules:
+# - apiGroups: [""]
+#   resources: ["pods", "pods/log"]
+#   verbs: ["get", "list", "watch"]
+# - apiGroups: [""]
+#   resources: ["namespaces"]
+#   verbs: ["get", "list"]
+#
+# For namespace-specific access:
+#
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: Role
+# metadata:
+#   name: gonzo-log-reader
+#   namespace: production
+# rules:
+# - apiGroups: [""]
+#   resources: ["pods", "pods/log"]
+#   verbs: ["get", "list", "watch"]
+
+# ==========================================
+# Interactive Features
+# ==========================================
+
+# While running, use these keyboard shortcuts:
+#
+# Ctrl+k  - Open Kubernetes filter modal
+#           * Tab to switch between Namespaces/Pods
+#           * Arrow keys to navigate
+#           * Space to toggle selection
+#           * Enter to apply
+#           * ESC to cancel
+#
+# Ctrl+f  - Open severity filter modal
+# /       - Filter by message/attributes (regex)
+# s       - Search and highlight
+# c       - Toggle Namespace/Pod columns
+# f       - Fullscreen log viewer
+# ?       - Show help
+
+# ==========================================
+# More Information
+# ==========================================
+
+# Documentation:
+#   - Main README: ../README.md
+#   - Kubernetes Guide: ../guides/KUBERNETES_USAGE.md
+#   - Usage Guide: ../USAGE_GUIDE.md
+#
+# Examples:
+#   - OTLP Config: ./otlp_example.yml
+#   - Basic Config: ./config.yml
+#
+# Support:
+#   - GitHub: https://github.com/control-theory/gonzo
+#   - Slack: https://ctrltheorycommunity.slack.com
+#   - Docs: https://docs.controltheory.com/
