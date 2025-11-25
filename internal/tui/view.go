@@ -37,6 +37,11 @@ func (m *DashboardModel) View() string {
 		return m.renderCountsModal()
 	}
 	
+	// Show Kubernetes filter modal (check before log viewer so it can overlay)
+	if m.showK8sFilterModal {
+		return m.renderK8sFilterModal()
+	}
+
 	// Show severity filter modal (check before log viewer so it can overlay)
 	if m.showSeverityFilterModal {
 		return m.renderSeverityFilterModal()

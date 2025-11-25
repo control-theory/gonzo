@@ -660,8 +660,36 @@ func (m *DashboardModel) updateFilteredView() {
 		normalizedSeverity := normalizeSeverityLevel(entry.Severity)
 		passesSeverityFilter := !m.severityFilterActive || m.severityFilter[normalizedSeverity]
 
-		// Include entry only if it passes both filters
-		if passesRegexFilter && passesSeverityFilter {
+		// Check K8s filter (if active)
+		passesK8sFilter := true
+		if m.k8sFilterActive {
+			// First check: does entry have K8s attributes at all?
+			ns, hasNs := entry.Attributes["k8s.namespace"]
+			pod, hasPod := entry.Attributes["k8s.pod"]
+
+			// If entry has K8s attributes, apply filtering
+			if hasNs || hasPod {
+				// Default to not passing if we have K8s attributes
+				passesK8sFilter = false
+
+				// Check namespace filter - must be selected
+				if hasNs && m.k8sNamespaces[ns] {
+					passesK8sFilter = true
+
+					// Also check pod filter if pod attribute exists
+					if hasPod {
+						// Build namespace/pod key for lookup
+						podKey := ns + "/" + pod
+						// Check if this specific pod is selected
+						passesK8sFilter = m.k8sPods[podKey]
+					}
+				}
+			}
+			// If no K8s attributes, let it pass (non-K8s logs)
+		}
+
+		// Include entry only if it passes all filters
+		if passesRegexFilter && passesSeverityFilter && passesK8sFilter {
 			m.logEntries = append(m.logEntries, entry)
 		}
 	}

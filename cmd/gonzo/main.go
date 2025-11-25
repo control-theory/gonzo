@@ -41,6 +41,13 @@ type Config struct {
 	VmlogsUser           string        `mapstructure:"vmlogs-user"`
 	VmlogsPassword       string        `mapstructure:"vmlogs-password"`
 	VmlogsQuery          string        `mapstructure:"vmlogs-query"`
+	K8sEnabled           bool          `mapstructure:"k8s-enabled"`
+	K8sKubeconfig        string        `mapstructure:"k8s-kubeconfig"`
+	K8sContext           string        `mapstructure:"k8s-context"`
+	K8sNamespaces        []string      `mapstructure:"k8s-namespaces"`
+	K8sSelector          string        `mapstructure:"k8s-selector"`
+	K8sSince             int64         `mapstructure:"k8s-since"`
+	K8sTailLines         int64         `mapstructure:"k8s-tail-lines"`
 	Skin                 string        `mapstructure:"skin"`
 	StopWords            []string      `mapstructure:"stop-words"`
 	Format               string        `mapstructure:"format"`
@@ -71,9 +78,18 @@ Supports OTLP (OpenTelemetry) format natively, with automatic detection of JSON,
   # Use glob patterns to read multiple files
   gonzo -f "/var/log/*.log" --follow
   
-  # Stream logs from kubectl  
+  # Stream logs from kubectl
   kubectl logs -f deployment/my-app | gonzo
-  
+
+  # Stream logs directly from Kubernetes
+  gonzo --k8s-enabled
+
+  # Stream logs from specific namespaces
+  gonzo --k8s-enabled --k8s-namespaces=default,production
+
+  # Stream logs with label selector
+  gonzo --k8s-enabled --k8s-selector="app=myapp,env=prod"
+
   # With custom settings
   gonzo -f logs.json --update-interval=2s --log-buffer=2000
   
@@ -153,6 +169,13 @@ func init() {
 	rootCmd.Flags().String("vmlogs-user", "", "Victoria Logs basic auth username (can also use GONZO_VMLOGS_USER env var)")
 	rootCmd.Flags().String("vmlogs-password", "", "Victoria Logs basic auth password (can also use GONZO_VMLOGS_PASSWORD env var)")
 	rootCmd.Flags().String("vmlogs-query", "*", "Victoria Logs query (LogsQL) to use for streaming (default: '*' for all logs)")
+	rootCmd.Flags().Bool("k8s-enabled", false, "Enable Kubernetes log streaming from pods")
+	rootCmd.Flags().String("k8s-kubeconfig", "", "Path to kubeconfig file (default: $KUBECONFIG or ~/.kube/config)")
+	rootCmd.Flags().String("k8s-context", "", "Kubernetes context to use (default: current context)")
+	rootCmd.Flags().StringSlice("k8s-namespaces", []string{}, "Kubernetes namespaces to watch (default: all namespaces)")
+	rootCmd.Flags().String("k8s-selector", "", "Label selector to filter pods (e.g., 'app=myapp,env=prod')")
+	rootCmd.Flags().Int64("k8s-since", 0, "Only show logs newer than this many seconds (default: 0 = all)")
+	rootCmd.Flags().Int64("k8s-tail-lines", 10, "Lines of recent logs to show initially per pod (default: 10, use -1 for all)")
 	rootCmd.Flags().StringP("skin", "s", "default", "Color scheme/skin to use (default, or name of a skin file in ~/.config/gonzo/skins/)")
 	rootCmd.Flags().StringSlice("stop-words", []string{}, "Additional stop words to filter out from analysis (adds to built-in list)")
 	rootCmd.Flags().String("format", "", "Log format to use (auto-detect if not specified). Can be: otlp, json, text, or a custom format name from ~/.config/gonzo/formats/")
@@ -174,6 +197,13 @@ func init() {
 	viper.BindPFlag("vmlogs-user", rootCmd.Flags().Lookup("vmlogs-user"))
 	viper.BindPFlag("vmlogs-password", rootCmd.Flags().Lookup("vmlogs-password"))
 	viper.BindPFlag("vmlogs-query", rootCmd.Flags().Lookup("vmlogs-query"))
+	viper.BindPFlag("k8s-enabled", rootCmd.Flags().Lookup("k8s-enabled"))
+	viper.BindPFlag("k8s-kubeconfig", rootCmd.Flags().Lookup("k8s-kubeconfig"))
+	viper.BindPFlag("k8s-context", rootCmd.Flags().Lookup("k8s-context"))
+	viper.BindPFlag("k8s-namespaces", rootCmd.Flags().Lookup("k8s-namespaces"))
+	viper.BindPFlag("k8s-selector", rootCmd.Flags().Lookup("k8s-selector"))
+	viper.BindPFlag("k8s-since", rootCmd.Flags().Lookup("k8s-since"))
+	viper.BindPFlag("k8s-tail-lines", rootCmd.Flags().Lookup("k8s-tail-lines"))
 	viper.BindPFlag("skin", rootCmd.Flags().Lookup("skin"))
 	viper.BindPFlag("stop-words", rootCmd.Flags().Lookup("stop-words"))
 	viper.BindPFlag("format", rootCmd.Flags().Lookup("format"))

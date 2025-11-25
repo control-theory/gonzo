@@ -217,6 +217,17 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.showCountsModal = false
 			return m, nil
 		}
+		if m.showK8sFilterModal {
+			// Restore original state (cancel changes)
+			for k, v := range m.k8sFilterOriginal {
+				m.k8sNamespaces[k] = v
+			}
+			for k, v := range m.k8sPodsOriginal {
+				m.k8sPods[k] = v
+			}
+			m.showK8sFilterModal = false
+			return m, nil
+		}
 		if m.showSeverityFilterModal {
 			// Restore original state (cancel changes)
 			for k, v := range m.severityFilterOriginal {
@@ -394,7 +405,7 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case "ctrl+f":
 		// Severity filter modal
-		if !m.showModal && !m.filterActive && !m.searchActive && !m.showHelp && !m.showPatternsModal && !m.showModelSelectionModal && !m.showStatsModal && !m.showCountsModal {
+		if !m.showModal && !m.filterActive && !m.searchActive && !m.showHelp && !m.showPatternsModal && !m.showModelSelectionModal && !m.showStatsModal && !m.showCountsModal && !m.showK8sFilterModal {
 			// Store original state for ESC cancellation
 			m.severityFilterOriginal = make(map[string]bool)
 			for k, v := range m.severityFilter {
@@ -405,9 +416,33 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+	case "ctrl+k":
+		// Kubernetes filter modal
+		if !m.showModal && !m.filterActive && !m.searchActive && !m.showHelp && !m.showPatternsModal && !m.showModelSelectionModal && !m.showStatsModal && !m.showCountsModal && !m.showSeverityFilterModal {
+			// Update namespaces and pods from Kubernetes API
+			m.updateK8sNamespacesFromAPI()
+			m.updateK8sPodsFromAPI()
+
+			// Store original state for ESC cancellation
+			m.k8sFilterOriginal = make(map[string]bool)
+			for k, v := range m.k8sNamespaces {
+				m.k8sFilterOriginal[k] = v
+			}
+			m.k8sPodsOriginal = make(map[string]bool)
+			for k, v := range m.k8sPods {
+				m.k8sPodsOriginal[k] = v
+			}
+
+			m.showK8sFilterModal = true
+			m.k8sFilterSelected = 0    // Start at the top
+			m.k8sScrollOffset = 0      // Reset scroll
+			m.k8sActiveView = "namespaces" // Start with namespaces view
+			return m, nil
+		}
+
 	case " ":
 		// Spacebar: Global pause/unpause toggle for entire UI
-		if !m.showModal && !m.filterActive && !m.searchActive && !m.showSeverityFilterModal {
+		if !m.showModal && !m.filterActive && !m.searchActive && !m.showSeverityFilterModal && !m.showK8sFilterModal {
 			wasPaused := m.viewPaused
 			m.viewPaused = !m.viewPaused
 			
@@ -673,6 +708,147 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case "escape", "esc":
 			m.showModelSelectionModal = false
+			return m, nil
+		}
+		return m, nil
+	}
+
+	// Kubernetes filter modal shortcuts
+	if m.showK8sFilterModal {
+		var totalItems int
+		if m.k8sActiveView == "namespaces" {
+			totalItems = len(m.k8sNamespaces) + 2 // +2 for "All Namespaces" and separator
+		} else {
+			totalItems = len(m.k8sPods) + 2 // +2 for "All Pods" and separator
+		}
+
+		switch msg.String() {
+		case "tab":
+			// Switch between namespaces and pods view
+			if m.k8sActiveView == "namespaces" {
+				m.k8sActiveView = "pods"
+				// Update pods based on selected namespaces
+				m.updateK8sPodsFromAPI()
+			} else {
+				m.k8sActiveView = "namespaces"
+			}
+			m.k8sFilterSelected = 0 // Reset selection to top
+			m.k8sScrollOffset = 0   // Reset scroll
+			return m, nil
+
+		case "up", "k":
+			if m.k8sFilterSelected > 0 {
+				m.k8sFilterSelected--
+				// Skip separator at index 1
+				if m.k8sFilterSelected == 1 {
+					m.k8sFilterSelected = 0
+				}
+			}
+			return m, nil
+
+		case "down", "j":
+			if m.k8sFilterSelected < totalItems-1 {
+				m.k8sFilterSelected++
+				// Skip separator at index 1
+				if m.k8sFilterSelected == 1 {
+					m.k8sFilterSelected = 2
+				}
+			}
+			return m, nil
+
+		case " ":
+			// Spacebar: Toggle selection
+			if m.k8sActiveView == "namespaces" {
+				if m.k8sFilterSelected == 0 {
+					// Toggle All Namespaces - if all are selected, deselect all; otherwise select all
+					allSelected := true
+					for _, enabled := range m.k8sNamespaces {
+						if !enabled {
+							allSelected = false
+							break
+						}
+					}
+					// Toggle: if all selected, deselect all; otherwise select all
+					newState := !allSelected
+					for ns := range m.k8sNamespaces {
+						m.k8sNamespaces[ns] = newState
+					}
+					// Update pods when namespaces change
+					m.updateK8sPodsFromAPI()
+				} else if m.k8sFilterSelected >= 2 {
+					// Individual namespace - use helper to get sorted list
+					sortedNS := m.getSortedNamespaces()
+					nsIndex := m.k8sFilterSelected - 2
+					if nsIndex >= 0 && nsIndex < len(sortedNS) {
+						ns := sortedNS[nsIndex]
+						m.k8sNamespaces[ns] = !m.k8sNamespaces[ns]
+						// Update pods when namespaces change
+						m.updateK8sPodsFromAPI()
+					}
+				}
+			} else {
+				// Pods view
+				if m.k8sFilterSelected == 0 {
+					// Toggle All Pods - if all are selected, deselect all; otherwise select all
+					allSelected := true
+					for _, enabled := range m.k8sPods {
+						if !enabled {
+							allSelected = false
+							break
+						}
+					}
+					// Toggle: if all selected, deselect all; otherwise select all
+					newState := !allSelected
+					for pod := range m.k8sPods {
+						m.k8sPods[pod] = newState
+					}
+				} else if m.k8sFilterSelected >= 2 {
+					// Individual pod - use helper to get sorted list
+					sortedPods := m.getSortedPods()
+					podIndex := m.k8sFilterSelected - 2
+					if podIndex >= 0 && podIndex < len(sortedPods) {
+						pod := sortedPods[podIndex]
+						m.k8sPods[pod] = !m.k8sPods[pod]
+					}
+				}
+			}
+			m.k8sFilterActive = true
+			return m, nil
+
+		case "enter":
+			// Apply filter and close modal
+			m.showK8sFilterModal = false
+			m.k8sFilterActive = true
+
+			// Update the actual K8s source to stream only from selected namespaces
+			if m.k8sSource != nil {
+				// Build list of selected namespaces
+				var selectedNamespaces []string
+				for ns, selected := range m.k8sNamespaces {
+					if selected {
+						selectedNamespaces = append(selectedNamespaces, ns)
+					}
+				}
+
+				// If no namespaces selected, use empty string to mean "all"
+				if len(selectedNamespaces) == 0 {
+					selectedNamespaces = []string{""}
+				}
+
+				// Update K8s source filter (namespace-level filtering)
+				// Pod-level filtering will be done display-side for granularity
+				if err := m.k8sSource.UpdateFilter(selectedNamespaces, ""); err != nil {
+					// Log error but don't block - display-side filtering will still work
+					// Note: In production, you might want to show this error to the user
+				}
+			}
+
+			// Filter will be applied in updateFilteredView (for pod-level filtering)
+			m.updateFilteredView()
+			return m, nil
+
+		case "escape", "esc":
+			// Cancel handled in escape section above
 			return m, nil
 		}
 		return m, nil

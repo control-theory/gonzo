@@ -101,11 +101,26 @@ func (fd *FormatDetector) GetCustomFormatName() string {
 
 // containsOTLPFields checks if the JSON contains OTLP-specific fields
 func (fd *FormatDetector) containsOTLPFields(data map[string]interface{}) bool {
+	// Check for standard OTLP keywords
 	for _, keyword := range fd.otlpKeywords {
 		if fd.hasKeyRecursive(data, keyword) {
 			return true
 		}
 	}
+
+	// Check for single OTLP record format (used by K8s logs)
+	// Must have both "body" and "attributes", and body must have "stringValue"
+	if body, hasBody := data["body"].(map[string]interface{}); hasBody {
+		if _, hasStringValue := body["stringValue"]; hasStringValue {
+			// Also check if attributes exists and is an array
+			if attrs, hasAttrs := data["attributes"]; hasAttrs {
+				if _, isArray := attrs.([]interface{}); isArray {
+					return true
+				}
+			}
+		}
+	}
+
 	return false
 }
 

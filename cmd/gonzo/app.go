@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/control-theory/gonzo/internal/analyzer"
 	"github.com/control-theory/gonzo/internal/filereader"
 	"github.com/control-theory/gonzo/internal/formats"
+	"github.com/control-theory/gonzo/internal/k8s"
 	"github.com/control-theory/gonzo/internal/memory"
 	"github.com/control-theory/gonzo/internal/otlplog"
 	"github.com/control-theory/gonzo/internal/otlpreceiver"
@@ -21,6 +23,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
+	"k8s.io/klog/v2"
 )
 
 // runApp initializes and runs the application
@@ -30,6 +33,15 @@ func runApp(cmd *cobra.Command, args []string) error {
 		versionCmd.Run(cmd, args)
 		return nil
 	}
+
+	// Redirect log output to discard to avoid messing up the TUI
+	// All log.Printf calls will be silently discarded
+	log.SetOutput(io.Discard)
+
+	// Suppress klog output from Kubernetes client-go
+	// This prevents errors like "request.go:752" from appearing in the TUI
+	klog.SetOutput(io.Discard)
+	klog.LogToStderr(false)
 
 	// Start version checking in background (if not disabled)
 	var versionChecker *versioncheck.Checker
@@ -181,6 +193,10 @@ type simpleTuiModel struct {
 	vmlogsReceiver *vmlogs.Receiver // Victoria Logs receiver for streaming logs
 	hasVmlogsInput bool             // Whether we're receiving Victoria Logs data
 
+	// Kubernetes receiver support
+	k8sReceiver *k8s.KubernetesLogSource // Kubernetes log source for streaming pod logs
+	hasK8sInput bool                     // Whether we're receiving Kubernetes logs
+
 	// JSON accumulation for multi-line OTLP support
 	jsonBuffer   strings.Builder // Buffer for accumulating multi-line JSON
 	jsonDepth    int             // Track JSON object/array nesting depth
@@ -195,8 +211,45 @@ func (m *simpleTuiModel) Init() tea.Cmd {
 	// Initialize frequency reset timer
 	m.lastFreqReset = time.Now()
 
-	// Check if Victoria Logs receiver is enabled
-	if cfg.VmlogsURL != "" {
+	// Check if Kubernetes receiver is enabled
+	if cfg.K8sEnabled {
+		// Kubernetes input mode
+		m.hasK8sInput = true
+		m.inputChan = make(chan string, 100)
+
+		// Create kubernetes config
+		k8sConfig := &k8s.Config{
+			Kubeconfig: cfg.K8sKubeconfig,
+			Context:    cfg.K8sContext,
+			Namespaces: cfg.K8sNamespaces,
+			Selector:   cfg.K8sSelector,
+			Since:      cfg.K8sSince,
+			TailLines:  cfg.K8sTailLines,
+		}
+
+		// Create and start Kubernetes log source
+		k8sSource, err := k8s.NewKubernetesLogSource(k8sConfig)
+		if err != nil {
+			log.Printf("Error creating Kubernetes log source: %v", err)
+			// Fall back to other input methods if Kubernetes fails
+			m.hasK8sInput = false
+		} else {
+			m.k8sReceiver = k8sSource
+			if err := m.k8sReceiver.Start(); err != nil {
+				log.Printf("Error starting Kubernetes log source: %v", err)
+				// Fall back to other input methods if Kubernetes fails
+				m.hasK8sInput = false
+			} else {
+				// Wire K8s source to the dashboard for namespace/pod listing
+				m.dashboard.SetK8sSource(k8sSource)
+				// Start reading from Kubernetes receiver in the background
+				go m.readK8sAsync()
+			}
+		}
+	}
+
+	// Check if Victoria Logs receiver is enabled (only if Kubernetes is not enabled)
+	if !m.hasK8sInput && cfg.VmlogsURL != "" {
 		// Victoria Logs input mode
 		m.hasVmlogsInput = true
 		m.inputChan = make(chan string, 100)
@@ -215,8 +268,8 @@ func (m *simpleTuiModel) Init() tea.Cmd {
 		}
 	}
 
-	// Check if OTLP receiver is enabled (only if Victoria Logs is not enabled)
-	if !m.hasVmlogsInput && cfg.OTLPEnabled {
+	// Check if OTLP receiver is enabled (only if Kubernetes and Victoria Logs are not enabled)
+	if !m.hasK8sInput && !m.hasVmlogsInput && cfg.OTLPEnabled {
 		// OTLP input mode
 		m.hasOTLPInput = true
 		m.inputChan = make(chan string, 100)
@@ -233,8 +286,8 @@ func (m *simpleTuiModel) Init() tea.Cmd {
 		}
 	}
 
-	// Check if we have file inputs specified (only if Victoria Logs and OTLP are not enabled)
-	if !m.hasVmlogsInput && !m.hasOTLPInput && len(cfg.Files) > 0 {
+	// Check if we have file inputs specified (only if Kubernetes, Victoria Logs and OTLP are not enabled)
+	if !m.hasK8sInput && !m.hasVmlogsInput && !m.hasOTLPInput && len(cfg.Files) > 0 {
 		// File input mode
 		m.hasFileInput = true
 		m.inputChan = make(chan string, 100)
@@ -252,8 +305,8 @@ func (m *simpleTuiModel) Init() tea.Cmd {
 		}
 	}
 
-	// If no Victoria Logs, no OTLP, no file input or file input failed, check stdin
-	if !m.hasVmlogsInput && !m.hasOTLPInput && !m.hasFileInput {
+	// If no Kubernetes, no Victoria Logs, no OTLP, no file input or file input failed, check stdin
+	if !m.hasK8sInput && !m.hasVmlogsInput && !m.hasOTLPInput && !m.hasFileInput {
 		// Check if stdin has data available (not a terminal)
 		stat, _ := os.Stdin.Stat()
 		if (stat.Mode() & os.ModeCharDevice) == 0 {
@@ -274,11 +327,44 @@ func (m *simpleTuiModel) Init() tea.Cmd {
 	cmds = append(cmds, m.periodicUpdate())
 
 	// Start checking for input data if we have any input source
-	if m.hasStdinData || m.hasFileInput || m.hasOTLPInput || m.hasVmlogsInput {
+	if m.hasStdinData || m.hasFileInput || m.hasOTLPInput || m.hasVmlogsInput || m.hasK8sInput {
 		cmds = append(cmds, m.checkInputChannel())
 	}
 
 	return tea.Batch(cmds...)
+}
+
+// readK8sAsync reads from the Kubernetes log source
+func (m *simpleTuiModel) readK8sAsync() {
+	defer close(m.inputChan)
+
+	if m.k8sReceiver == nil {
+		return
+	}
+
+	// Get the channel from Kubernetes receiver
+	k8sLineChan := m.k8sReceiver.GetLineChan()
+
+	// Forward lines from Kubernetes receiver to input channel
+	for {
+		select {
+		case <-m.ctx.Done():
+			m.k8sReceiver.Stop()
+			return
+		case line, ok := <-k8sLineChan:
+			if !ok {
+				// Kubernetes receiver finished
+				return
+			}
+			if line != "" {
+				select {
+				case m.inputChan <- line:
+				case <-m.ctx.Done():
+					return
+				}
+			}
+		}
+	}
 }
 
 // readVmlogsAsync reads from the Victoria Logs receiver
@@ -495,7 +581,7 @@ func (m *simpleTuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.processLogLine(string(msg))
 
 		// Continue checking for more data if we have input sources
-		if (m.hasStdinData || m.hasFileInput || m.hasOTLPInput || m.hasVmlogsInput) && !m.finished {
+		if (m.hasStdinData || m.hasFileInput || m.hasOTLPInput || m.hasVmlogsInput || m.hasK8sInput) && !m.finished {
 			cmds = append(cmds, m.checkInputChannel())
 		}
 

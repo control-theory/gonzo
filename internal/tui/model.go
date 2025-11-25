@@ -15,6 +15,14 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// K8sSourceInterface defines the interface for Kubernetes log source
+// This allows the TUI to query available namespaces and pods
+type K8sSourceInterface interface {
+	ListNamespaces() (map[string]bool, error)
+	ListPods(selectedNamespaces map[string]bool) (map[string]bool, error)
+	UpdateFilter(namespaces []string, selector string) error
+}
+
 // Section represents different dashboard sections
 type Section int
 
@@ -101,6 +109,18 @@ type DashboardModel struct {
 	severityFilterSelected int             // Selected index in severity filter modal
 	severityFilterActive   bool            // Whether severity filtering is active (any severity disabled)
 	severityFilterOriginal map[string]bool // Original state when modal opened (for ESC cancellation)
+
+	// Kubernetes Filter (requires integration with k8s log source)
+	showK8sFilterModal     bool                // Whether to show K8s filter modal
+	k8sNamespaces          map[string]bool     // Available namespaces and their selection state
+	k8sPods                map[string]bool     // Available pods and their selection state
+	k8sFilterSelected      int                 // Selected index in K8s filter modal
+	k8sScrollOffset        int                 // Scroll offset for K8s filter modal
+	k8sFilterOriginal      map[string]bool     // Original namespace state (for ESC cancellation)
+	k8sPodsOriginal        map[string]bool     // Original pod state (for ESC cancellation)
+	k8sActiveView          string              // "namespaces" or "pods"
+	k8sFilterActive        bool                // Whether K8s filtering is currently active
+	k8sSource              K8sSourceInterface  // Reference to K8s source for listing namespaces/pods
 
 	// Charts data for rendering
 	chartsInitialized bool
@@ -418,6 +438,11 @@ func (m *DashboardModel) getLifetimeAttributeEntries() []*memory.AttributeStatsE
 // SetVersionChecker sets the version checker for update notifications
 func (m *DashboardModel) SetVersionChecker(checker *versioncheck.Checker) {
 	m.versionChecker = checker
+}
+
+// SetK8sSource sets the Kubernetes log source for the dashboard
+func (m *DashboardModel) SetK8sSource(source K8sSourceInterface) {
+	m.k8sSource = source
 }
 
 // Init initializes the model

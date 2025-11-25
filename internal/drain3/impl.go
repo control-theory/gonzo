@@ -134,7 +134,7 @@ func (d *Drain) Reset() error {
 		// Process the log line through drain3
 		err := d.AddLogMessage(line)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error processing log line: %v\n", err)
+			// Silently skip lines that fail to process to avoid messing up TUI
 			continue
 		}
 	}
