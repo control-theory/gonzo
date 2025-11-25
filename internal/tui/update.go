@@ -661,9 +661,13 @@ func (m *DashboardModel) updateFilteredView() {
 		passesSeverityFilter := !m.severityFilterActive || m.severityFilter[normalizedSeverity]
 
 		// Check K8s filter (if active)
+		// Note: When using K8s source, filtering is applied at the source level,
+		// so logs from unselected pods won't arrive here at all.
+		// This display-side filter is kept as a fallback for edge cases.
 		passesK8sFilter := true
-		if m.k8sFilterActive {
-			// First check: does entry have K8s attributes at all?
+		if m.k8sFilterActive && m.k8sSource == nil {
+			// Only apply display-side filtering if we don't have a K8s source
+			// (e.g., when reading k8s logs from stdin/file)
 			ns, hasNs := entry.Attributes["k8s.namespace"]
 			pod, hasPod := entry.Attributes["k8s.pod"]
 

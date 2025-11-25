@@ -20,7 +20,7 @@ import (
 type K8sSourceInterface interface {
 	ListNamespaces() (map[string]bool, error)
 	ListPods(selectedNamespaces map[string]bool) (map[string]bool, error)
-	UpdateFilter(namespaces []string, selector string) error
+	UpdateFilter(namespaces []string, selector string, podNames []string) error
 }
 
 // Section represents different dashboard sections

@@ -820,7 +820,7 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.showK8sFilterModal = false
 			m.k8sFilterActive = true
 
-			// Update the actual K8s source to stream only from selected namespaces
+			// Update the actual K8s source to stream only from selected namespaces and pods
 			if m.k8sSource != nil {
 				// Build list of selected namespaces
 				var selectedNamespaces []string
@@ -835,15 +835,22 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					selectedNamespaces = []string{""}
 				}
 
-				// Update K8s source filter (namespace-level filtering)
-				// Pod-level filtering will be done display-side for granularity
-				if err := m.k8sSource.UpdateFilter(selectedNamespaces, ""); err != nil {
-					// Log error but don't block - display-side filtering will still work
+				// Build list of selected pods (format: namespace/podname or just podname)
+				var selectedPods []string
+				for pod, selected := range m.k8sPods {
+					if selected {
+						selectedPods = append(selectedPods, pod)
+					}
+				}
+
+				// Update K8s source filter (both namespace and pod filtering at source)
+				if err := m.k8sSource.UpdateFilter(selectedNamespaces, "", selectedPods); err != nil {
+					// Log error but don't block
 					// Note: In production, you might want to show this error to the user
 				}
 			}
 
-			// Filter will be applied in updateFilteredView (for pod-level filtering)
+			// Refresh filtered view
 			m.updateFilteredView()
 			return m, nil
 

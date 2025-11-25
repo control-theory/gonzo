@@ -56,11 +56,12 @@ func (s *KubernetesLogSource) Start() error {
 		since = &s.config.Since
 	}
 
-	// Create pod watcher
+	// Create pod watcher (initially no pod name filter)
 	watcher, err := NewPodWatcher(
 		clientset,
 		s.config.Namespaces,
 		s.config.Selector,
+		nil, // No pod name filter initially
 		s.lineChan,
 		tailLines,
 		since,
@@ -116,9 +117,9 @@ func (s *KubernetesLogSource) GetActiveStreams() int {
 	return 0
 }
 
-// UpdateFilter updates the namespace and label selector filter
+// UpdateFilter updates the namespace, label selector, and pod name filter
 // This can be used to dynamically change what pods are being watched
-func (s *KubernetesLogSource) UpdateFilter(namespaces []string, selector string) error {
+func (s *KubernetesLogSource) UpdateFilter(namespaces []string, selector string, podNames []string) error {
 	// Stop current watcher
 	if s.watcher != nil {
 		s.watcher.Stop()
@@ -151,6 +152,7 @@ func (s *KubernetesLogSource) UpdateFilter(namespaces []string, selector string)
 		clientset,
 		s.config.Namespaces,
 		s.config.Selector,
+		podNames,
 		s.lineChan,
 		tailLines,
 		since,
@@ -166,7 +168,7 @@ func (s *KubernetesLogSource) UpdateFilter(namespaces []string, selector string)
 		return fmt.Errorf("failed to start pod watcher: %w", err)
 	}
 
-	log.Printf("Updated kubernetes filter - Namespaces: %v, Selector: %s", namespaces, selector)
+	log.Printf("Updated kubernetes filter - Namespaces: %v, Selector: %s, Pods: %d selected", namespaces, selector, len(podNames))
 
 	return nil
 }

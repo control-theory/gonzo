@@ -21,6 +21,7 @@ type PodWatcher struct {
 	clientset    *kubernetes.Clientset
 	namespaces   []string
 	selector     labels.Selector
+	podNames     map[string]bool            // Pod names to filter (namespace/podname format), empty = all pods
 	output       chan string
 	streamers    map[string]*PodLogStreamer // key: namespace/podName/containerName
 	mu           sync.RWMutex
@@ -38,6 +39,7 @@ func NewPodWatcher(
 	clientset *kubernetes.Clientset,
 	namespaces []string,
 	selector string,
+	podNames []string,
 	output chan string,
 	tailLines *int64,
 	since *int64,
@@ -62,10 +64,17 @@ func NewPodWatcher(
 		namespaces = []string{""} // Empty string means all namespaces
 	}
 
+	// Convert pod names slice to map for fast lookup
+	podNamesMap := make(map[string]bool)
+	for _, podName := range podNames {
+		podNamesMap[podName] = true
+	}
+
 	return &PodWatcher{
 		clientset:  clientset,
 		namespaces: namespaces,
 		selector:   labelSelector,
+		podNames:   podNamesMap,
 		output:     output,
 		streamers:  make(map[string]*PodLogStreamer),
 		ctx:        ctx,
@@ -153,11 +162,21 @@ func (w *PodWatcher) watchNamespace(namespace string) error {
 	return nil
 }
 
-// shouldWatchPod determines if a pod should be watched based on selector and phase
+// shouldWatchPod determines if a pod should be watched based on selector, name filter, and phase
 func (w *PodWatcher) shouldWatchPod(pod *corev1.Pod) bool {
 	// Check if pod matches label selector
 	if !w.selector.Matches(labels.Set(pod.Labels)) {
 		return false
+	}
+
+	// Check pod name filter (if specified)
+	if len(w.podNames) > 0 {
+		// Build pod key in namespace/podname format
+		podKey := fmt.Sprintf("%s/%s", pod.Namespace, pod.Name)
+		// If pod is not in the filter list, skip it
+		if !w.podNames[podKey] {
+			return false
+		}
 	}
 
 	// Only watch running or succeeded pods (succeeded for job logs)
