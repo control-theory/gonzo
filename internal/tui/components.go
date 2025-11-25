@@ -278,12 +278,20 @@ func (m *DashboardModel) renderLogScrollContent(height int, logWidth int) []stri
 	if m.showColumns {
 		timestampHeader := lipgloss.NewStyle().Foreground(ColorWhite).Render("Time    ")
 		severityHeader := lipgloss.NewStyle().Foreground(ColorWhite).Render("Level")
-		hostHeader := lipgloss.NewStyle().Foreground(ColorWhite).Render("Host        ")
-		serviceHeader := lipgloss.NewStyle().Foreground(ColorWhite).Render("Service         ")
+
+		// Use k8s headers if in k8s mode, otherwise use host/service headers
+		var col1Header, col2Header string
+		if m.isK8sMode() {
+			col1Header = lipgloss.NewStyle().Foreground(ColorWhite).Render("Namespace           ")
+			col2Header = lipgloss.NewStyle().Foreground(ColorWhite).Render("Pod                 ")
+		} else {
+			col1Header = lipgloss.NewStyle().Foreground(ColorWhite).Render("Host        ")
+			col2Header = lipgloss.NewStyle().Foreground(ColorWhite).Render("Service         ")
+		}
 		messageHeader := lipgloss.NewStyle().Foreground(ColorWhite).Render("Message")
 
 		headerLine := fmt.Sprintf("%s %s %s %s %s",
-			timestampHeader, severityHeader, hostHeader, serviceHeader, messageHeader)
+			timestampHeader, severityHeader, col1Header, col2Header, messageHeader)
 		logLines = append(logLines, headerLine)
 		height-- // Reduce available height for logs
 	}

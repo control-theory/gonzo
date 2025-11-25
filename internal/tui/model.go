@@ -445,6 +445,23 @@ func (m *DashboardModel) SetK8sSource(source K8sSourceInterface) {
 	m.k8sSource = source
 }
 
+// isK8sMode returns true if any logs have k8s attributes (namespace or pod)
+func (m *DashboardModel) isK8sMode() bool {
+	// Check the most recent log entries for k8s attributes
+	// We only need to check a few entries to determine mode
+	checkCount := min(10, len(m.logEntries))
+	for i := len(m.logEntries) - checkCount; i < len(m.logEntries); i++ {
+		if i < 0 {
+			continue
+		}
+		entry := m.logEntries[i]
+		if entry.Attributes["k8s.namespace"] != "" || entry.Attributes["k8s.pod"] != "" {
+			return true
+		}
+	}
+	return false
+}
+
 // Init initializes the model
 func (m *DashboardModel) Init() tea.Cmd {
 	var cmds []tea.Cmd

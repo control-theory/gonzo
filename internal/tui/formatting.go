@@ -20,25 +20,48 @@ func (m *DashboardModel) formatLogEntry(entry LogEntry, availableWidth int, isSe
 
 		var logLine string
 		if m.showColumns {
-			// Extract host.name and service.name from OTLP attributes
-			host := entry.Attributes["host.name"]
-			service := entry.Attributes["service.name"]
+			// Check if this is a k8s log (has k8s.namespace or k8s.pod attributes)
+			namespace := entry.Attributes["k8s.namespace"]
+			pod := entry.Attributes["k8s.pod"]
+			isK8s := namespace != "" || pod != ""
 
-			// Truncate to fit column width
-			if len(host) > 12 {
-				host = host[:9] + "..."
-			}
-			if len(service) > 16 {
-				service = service[:13] + "..."
-			}
+			var col1Str, col2Str string
+			var columnsWidth int
 
-			// Format fixed-width columns
-			hostCol := fmt.Sprintf("%-12s", host)
-			serviceCol := fmt.Sprintf("%-16s", service)
+			if isK8s {
+				// K8s mode: show namespace and pod (both truncated to 20 chars)
+				if len(namespace) > 20 {
+					namespace = namespace[:17] + "..."
+				}
+				if len(pod) > 20 {
+					pod = pod[:17] + "..."
+				}
+
+				// Format fixed-width columns
+				col1Str = fmt.Sprintf("%-20s", namespace)
+				col2Str = fmt.Sprintf("%-20s", pod)
+				columnsWidth = 42 // 20 + 20 + 2 spaces
+			} else {
+				// Normal mode: show host.name and service.name from OTLP attributes
+				host := entry.Attributes["host.name"]
+				service := entry.Attributes["service.name"]
+
+				// Truncate to fit column width
+				if len(host) > 12 {
+					host = host[:9] + "..."
+				}
+				if len(service) > 16 {
+					service = service[:13] + "..."
+				}
+
+				// Format fixed-width columns
+				col1Str = fmt.Sprintf("%-12s", host)
+				col2Str = fmt.Sprintf("%-16s", service)
+				columnsWidth = 30 // 12 + 16 + 2 spaces
+			}
 
 			// Calculate remaining space for message
 			// Use same calculation as non-selected: availableWidth - 18 - columnsWidth
-			columnsWidth := 30 // 12 + 16 + 2 spaces
 			maxMessageLen := availableWidth - 18 - columnsWidth
 			if maxMessageLen < 10 {
 				maxMessageLen = 10
@@ -49,7 +72,7 @@ func (m *DashboardModel) formatLogEntry(entry LogEntry, availableWidth int, isSe
 				message = message[:maxMessageLen-3] + "..."
 			}
 
-			logLine = fmt.Sprintf("%s %-5s %s %s %s", timestamp, severity, hostCol, serviceCol, message)
+			logLine = fmt.Sprintf("%s %-5s %s %s %s", timestamp, severity, col1Str, col2Str, message)
 		} else {
 			// Calculate space for message - use same as non-selected: availableWidth - 18
 			maxMessageLen := availableWidth - 18
@@ -84,32 +107,58 @@ func (m *DashboardModel) formatLogEntry(entry LogEntry, availableWidth int, isSe
 		Foreground(ColorGray).
 		Render(timestamp)
 
-	// Extract Host and Service columns if enabled
-	var hostCol, serviceCol string
+	// Extract columns if enabled (K8s or Host/Service)
+	var col1, col2 string
 	columnsWidth := 0
 	if m.showColumns {
-		// Extract host.name and service.name from OTLP attributes
-		host := entry.Attributes["host.name"]
-		service := entry.Attributes["service.name"]
+		// Check if this is a k8s log (has k8s.namespace or k8s.pod attributes)
+		namespace := entry.Attributes["k8s.namespace"]
+		pod := entry.Attributes["k8s.pod"]
+		isK8s := namespace != "" || pod != ""
 
-		// Truncate to fit column width (12 chars / 16 chars)
-		if len(host) > 12 {
-			host = host[:9] + "..."
+		if isK8s {
+			// K8s mode: show namespace and pod (both truncated to 20 chars)
+			if len(namespace) > 20 {
+				namespace = namespace[:17] + "..."
+			}
+			if len(pod) > 20 {
+				pod = pod[:17] + "..."
+			}
+
+			// Style the k8s columns
+			col1 = lipgloss.NewStyle().
+				Foreground(ColorGreen).
+				Render(fmt.Sprintf("%-20s", namespace))
+
+			col2 = lipgloss.NewStyle().
+				Foreground(ColorBlue).
+				Render(fmt.Sprintf("%-20s", pod))
+
+			columnsWidth = 42 // 20 + 20 + 2 spaces
+		} else {
+			// Normal mode: show host.name and service.name from OTLP attributes
+			host := entry.Attributes["host.name"]
+			service := entry.Attributes["service.name"]
+
+			// Truncate to fit column width (12 chars / 16 chars)
+			if len(host) > 12 {
+				host = host[:9] + "..."
+			}
+			if len(service) > 16 {
+				service = service[:13] + "..."
+			}
+
+			// Style the columns
+			col1 = lipgloss.NewStyle().
+				Foreground(ColorGreen).
+				Render(fmt.Sprintf("%-12s", host))
+
+			col2 = lipgloss.NewStyle().
+				Foreground(ColorBlue).
+				Render(fmt.Sprintf("%-16s", service))
+
+			columnsWidth = 30 // 12 + 16 + 2 spaces
 		}
-		if len(service) > 16 {
-			service = service[:13] + "..."
-		}
-
-		// Style the columns
-		hostCol = lipgloss.NewStyle().
-			Foreground(ColorGreen).
-			Render(fmt.Sprintf("%-12s", host))
-
-		serviceCol = lipgloss.NewStyle().
-			Foreground(ColorBlue).
-			Render(fmt.Sprintf("%-16s", service))
-
-		columnsWidth = 30 // 12 + 16 + 2 spaces
 	}
 
 	// Truncate message if too long
@@ -131,7 +180,7 @@ func (m *DashboardModel) formatLogEntry(entry LogEntry, availableWidth int, isSe
 	// Create the complete log line
 	var logLine string
 	if m.showColumns {
-		logLine = fmt.Sprintf("%s %s %s %s %s", styledTimestamp, styledSeverity, hostCol, serviceCol, message)
+		logLine = fmt.Sprintf("%s %s %s %s %s", styledTimestamp, styledSeverity, col1, col2, message)
 	} else {
 		logLine = fmt.Sprintf("%s %s %s", styledTimestamp, styledSeverity, message)
 	}
