@@ -207,14 +207,6 @@ func (s *PodLogStreamer) enrichLogLine(line string) string {
 	return string(jsonBytes)
 }
 
-// min returns the minimum of two integers
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 // mustMarshalJSON marshals to JSON or returns empty array string on error
 func mustMarshalJSON(v interface{}) string {
 	bytes, err := json.Marshal(v)

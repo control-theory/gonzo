@@ -122,9 +122,7 @@ func (fr *FileReader) Start() <-chan string {
 
 // startReadMode reads files once from beginning to end
 func (fr *FileReader) startReadMode() {
-	fr.wg.Add(1)
-	go func() {
-		defer fr.wg.Done()
+	fr.wg.Go(func() {
 		defer close(fr.lineChan)
 
 		for _, filePath := range fr.filePaths {
@@ -133,14 +131,12 @@ func (fr *FileReader) startReadMode() {
 				continue
 			}
 		}
-	}()
+	})
 }
 
 // startFollowMode reads files and then watches for new content
 func (fr *FileReader) startFollowMode() {
-	fr.wg.Add(1)
-	go func() {
-		defer fr.wg.Done()
+	fr.wg.Go(func() {
 		defer close(fr.lineChan)
 		defer fr.closeAllWatchers()
 
@@ -161,7 +157,7 @@ func (fr *FileReader) startFollowMode() {
 
 		// Keep running until context is cancelled
 		<-fr.ctx.Done()
-	}()
+	})
 }
 
 // readFile reads a file from beginning to end
@@ -241,15 +237,15 @@ func (fr *FileReader) setupFileWatcher(filePath string) error {
 	}
 
 	// Start watching for changes
-	fr.wg.Add(1)
-	go fr.watchFile(filePath, watcher)
+	fr.wg.Go(func() {
+		fr.watchFile(filePath, watcher)
+	})
 
 	return nil
 }
 
 // watchFile watches a single file for changes
 func (fr *FileReader) watchFile(filePath string, watcher *fsnotify.Watcher) {
-	defer fr.wg.Done()
 
 	for {
 		select {

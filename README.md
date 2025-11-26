@@ -687,7 +687,7 @@ internal/
 
 ### Prerequisites
 
-- Go 1.21 or higher
+- Go 1.25 or higher
 - Make (optional, for convenience)
 
 ### Building

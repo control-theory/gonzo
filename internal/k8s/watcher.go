@@ -151,13 +151,11 @@ func (w *PodWatcher) watchNamespace(namespace string) error {
 	factory.Start(stopCh)
 
 	// Wait for cache sync
-	w.wg.Add(1)
-	go func() {
-		defer w.wg.Done()
+	w.wg.Go(func() {
 		if !cache.WaitForCacheSync(stopCh, podInformer.HasSynced) {
 			log.Printf("Failed to sync cache for namespace %q", namespace)
 		}
-	}()
+	})
 
 	return nil
 }

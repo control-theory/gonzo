@@ -78,14 +78,12 @@ func (r *Receiver) Start() error {
 		otlpgrpc.RegisterLogsServiceServer(r.grpcServer, r)
 
 		// Start serving in a goroutine
-		r.wg.Add(1)
-		go func() {
-			defer r.wg.Done()
+		r.wg.Go(func() {
 			log.Printf("OTLP gRPC receiver listening on port %d", r.grpcPort)
 			if err := r.grpcServer.Serve(grpcListener); err != nil && err != grpc.ErrServerStopped {
 				log.Printf("OTLP gRPC receiver serve error: %v", err)
 			}
-		}()
+		})
 	}
 
 	// Start HTTP server
@@ -105,14 +103,12 @@ func (r *Receiver) Start() error {
 		}
 
 		// Start serving in a goroutine
-		r.wg.Add(1)
-		go func() {
-			defer r.wg.Done()
+		r.wg.Go(func() {
 			log.Printf("OTLP HTTP receiver listening on port %d", r.httpPort)
 			if err := r.httpServer.Serve(httpListener); err != nil && err != http.ErrServerClosed {
 				log.Printf("OTLP HTTP receiver serve error: %v", err)
 			}
-		}()
+		})
 	}
 
 	return nil
