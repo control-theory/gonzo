@@ -29,8 +29,7 @@ Gonzo's Kubernetes integration provides:
 Before using Gonzo with Kubernetes, ensure you have:
 
 1. **Kubernetes cluster access** - Valid kubeconfig file
-2. **RBAC permissions** - Ability to list pods and read logs
-3. **Gonzo installed** - See main [README](../README.md) for installation
+2. **Gonzo installed** - See main [README](../README.md) for installation
 
 ### Required Kubernetes Permissions
 
