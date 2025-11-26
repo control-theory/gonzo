@@ -30,10 +30,11 @@ func NewPodLogStreamer(
 	pod *corev1.Pod,
 	container string,
 	output chan<- string,
+	parentCtx context.Context,
 	tailLines *int64,
 	since *int64,
 ) *PodLogStreamer {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(parentCtx)
 	return &PodLogStreamer{
 		clientset: clientset,
 		pod:       pod,

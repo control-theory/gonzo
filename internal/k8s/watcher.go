@@ -18,20 +18,18 @@ import (
 
 // PodWatcher watches for pod lifecycle events and manages log streams
 type PodWatcher struct {
-	clientset    *kubernetes.Clientset
-	namespaces   []string
-	selector     labels.Selector
-	podNames     map[string]bool            // Pod names to filter (namespace/podname format), empty = all pods
-	output       chan string
-	streamers    map[string]*PodLogStreamer // key: namespace/podName/containerName
-	mu           sync.RWMutex
-	ctx          context.Context
-	cancel       context.CancelFunc
-	wg           sync.WaitGroup
-	tailLines    *int64
-	since        *int64
-	informers    []cache.SharedIndexInformer
-	stopChannels []chan struct{}
+	clientset  *kubernetes.Clientset
+	namespaces []string
+	selector   labels.Selector
+	podNames   map[string]bool // Pod names to filter (namespace/podname format), empty = all pods
+	output     chan string
+	streamers  map[string]*PodLogStreamer // key: namespace/podName/containerName
+	mu         sync.RWMutex
+	ctx        context.Context
+	cancel     context.CancelFunc
+	wg         sync.WaitGroup
+	tailLines  *int64
+	since      *int64
 }
 
 // NewPodWatcher creates a new pod watcher
@@ -142,17 +140,12 @@ func (w *PodWatcher) watchNamespace(namespace string) error {
 		return fmt.Errorf("failed to add event handler: %w", err)
 	}
 
-	// Store informer
-	w.informers = append(w.informers, podInformer)
-
-	// Start informer
-	stopCh := make(chan struct{})
-	w.stopChannels = append(w.stopChannels, stopCh)
-	factory.Start(stopCh)
+	// Start informer (use context's Done channel as stop signal)
+	factory.Start(w.ctx.Done())
 
 	// Wait for cache sync
 	w.wg.Go(func() {
-		if !cache.WaitForCacheSync(stopCh, podInformer.HasSynced) {
+		if !cache.WaitForCacheSync(w.ctx.Done(), podInformer.HasSynced) {
 			log.Printf("Failed to sync cache for namespace %q", namespace)
 		}
 	})
@@ -200,12 +193,13 @@ func (w *PodWatcher) startPodStreams(pod *corev1.Pod) {
 			continue
 		}
 
-		// Create and start new streamer
+		// Create and start new streamer (pass parent context for cancellation cascade)
 		streamer := NewPodLogStreamer(
 			w.clientset,
 			pod,
 			container.Name,
 			w.output,
+			w.ctx,
 			w.tailLines,
 			w.since,
 		)
@@ -246,6 +240,7 @@ func (w *PodWatcher) startPodStreams(pod *corev1.Pod) {
 			pod,
 			container.Name,
 			w.output,
+			w.ctx,
 			w.tailLines,
 			w.since,
 		)
@@ -263,11 +258,11 @@ func (w *PodWatcher) stopPodStreams(pod *corev1.Pod) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	// Stop streams for all containers
+	// Stop streams for all containers (cancellation happens via context cascade)
 	for _, container := range pod.Spec.Containers {
 		key := w.getStreamKey(pod, container.Name)
 		if streamer, exists := w.streamers[key]; exists {
-			streamer.Stop()
+			streamer.Stop() // This cancels the streamer's child context
 			delete(w.streamers, key)
 			log.Printf("Stopped streaming logs from %s/%s container %s",
 				pod.Namespace, pod.Name, container.Name)
@@ -278,7 +273,7 @@ func (w *PodWatcher) stopPodStreams(pod *corev1.Pod) {
 	for _, container := range pod.Spec.InitContainers {
 		key := w.getStreamKey(pod, container.Name)
 		if streamer, exists := w.streamers[key]; exists {
-			streamer.Stop()
+			streamer.Stop() // This cancels the streamer's child context
 			delete(w.streamers, key)
 			log.Printf("Stopped streaming logs from %s/%s init container %s",
 				pod.Namespace, pod.Name, container.Name)
@@ -293,26 +288,19 @@ func (w *PodWatcher) getStreamKey(pod *corev1.Pod, containerName string) string 
 
 // Stop stops the pod watcher and all active streams
 func (w *PodWatcher) Stop() {
-	// Cancel context
+	// Cancel context - this cascades to all streamers and stops all informers
 	if w.cancel != nil {
 		w.cancel()
 	}
 
-	// Stop all informers
-	for _, stopCh := range w.stopChannels {
-		close(stopCh)
-	}
-
-	// Stop all active streamers
-	w.mu.Lock()
-	for key, streamer := range w.streamers {
-		streamer.Stop()
-		delete(w.streamers, key)
-	}
-	w.mu.Unlock()
-
 	// Wait for all goroutines to finish
+	// The context cancellation will cause all streamers and informers to stop naturally
 	w.wg.Wait()
+
+	// Clean up streamer map (they're already stopped via context cancellation)
+	w.mu.Lock()
+	w.streamers = make(map[string]*PodLogStreamer)
+	w.mu.Unlock()
 }
 
 // GetActiveStreams returns the number of active streams
