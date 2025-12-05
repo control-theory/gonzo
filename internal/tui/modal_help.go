@@ -76,6 +76,7 @@ ACTIONS:
   f              - Open fullscreen log viewer modal
   Space          - Pause/unpause UI updates
   c              - Toggle Host/Service columns in log view
+  T              - Toggle timestamp mode (Log Time / Receive Time)
   r              - Reset all data (manual reset)
   u/U            - Cycle update intervals (forward/backward)
   i              - Show comprehensive statistics modal

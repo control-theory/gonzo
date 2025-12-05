@@ -133,16 +133,29 @@ func (m *DashboardModel) renderStatusLine() string {
 		}
 	}
 
+	// Add timestamp mode indicator
+	var timestampMode string
+	if m.useLogTime {
+		if narrow {
+			timestampMode = "⏱Log"
+		} else {
+			timestampMode = "⏱ Log Time"
+		}
+	}
+
 	// Add branding (show unless terminal is very narrow)
 	branding := ""
 	if m.width >= 30 { // Show branding unless terminal is very narrow
 		branding = m.renderGonzoBranding()
 	}
 
-	// Combine status info, version update, and branding
+	// Combine status info, timestamp mode, version update, and branding
 	var rightParts []string
 	if statusInfo != "" {
 		rightParts = append(rightParts, statusInfo)
+	}
+	if timestampMode != "" {
+		rightParts = append(rightParts, timestampMode)
 	}
 	if versionUpdateInfo != "" {
 		rightParts = append(rightParts, versionUpdateInfo)

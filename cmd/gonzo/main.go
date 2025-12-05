@@ -53,6 +53,7 @@ type Config struct {
 	Format               string        `mapstructure:"format"`
 	DisableVersionCheck  bool          `mapstructure:"disable-version-check"`
 	ReverseScrollWheel   bool          `mapstructure:"reverse-scroll-wheel"`
+	UseLogTime           bool          `mapstructure:"use-log-time"`
 }
 
 var (
@@ -181,6 +182,7 @@ func init() {
 	rootCmd.Flags().String("format", "", "Log format to use (auto-detect if not specified). Can be: otlp, json, text, or a custom format name from ~/.config/gonzo/formats/")
 	rootCmd.Flags().Bool("disable-version-check", false, "Disable automatic version checking on startup")
 	rootCmd.Flags().Bool("reverse-scroll-wheel", false, "Reverse scroll wheel direction (natural scrolling)")
+	rootCmd.Flags().Bool("use-log-time", false, "Use original log timestamps instead of receive time for heatmap and display (falls back to receive time if log has no timestamp)")
 
 	// Bind flags to viper
 	viper.BindPFlag("memory-size", rootCmd.Flags().Lookup("memory-size"))
@@ -209,6 +211,7 @@ func init() {
 	viper.BindPFlag("format", rootCmd.Flags().Lookup("format"))
 	viper.BindPFlag("disable-version-check", rootCmd.Flags().Lookup("disable-version-check"))
 	viper.BindPFlag("reverse-scroll-wheel", rootCmd.Flags().Lookup("reverse-scroll-wheel"))
+	viper.BindPFlag("use-log-time", rootCmd.Flags().Lookup("use-log-time"))
 
 	// Add version command
 	rootCmd.AddCommand(versionCmd)

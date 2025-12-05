@@ -93,6 +93,7 @@ type DashboardModel struct {
 	maxLogBuffer       int
 	updateInterval     time.Duration
 	reverseScrollWheel bool
+	useLogTime         bool // Use OrigTimestamp instead of Timestamp for heatmap/display
 
 	// Filter
 	filterInput  textinput.Model
@@ -244,7 +245,7 @@ func initializeDrain3BySeverity() map[string]*Drain3Manager {
 }
 
 // NewDashboardModel creates a new dashboard model with stop words
-func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiModel string, stopWords map[string]bool, reverseScrollWheel bool) *DashboardModel {
+func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiModel string, stopWords map[string]bool, reverseScrollWheel bool, useLogTime bool) *DashboardModel {
 	filterInput := textinput.New()
 	filterInput.Placeholder = "Filter logs by message or attributes (regex supported)..."
 	filterInput.CharLimit = 200
@@ -285,6 +286,7 @@ func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiModel s
 		maxLogBuffer:        maxLogBuffer,
 		updateInterval:      updateInterval,
 		reverseScrollWheel:  reverseScrollWheel,
+		useLogTime:          useLogTime,
 		filterInput:         filterInput,
 		searchInput:         searchInput,
 		chatInput:           chatInput,

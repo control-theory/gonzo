@@ -847,11 +847,29 @@ func (m *DashboardModel) matchesFilter(entry LogEntry) bool {
 	return false
 }
 
+// getDisplayTimestamp returns the appropriate timestamp based on useLogTime setting
+// Falls back to receive time (Timestamp) if OrigTimestamp is not available
+func (m *DashboardModel) getDisplayTimestamp(entry LogEntry) time.Time {
+	if m.useLogTime && !entry.OrigTimestamp.IsZero() {
+		return entry.OrigTimestamp
+	}
+	return entry.Timestamp
+}
+
+// rebuildHeatmap clears and rebuilds the heatmap from all log entries
+// Used when toggling timestamp mode to recalculate with the new timestamp source
+func (m *DashboardModel) rebuildHeatmap() {
+	m.heatmapData = make([]HeatmapMinute, 0)
+	for _, entry := range m.allLogEntries {
+		m.updateHeatmapData(entry)
+	}
+}
+
 // updateHeatmapData updates the minute-by-minute heatmap data for the counts modal
 func (m *DashboardModel) updateHeatmapData(entry LogEntry) {
-	// Now entry.Timestamp is always the receive time, so we can use it directly
-	// This ensures the heatmap shows when logs were received, not their original timestamps
-	entryTime := entry.Timestamp.Truncate(time.Minute)
+	// Use getDisplayTimestamp to respect the useLogTime setting
+	// This allows users to choose between log time and receive time
+	entryTime := m.getDisplayTimestamp(entry).Truncate(time.Minute)
 	
 	// Find or create the heatmap minute entry
 	var targetMinute *HeatmapMinute

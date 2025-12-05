@@ -10,8 +10,8 @@ import (
 
 // formatLogEntry formats a log entry with colors
 func (m *DashboardModel) formatLogEntry(entry LogEntry, availableWidth int, isSelected bool) string {
-	// Use receive time for display
-	timestamp := entry.Timestamp.Format("15:04:05")
+	// Use getDisplayTimestamp to respect the useLogTime setting
+	timestamp := m.getDisplayTimestamp(entry).Format("15:04:05")
 
 	// If selected, apply selection style to entire row
 	if isSelected {

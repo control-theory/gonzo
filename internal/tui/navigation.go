@@ -362,7 +362,15 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.showColumns = !m.showColumns
 			return m, nil
 		}
-		
+
+	case "T":
+		// Toggle timestamp mode (Log Time vs Receive Time)
+		if !m.showModal && !m.filterActive && !m.searchActive && !m.showSeverityFilterModal {
+			m.useLogTime = !m.useLogTime
+			m.rebuildHeatmap()
+			return m, nil
+		}
+
 	case "i":
 		// Toggle statistics modal
 		if !m.showModal && !m.filterActive && !m.searchActive && !m.showHelp && !m.showPatternsModal && !m.showModelSelectionModal && !m.showSeverityFilterModal {
