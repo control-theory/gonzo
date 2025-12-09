@@ -818,3 +818,4 @@ If you find this project useful, please consider giving it a star! It helps othe
 <p align="center">
 Made with ❤️ by <a href="https://controltheory.com">ControlTheory</a> and the Gonzo community
 </p>
+<img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=acef447d-5cc3-4756-a46a-8c384b9babf2&page=README.md" width="1" height="1" />
