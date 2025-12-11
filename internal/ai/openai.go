@@ -121,7 +121,11 @@ func NewOpenAIClient(model string) *OpenAIClient {
 	// Detect API key from standard environment variable
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
-		return nil // No API key found
+		return &OpenAIClient{
+			Validated:     false,
+			ValidationErr: "OPENAI_API_KEY environment variable not set",
+			ServiceName:   "OpenAI",
+		}
 	}
 
 	// Detect base URL from environment variable, default to OpenAI's endpoint
@@ -649,10 +653,43 @@ func (c *OpenAIClient) findBestModelMatch(requestedModel string, availableModels
 	return ""
 }
 
-// GetValidationStatus returns the validation status and any error message
-func (c *OpenAIClient) GetValidationStatus() (bool, string, string, string) {
+// GetValidationStatus returns the validation status of the client
+func (c *OpenAIClient) GetValidationStatus() ValidationStatus {
 	if c == nil {
-		return false, "No API key configured", "None", ""
+		return ValidationStatus{
+			Validated:    false,
+			ErrorMessage: "No API key configured",
+			ServiceName:  "None",
+			ModelName:    "",
+		}
 	}
-	return c.Validated, c.ValidationErr, c.ServiceName, c.Model
+	return ValidationStatus{
+		Validated:    c.Validated,
+		ErrorMessage: c.ValidationErr,
+		ServiceName:  c.ServiceName,
+		ModelName:    c.Model,
+	}
+}
+
+// SetModel updates the model being used
+func (c *OpenAIClient) SetModel(model string) {
+	if c != nil {
+		c.Model = model
+	}
+}
+
+// GetModel returns the current model being used
+func (c *OpenAIClient) GetModel() string {
+	if c == nil {
+		return ""
+	}
+	return c.Model
+}
+
+// CachedModels returns the cached list of available models without making API calls
+func (c *OpenAIClient) CachedModels() []string {
+	if c == nil {
+		return nil
+	}
+	return c.AvailableModels
 }
