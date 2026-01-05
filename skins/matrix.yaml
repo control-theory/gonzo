@@ -1,0 +1,44 @@
+name: matrix
+description: Knock Knock, Neo. This is a simple console theme inspired by The Matrix movie, featuring various shades of green text on a black background for a digital rain aesthetic.
+author: Eric Wright (eric@discoposse.com)
+colors:
+  # UI Component Colors
+  primary: "#00FF41"           # Bright green for main accents
+  secondary: "#008F11"         # Mid green for secondary accents
+  background: "#000000"        # Pure black background
+  surface: "#0D0208"           # Very dark gray for secondary backgrounds
+  border: "#003B00"            # Dark green for borders
+  border_active: "#00FF41"     # Bright green for active borders
+  text: "#00FF41"              # Bright green primary text
+  text_secondary: "#008F11"    # Mid green for muted text
+  text_inverse: "#000000"      # Black for text on colored backgrounds
+  
+  # Chart and Data Colors
+  chart_title: "#00FF41"       # Bright green chart titles
+  chart_bar: "#008F11"         # Mid green for bars
+  chart_accent: "#00FF41"      # Bright green accents
+  
+  # Log Entry Colors
+  log_timestamp: "#003B00"     # Dark green timestamps
+  log_message: "#00FF41"       # Bright green messages
+  log_background: "#000000"    # Black log background
+  log_selected: "#003B00"      # Dark green selected highlight
+  
+  # Severity Level Colors
+  severity_trace: "#003B00"    # Darkest green for TRACE
+  severity_debug: "#006600"    # Dark green for DEBUG
+  severity_info: "#008F11"     # Mid green for INFO
+  severity_warn: "#00CC00"     # Brighter green for WARN
+  severity_error: "#00FF41"    # Brightest green for ERROR
+  severity_fatal: "#33FF33"    # Neon green for FATAL
+  
+  # Status Colors
+  success: "#00FF41"           # Bright green success
+  warning: "#00CC00"           # Brighter green warning
+  error: "#00FF41"             # Bright green error (keeping thematic)
+  info: "#008F11"              # Mid green info
+  
+  # Special Elements
+  help: "#008F11"              # Mid green help text
+  highlight: "#33FF33"         # Neon green highlights
+  disabled: "#003B00"          # Dark green disabled
