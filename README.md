@@ -147,8 +147,8 @@ gonzo -f "/var/log/*.log" --follow
 cat application.log | gonzo
 
 # Stream logs directly from Kubernetes clusters
-gonzo --k8s-enabled=true --k8s-namespace=default
-gonzo --k8s-enabled=true --k8s-namespace=production --k8s-namespace=staging
+gonzo --k8s-enabled=true --k8s-namespaces=default
+gonzo --k8s-enabled=true --k8s-namespaces=production --k8s-namespaces=staging
 gonzo --k8s-enabled=true --k8s-selector="app=my-app"
 
 # Stream logs from kubectl (traditional way)
@@ -426,7 +426,7 @@ Flags:
 
 Kubernetes Flags:
   --k8s-enabled=true               Enable Kubernetes log streaming mode
-  --k8s-namespace stringArray      Kubernetes namespace(s) to watch (can specify multiple, default: all)
+  --k8s-namespaces stringArray      Kubernetes namespace(s) to watch (can specify multiple, default: all)
   --k8s-selector string            Kubernetes label selector for filtering pods
   --k8s-tail int                   Number of previous log lines to retrieve (default: 10)
   --k8s-since int                  Only return logs newer than relative duration in seconds
