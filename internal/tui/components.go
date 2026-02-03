@@ -321,7 +321,7 @@ func (m *DashboardModel) renderLogScrollContent(height int, logWidth int) []stri
 
 	// Add column headers when columns are enabled
 	if m.showColumns {
-		headerLine := m.renderDynamicColumnHeadersWithScroll(logWidth, columnWidths, m.logViewHorizontalOffset)
+		headerLine := m.renderDynamicColumnHeaders(logWidth, columnWidths, m.logViewHorizontalOffset)
 		logLines = append(logLines, headerLine)
 		height-- // Reduce available height for logs
 	}
@@ -565,8 +565,8 @@ func (m *DashboardModel) renderLogScroll(height int) string {
 	return style.Render(lipgloss.JoinVertical(lipgloss.Left, logLines...))
 }
 
-// renderDynamicColumnHeadersWithScroll renders column headers with horizontal scroll support
-func (m *DashboardModel) renderDynamicColumnHeadersWithScroll(availableWidth int, columnWidths map[string]int, horizontalOffset int) string {
+// renderDynamicColumnHeaders renders column headers with horizontal scroll support
+func (m *DashboardModel) renderDynamicColumnHeaders(availableWidth int, columnWidths map[string]int, horizontalOffset int) string {
 	// Build raw header string first (no ANSI codes)
 	var rawHeaders []string
 
