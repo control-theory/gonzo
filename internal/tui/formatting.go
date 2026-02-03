@@ -2,7 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -46,33 +45,6 @@ func (m *DashboardModel) calculateEffectiveColumnWidth(col ColumnConfig, value s
 	}
 
 	return width
-}
-
-// calculateTotalColumnsWidth calculates the total width needed for all columns
-// based on current log entries (samples the visible entries for width calculation)
-func (m *DashboardModel) calculateTotalColumnsWidth() int {
-	total := 0
-	count := 0
-	for _, col := range m.activeColumns {
-		if !col.Enabled {
-			continue
-		}
-		// Use label width as minimum, but actual width depends on content
-		width := len(col.Label)
-		if col.Width > width {
-			width = col.Width
-		}
-		if width > MaxColumnWidth {
-			width = MaxColumnWidth
-		}
-		total += width
-		count++
-	}
-	// Add spaces between columns
-	if count > 1 {
-		total += count - 1
-	}
-	return total
 }
 
 // calculateColumnWidths calculates the width for each enabled column based on content
@@ -298,11 +270,6 @@ func (m *DashboardModel) getColumnValue(entry LogEntry, key string) string {
 	}
 }
 
-// highlightText highlights search term within text (for 's' command)
-func (m *DashboardModel) highlightText(text, searchTerm string) string {
-	return m.highlightTextWithBaseStyle(text, searchTerm, lipgloss.NewStyle())
-}
-
 // highlightTextWithBaseStyle highlights search term within text, applying a base style to non-highlighted portions
 func (m *DashboardModel) highlightTextWithBaseStyle(text, searchTerm string, baseStyle lipgloss.Style) string {
 	if searchTerm == "" {
@@ -348,29 +315,6 @@ func (m *DashboardModel) highlightTextWithBaseStyle(text, searchTerm string, bas
 	}
 
 	return result.String()
-}
-
-// containsWord checks if a word appears in text using word boundary matching
-// This matches how words are extracted for frequency analysis
-func (m *DashboardModel) containsWord(text, word string) bool {
-	if word == "" {
-		return false
-	}
-
-	// Convert both to lowercase for case-insensitive matching
-	lowerText := strings.ToLower(text)
-	lowerWord := strings.ToLower(word)
-
-	// Use regex to match word boundaries - this ensures we match whole words
-	// even when they're surrounded by punctuation
-	pattern := `\b` + regexp.QuoteMeta(lowerWord) + `\b`
-	matched, err := regexp.MatchString(pattern, lowerText)
-	if err != nil {
-		// Fallback to simple contains if regex fails
-		return strings.Contains(lowerText, lowerWord)
-	}
-
-	return matched
 }
 
 // wrapTextToWidth wraps text to fit within the specified width
