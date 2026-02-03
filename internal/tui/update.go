@@ -36,7 +36,7 @@ func (m *DashboardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case TickMsg:
 		// Update processing rate statistics on every tick
 		m.updateProcessingRateStats()
-		
+
 		// Only refresh charts when not paused
 		if !m.viewPaused {
 			m.updateCharts()
@@ -51,7 +51,7 @@ func (m *DashboardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.modalReady = false // Force viewport update
 			}
 		}
-		
+
 		// Animate chat spinner separately
 		if m.chatAiAnalyzing {
 			m.chatSpinnerFrame = (m.chatSpinnerFrame + 1) % 4
@@ -74,7 +74,7 @@ func (m *DashboardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.IsChat {
 			// Handle chat AI response
 			m.chatAiAnalyzing = false
-			
+
 			// Remove the "Working on it..." message (should be the last one)
 			if len(m.chatHistory) > 0 {
 				lastIdx := len(m.chatHistory) - 1
@@ -83,14 +83,14 @@ func (m *DashboardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.chatHistory = m.chatHistory[:lastIdx]
 				}
 			}
-			
+
 			// Add the actual response
 			if msg.Error != nil {
 				m.chatHistory = append(m.chatHistory, fmt.Sprintf("AI: Error: %v", msg.Error))
 			} else {
 				m.chatHistory = append(m.chatHistory, fmt.Sprintf("AI: %s", msg.Result))
 			}
-			m.chatAutoScroll = true  // Enable auto-scroll for new AI response
+			m.chatAutoScroll = true // Enable auto-scroll for new AI response
 		} else {
 			// Handle info section AI analysis
 			m.aiAnalyzing = false
@@ -126,17 +126,17 @@ func (m *DashboardModel) handleMouseEvent(msg tea.MouseMsg) (tea.Model, tea.Cmd)
 	if m.showModelSelectionModal {
 		return m.handleModelSelectionMouseEvent(msg)
 	}
-	
+
 	// Handle mouse events in help modal
 	if m.showHelp {
 		return m.handleHelpModalMouseEvent(msg)
 	}
-	
+
 	// Handle mouse events in patterns modal
 	if m.showPatternsModal {
 		return m.handlePatternsModalMouseEvent(msg)
 	}
-	
+
 	// Handle mouse events in statistics modal
 	if m.showStatsModal {
 		return m.handleStatsModalMouseEvent(msg)
@@ -146,12 +146,12 @@ func (m *DashboardModel) handleMouseEvent(msg tea.MouseMsg) (tea.Model, tea.Cmd)
 	if m.showCountsModal {
 		return m.handleCountsModalMouseEvent(msg)
 	}
-	
+
 	// Handle mouse events in log viewer modal
 	if m.showLogViewerModal {
 		return m.handleLogViewerModalMouseEvent(msg)
 	}
-	
+
 	// Skip mouse events for input modes
 	if m.filterActive || m.searchActive {
 		return m, nil
@@ -311,7 +311,7 @@ func (m *DashboardModel) handleModalClick(x, _ int) (tea.Model, tea.Cmd) {
 				// Show error in chat area instead of enabling chat
 				chatError := fmt.Sprintf("AI Chat Not Available\n\nError: %s\n\nTo configure AI:\n• Set OPENAI_API_KEY environment variable\n• For local AI: Set OPENAI_API_BASE\n• Use --ai-model flag to specify model", m.aiErrorMessage)
 				m.chatHistory = []string{fmt.Sprintf("System: %s", chatError)}
-				m.chatAutoScroll = true  // Enable auto-scroll for error message
+				m.chatAutoScroll = true // Enable auto-scroll for error message
 				return m, nil
 			}
 			// Automatically enter chat mode when clicking on chat section
@@ -350,7 +350,7 @@ func (m *DashboardModel) handleModelSelectionMouseEvent(msg tea.MouseMsg) (tea.M
 			return m, nil
 		}
 	}
-	
+
 	return m, nil
 }
 
@@ -588,7 +588,7 @@ func (m *DashboardModel) handleUpdate(msg UpdateMsg) (tea.Model, tea.Cmd) {
 	if msg.ResetDrain3 && m.drain3Manager != nil {
 		m.drain3Manager.Reset()
 		m.drain3LastProcessed = 0 // Reset tracking
-		
+
 		// Also reset all severity-specific drain3 instances
 		for _, drain3Instance := range m.drain3BySeverity {
 			if drain3Instance != nil {
@@ -604,20 +604,73 @@ func (m *DashboardModel) handleUpdate(msg UpdateMsg) (tea.Model, tea.Cmd) {
 func (m *DashboardModel) addLogEntry(entry LogEntry) {
 	// Always add to the complete unfiltered buffer
 	m.allLogEntries = append(m.allLogEntries, entry)
-	
+
+	// Track attributes from new log entry
+	if m.discoveredAttributes != nil {
+		for key := range entry.Attributes {
+			m.discoveredAttributes[key] = true
+		}
+	}
+
+	// Auto-switch to k8s columns if we detect k8s attributes (first time only)
+	if !m.autoSwitchedToK8sMode {
+		if entry.Attributes["k8s.namespace"] != "" || entry.Attributes["k8s.pod"] != "" {
+			// Check if we're currently showing Host/Service columns
+			hasNormalColumns := false
+			for _, col := range m.activeColumns {
+				if col.Key == "host.name" || col.Key == "service.name" {
+					hasNormalColumns = true
+					break
+				}
+			}
+
+			// If we're showing normal columns, auto-switch to k8s columns
+			if hasNormalColumns {
+				newColumns := []ColumnConfig{}
+				for _, col := range m.activeColumns {
+					if col.Key == "host.name" {
+						// Replace with k8s.namespace
+						newColumns = append(newColumns, ColumnConfig{
+							Key: "k8s.namespace", Label: "Namespace", Width: 20, Enabled: true, IsDefault: true,
+						})
+					} else if col.Key == "service.name" {
+						// Replace with k8s.pod
+						newColumns = append(newColumns, ColumnConfig{
+							Key: "k8s.pod", Label: "Pod", Width: 20, Enabled: true, IsDefault: true,
+						})
+					} else {
+						newColumns = append(newColumns, col)
+					}
+				}
+				m.activeColumns = newColumns
+
+				// Also update availableColumns
+				for i := range m.availableColumns {
+					if m.availableColumns[i].Key == "host.name" || m.availableColumns[i].Key == "service.name" {
+						m.availableColumns[i].Enabled = false
+					}
+					if m.availableColumns[i].Key == "k8s.namespace" || m.availableColumns[i].Key == "k8s.pod" {
+						m.availableColumns[i].Enabled = true
+					}
+				}
+			}
+			m.autoSwitchedToK8sMode = true
+		}
+	}
+
 	// Update statistics tracking
-	m.statsTotalLogsEver++  // Track total logs processed (unlimited)
+	m.statsTotalLogsEver++ // Track total logs processed (unlimited)
 	m.statsTotalBytes += int64(len(entry.RawLine))
-	
+
 	// Update lifetime statistics (unlimited tracking)
 	m.updateLifetimeStats(entry)
-	
+
 	// Update heatmap data for counts modal
 	m.updateHeatmapData(entry)
-	
+
 	// Update services data for counts modal (patterns will be derived from drain3)
 	m.updateCountsModalServices(entry)
-	
+
 	// Track logs for the current second
 	m.statsLogsThisSecond++
 
@@ -731,19 +784,19 @@ func (m *DashboardModel) updateCharts() {
 func (m *DashboardModel) updateLifetimeStats(entry LogEntry) {
 	// Update severity counts
 	m.lifetimeSeverityCounts[entry.Severity]++
-	
+
 	// Update host counts
 	if host, exists := entry.Attributes["host"]; exists && host != "" {
 		m.lifetimeHostCounts[host]++
 	}
-	
+
 	// Update service counts
 	if service, exists := entry.Attributes["service.name"]; exists && service != "" {
 		m.lifetimeServiceCounts[service]++
 	} else if service, exists := entry.Attributes["service"]; exists && service != "" {
 		m.lifetimeServiceCounts[service]++
 	}
-	
+
 	// Update attribute counts
 	for key, value := range entry.Attributes {
 		// Skip common keys that we handle separately for some stats
@@ -751,14 +804,14 @@ func (m *DashboardModel) updateLifetimeStats(entry LogEntry) {
 		if len(attrKey) < 200 { // Only include reasonable length attributes
 			m.lifetimeAttrCounts[attrKey]++
 		}
-		
+
 		// Update per-attribute-key value counts (for dashboard charts)
 		if m.lifetimeAttrKeyCounts[key] == nil {
 			m.lifetimeAttrKeyCounts[key] = make(map[string]int64)
 		}
 		m.lifetimeAttrKeyCounts[key][value]++
 	}
-	
+
 	// Update word counts (simplified word extraction for performance)
 	words := strings.Fields(strings.ToLower(entry.Message))
 	for _, word := range words {
@@ -777,7 +830,7 @@ func (m *DashboardModel) updateLifetimeStats(entry LogEntry) {
 // updateProcessingRateStats updates the processing rate statistics on every update cycle
 func (m *DashboardModel) updateProcessingRateStats() {
 	now := time.Now()
-	
+
 	// Check if a second has passed
 	if now.Sub(m.statsLastSecond) >= time.Second {
 		// Store the count for the completed second
@@ -786,7 +839,7 @@ func (m *DashboardModel) updateProcessingRateStats() {
 			if rate > m.statsPeakLogsPerSec {
 				m.statsPeakLogsPerSec = rate
 			}
-			
+
 			// Add to sliding window
 			m.statsRecentCounts = append(m.statsRecentCounts, m.statsLogsThisSecond)
 			m.statsRecentTimes = append(m.statsRecentTimes, m.statsLastSecond)
@@ -795,18 +848,18 @@ func (m *DashboardModel) updateProcessingRateStats() {
 			m.statsRecentCounts = append(m.statsRecentCounts, 0)
 			m.statsRecentTimes = append(m.statsRecentTimes, m.statsLastSecond)
 		}
-		
+
 		// Keep only last 10 seconds
 		if len(m.statsRecentCounts) > 10 {
 			m.statsRecentCounts = m.statsRecentCounts[1:]
 			m.statsRecentTimes = m.statsRecentTimes[1:]
 		}
-		
+
 		// Reset for new second
 		m.statsLastSecond = now
 		m.statsLogsThisSecond = 0
 	}
-	
+
 	// Clean up old entries from the sliding window (older than 10 seconds)
 	cutoffTime := now.Add(-10 * time.Second)
 	for len(m.statsRecentTimes) > 0 && m.statsRecentTimes[0].Before(cutoffTime) {
@@ -870,10 +923,10 @@ func (m *DashboardModel) updateHeatmapData(entry LogEntry) {
 	// Use getDisplayTimestamp to respect the useLogTime setting
 	// This allows users to choose between log time and receive time
 	entryTime := m.getDisplayTimestamp(entry).Truncate(time.Minute)
-	
+
 	// Find or create the heatmap minute entry
 	var targetMinute *HeatmapMinute
-	
+
 	// Look for existing minute entry
 	for i := range m.heatmapData {
 		if m.heatmapData[i].Timestamp.Equal(entryTime) {
@@ -881,7 +934,7 @@ func (m *DashboardModel) updateHeatmapData(entry LogEntry) {
 			break
 		}
 	}
-	
+
 	// If not found, create new minute entry
 	if targetMinute == nil {
 		newMinute := HeatmapMinute{
@@ -891,7 +944,7 @@ func (m *DashboardModel) updateHeatmapData(entry LogEntry) {
 		m.heatmapData = append(m.heatmapData, newMinute)
 		targetMinute = &m.heatmapData[len(m.heatmapData)-1]
 	}
-	
+
 	// Update the severity count for this minute
 	switch entry.Severity {
 	case "TRACE":
@@ -911,21 +964,21 @@ func (m *DashboardModel) updateHeatmapData(entry LogEntry) {
 	default:
 		targetMinute.Counts.Unknown++
 	}
-	
+
 	// Update total count
 	targetMinute.Counts.Total++
-	
+
 	// Keep a larger window of data (6 hours) to accommodate logs with older timestamps
 	// The actual 60-minute window filtering will be done during display
 	cutoffTime := time.Now().Add(-6 * time.Hour)
 	filteredData := make([]HeatmapMinute, 0)
-	
+
 	for _, minute := range m.heatmapData {
 		if minute.Timestamp.After(cutoffTime) {
 			filteredData = append(filteredData, minute)
 		}
 	}
-	
+
 	m.heatmapData = filteredData
 }
 
@@ -935,14 +988,14 @@ func (m *DashboardModel) updateCountsModalServices(entry LogEntry) {
 	if severity == "" {
 		severity = "UNKNOWN"
 	}
-	
+
 	// Update service counts by severity
 	serviceName := getServiceName(entry)
 	if serviceName != "" {
 		if m.servicesBySeverity[severity] == nil {
 			m.servicesBySeverity[severity] = make([]ServiceCount, 0)
 		}
-		
+
 		// Find existing service or create new one
 		found := false
 		for i := range m.servicesBySeverity[severity] {
@@ -952,18 +1005,18 @@ func (m *DashboardModel) updateCountsModalServices(entry LogEntry) {
 				break
 			}
 		}
-		
+
 		if !found {
 			m.servicesBySeverity[severity] = append(m.servicesBySeverity[severity], ServiceCount{
 				Service: serviceName,
 				Count:   1,
 			})
 		}
-		
+
 		// Keep only top 10 services per severity and sort
 		m.sortAndTrimServiceCounts(severity)
 	}
-	
+
 	// Feed log to severity-specific drain3 instance
 	if drain3Instance, exists := m.drain3BySeverity[entry.Severity]; exists && drain3Instance != nil {
 		drain3Instance.AddLogMessage(entry.Message)
@@ -988,12 +1041,12 @@ func getServiceName(entry LogEntry) string {
 	if service, ok := entry.Attributes["application"]; ok {
 		return service
 	}
-	
+
 	// Fallback to host if no service specified
 	if host, ok := entry.Attributes["host"]; ok {
 		return "host:" + host
 	}
-	
+
 	return "unknown"
 }
 
@@ -1003,7 +1056,7 @@ func (m *DashboardModel) sortAndTrimServiceCounts(severity string) {
 	if len(services) <= 1 {
 		return
 	}
-	
+
 	// Sort by count (descending)
 	for i := 0; i < len(services); i++ {
 		for j := i + 1; j < len(services); j++ {
@@ -1012,10 +1065,9 @@ func (m *DashboardModel) sortAndTrimServiceCounts(severity string) {
 			}
 		}
 	}
-	
+
 	// Keep only top 10
 	if len(services) > 10 {
 		m.servicesBySeverity[severity] = services[:10]
 	}
 }
-

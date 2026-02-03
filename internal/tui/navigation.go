@@ -31,7 +31,7 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case "enter":
 			// Exit filter input mode but keep filter applied
-			m.filterActive = false  // Exit input mode to allow other keys
+			m.filterActive = false // Exit input mode to allow other keys
 			m.filterInput.Blur()
 			// Make sure filtered view is up to date
 			m.updateFilteredView()
@@ -81,7 +81,7 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case "enter":
 			// Exit search input mode but keep search applied
-			m.searchActive = false  // Exit input mode to allow other keys
+			m.searchActive = false // Exit input mode to allow other keys
 			m.searchInput.Blur()
 			// Update search term
 			m.searchTerm = m.searchInput.Value()
@@ -144,15 +144,15 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			if m.chatInput.Value() != "" && m.currentLogEntry != nil && m.aiClient != nil {
 				question := m.chatInput.Value()
 				m.chatHistory = append(m.chatHistory, fmt.Sprintf("You: %s", question))
-				
+
 				// Add working indicator to chat history
 				m.chatHistory = append(m.chatHistory, fmt.Sprintf("AI: %s Working on it...", m.getChatSpinner()))
-				m.chatAutoScroll = true  // Enable auto-scroll for new messages
-				
+				m.chatAutoScroll = true // Enable auto-scroll for new messages
+
 				m.chatInput.SetValue("")
 				// Keep chat mode active and focused after sending
 				m.chatInput.Focus()
-				m.chatAiAnalyzing = true  // Use chat-specific AI flag
+				m.chatAiAnalyzing = true // Use chat-specific AI flag
 
 				// Continue conversation with context
 				return m, func() tea.Msg {
@@ -236,6 +236,11 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.updateSeverityFilterActiveStatus()
 			m.updateFilteredView()
 			m.showSeverityFilterModal = false
+			return m, nil
+		}
+		if m.showColumnConfigModal {
+			m.restoreColumnConfig()
+			m.showColumnConfigModal = false
 			return m, nil
 		}
 		if m.showLogViewerModal {
@@ -357,9 +362,9 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 
 	case "c":
-		// Toggle Host/Service columns in log view
+		// Toggle columns mode (Host/Service <-> Namespace/Pod in k8s mode, or toggle visibility)
 		if !m.showModal && !m.filterActive && !m.searchActive && !m.showSeverityFilterModal {
-			m.showColumns = !m.showColumns
+			m.toggleColumnsMode()
 			return m, nil
 		}
 
@@ -442,8 +447,8 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 
 			m.showK8sFilterModal = true
-			m.k8sFilterSelected = 0    // Start at the top
-			m.k8sScrollOffset = 0      // Reset scroll
+			m.k8sFilterSelected = 0        // Start at the top
+			m.k8sScrollOffset = 0          // Reset scroll
 			m.k8sActiveView = "namespaces" // Start with namespaces view
 			return m, nil
 		}
@@ -453,7 +458,7 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if !m.showModal && !m.filterActive && !m.searchActive && !m.showSeverityFilterModal && !m.showK8sFilterModal {
 			wasPaused := m.viewPaused
 			m.viewPaused = !m.viewPaused
-			
+
 			// If unpausing, process any accumulated logs
 			if wasPaused && !m.viewPaused {
 				// Process unprocessed logs through drain3
@@ -464,7 +469,7 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					}
 					m.drain3LastProcessed = len(m.allLogEntries)
 				}
-				
+
 				// Update the filtered view with all accumulated logs
 				m.updateFilteredView()
 			}
@@ -506,6 +511,68 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				return UpdateIntervalMsg(newInterval)
 			}
 		}
+
+	case "C":
+		// Open column configuration modal (only when in logs section with selection)
+		if !m.showModal && !m.filterActive && !m.searchActive && !m.showSeverityFilterModal && !m.showK8sFilterModal && !m.showColumnConfigModal {
+			if (m.activeSection == SectionLogs || m.showLogViewerModal) && len(m.logEntries) > 0 {
+				if m.selectedLogIndex >= 0 && m.selectedLogIndex < len(m.logEntries) {
+					selectedEntry := &m.logEntries[m.selectedLogIndex]
+					m.prepareColumnConfigModal(selectedEntry)
+					m.showColumnConfigModal = true
+					return m, nil
+				}
+			}
+		}
+	}
+
+	// Column config modal shortcuts
+	if m.showColumnConfigModal {
+		totalLines := m.getColumnConfigLineCount()
+
+		switch msg.String() {
+		case "up", "k":
+			if m.columnConfigSelected > 0 {
+				m.columnConfigSelected--
+				// Skip header lines
+				for m.columnConfigSelected > 0 && m.isColumnConfigHeaderLine(m.columnConfigSelected) {
+					m.columnConfigSelected--
+				}
+				// If we landed on line 0 (first header), go to first column
+				if m.columnConfigSelected == 0 {
+					m.columnConfigSelected = 1
+				}
+			}
+			return m, nil
+
+		case "down", "j":
+			if m.columnConfigSelected < totalLines-1 {
+				m.columnConfigSelected++
+				// Skip header lines
+				for m.columnConfigSelected < totalLines-1 && m.isColumnConfigHeaderLine(m.columnConfigSelected) {
+					m.columnConfigSelected++
+				}
+			}
+			return m, nil
+
+		case " ", "x":
+			// Toggle selection (space or x key)
+			m.toggleColumnConfigSelection()
+			return m, nil
+
+		case "enter":
+			// Apply changes and close
+			m.applyColumnConfig()
+			m.showColumnConfigModal = false
+			return m, nil
+
+		case "escape", "esc":
+			// Restore original and close
+			m.restoreColumnConfig()
+			m.showColumnConfigModal = false
+			return m, nil
+		}
+		return m, nil
 	}
 
 	// Patterns modal shortcuts
@@ -533,7 +600,7 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.infoViewport, cmd = m.infoViewport.Update(msg)
 		return m, cmd
 	}
-	
+
 	// Statistics modal shortcuts
 	if m.showStatsModal {
 		switch msg.String() {
@@ -589,13 +656,13 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.infoViewport, cmd = m.infoViewport.Update(msg)
 		return m, cmd
 	}
-	
+
 	// Log viewer modal keyboard navigation
 	if m.showLogViewerModal && !m.showSeverityFilterModal {
 		// Save the previous active section and temporarily activate log section
 		previousSection := m.activeSection
 		m.activeSection = SectionLogs
-		
+
 		switch msg.String() {
 		case "up", "k":
 			// Navigate up in log list
@@ -649,35 +716,36 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case "/":
 			// Start filter input
-			m.showLogViewerModal = false  // Close modal when starting filter
+			m.showLogViewerModal = false // Close modal when starting filter
 			m.activeSection = SectionFilter
 			m.filterActive = true
 			m.filterInput.Focus()
 			return m, nil
 		case "s":
 			// Start search input
-			m.showLogViewerModal = false  // Close modal when starting search
+			m.showLogViewerModal = false // Close modal when starting search
 			m.activeSection = SectionFilter
 			m.searchActive = true
 			m.searchInput.Focus()
 			return m, nil
 		case "c":
-			// Toggle columns
-			m.showColumns = !m.showColumns
+			// Toggle columns mode (Host/Service <-> Namespace/Pod in k8s mode, or toggle visibility)
+			m.toggleColumnsMode()
 			m.activeSection = previousSection
 			return m, nil
+
 		case "escape", "esc", "f":
 			// Close modal with ESC or 'f' (toggle)
 			m.showLogViewerModal = false
 			m.activeSection = previousSection
 			return m, nil
 		}
-		
+
 		// Restore previous section
 		m.activeSection = previousSection
 		return m, nil
 	}
-	
+
 	// Model selection modal shortcuts
 	if m.showModelSelectionModal {
 		switch msg.String() {
@@ -964,7 +1032,7 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 						// Show error in chat area instead of enabling chat
 						chatError := fmt.Sprintf("AI Chat Not Available\n\nError: %s\n\nTo configure AI:\n• Set OPENAI_API_KEY environment variable\n• For local AI: Set OPENAI_API_BASE\n• Use --ai-model flag to specify model", m.aiErrorMessage)
 						m.chatHistory = []string{fmt.Sprintf("System: %s", chatError)}
-						m.chatAutoScroll = true  // Enable auto-scroll for error message
+						m.chatAutoScroll = true // Enable auto-scroll for error message
 						return m, nil
 					}
 					// Automatically enter chat mode when switching to chat pane
@@ -1072,7 +1140,7 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				m.aiAnalysisResult = ""
 				m.chatHistory = []string{}
 				m.chatActive = false
-				m.chatAiAnalyzing = false  // Reset chat AI state
+				m.chatAiAnalyzing = false // Reset chat AI state
 				m.chatInput.SetValue("")
 				return m, nil
 			}
@@ -1120,7 +1188,6 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 	}
-
 
 	// Navigation shortcuts
 	switch msg.String() {
@@ -1227,12 +1294,32 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				// Explicitly reset viewport scroll position
 				m.infoViewport.GotoTop()
 				m.chatViewport.GotoTop()
-				
+
 				// Clear any previous AI analysis result - user must press 'i' to analyze
 				m.aiAnalysisResult = ""
 			}
 		}
 		return m, nil
+
+	case "left":
+		// Horizontal scroll left in log section
+		if m.activeSection == SectionLogs {
+			if m.logViewHorizontalOffset > 0 {
+				m.logViewHorizontalOffset -= 5
+				if m.logViewHorizontalOffset < 0 {
+					m.logViewHorizontalOffset = 0
+				}
+			}
+			return m, nil
+		}
+
+	case "right":
+		// Horizontal scroll right in log section
+		if m.activeSection == SectionLogs {
+			m.logViewHorizontalOffset += 5
+			// Max offset will be bounded in renderLogScrollContent
+			return m, nil
+		}
 
 	case "enter":
 		return m.showDetails()
@@ -1310,7 +1397,7 @@ func (m *DashboardModel) moveSelection(delta int) {
 			m.logAutoScroll = true
 		}
 		// For positions in between, keep current auto-scroll state
-		
+
 		return
 	}
 
@@ -1374,7 +1461,7 @@ func (m *DashboardModel) showDetails() (tea.Model, tea.Cmd) {
 			m.currentLogEntry = &entry // Store current log entry for AI analysis
 			m.modalContent = m.formatLogDetails(entry, 60)
 			m.showModal = true
-			m.modalReady = false       // Reset viewport
+			m.modalReady = false // Reset viewport
 			// Explicitly reset viewport scroll position
 			m.infoViewport.GotoTop()
 			m.chatViewport.GotoTop()
@@ -1429,7 +1516,7 @@ func (m *DashboardModel) showDetails() (tea.Model, tea.Cmd) {
 			m.currentLogEntry = nil
 			return m, nil
 		}
-		
+
 	case SectionCounts:
 		// Show counts modal with heatmap and analysis
 		m.showCountsModal = true

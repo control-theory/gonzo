@@ -277,34 +277,51 @@ func (m *DashboardModel) renderFilter() string {
 func (m *DashboardModel) renderLogScrollContent(height int, logWidth int) []string {
 	var logLines []string
 
+	// Calculate column widths based on content
+	columnWidths := m.calculateColumnWidths(m.logEntries)
+
+	// Calculate total content width for horizontal scrolling
+	totalContentWidth := 0
+	enabledCount := 0
+	for _, col := range m.activeColumns {
+		if !col.Enabled {
+			continue
+		}
+		totalContentWidth += columnWidths[col.Key]
+		enabledCount++
+	}
+	if enabledCount > 1 {
+		totalContentWidth += enabledCount - 1 // spaces between columns
+	}
+
+	// Determine if horizontal scrolling is needed
+	canScroll := totalContentWidth > logWidth
+	maxHorizontalOffset := 0
+	if canScroll {
+		maxHorizontalOffset = totalContentWidth - logWidth
+		if m.logViewHorizontalOffset > maxHorizontalOffset {
+			m.logViewHorizontalOffset = maxHorizontalOffset
+		}
+		if m.logViewHorizontalOffset < 0 {
+			m.logViewHorizontalOffset = 0
+		}
+	} else {
+		m.logViewHorizontalOffset = 0
+	}
+
 	// Add paused indicator and help text when log section is active
 	if m.activeSection == SectionLogs {
 		pausedStyle := lipgloss.NewStyle().
 			Foreground(ColorYellow).
 			Bold(true)
-		statusLine := pausedStyle.Render("↑/↓ to navigate • Home: Top • End: Latest • PgUp/PgDn: Page • Enter for details")
+		statusLine := pausedStyle.Render("↑/↓ ←/→ to navigate • Home: Top • End: Latest • PgUp/PgDn: Page • Enter for details")
 		logLines = append(logLines, statusLine)
 		height-- // Reduce available height for logs
 	}
 
 	// Add column headers when columns are enabled
 	if m.showColumns {
-		timestampHeader := lipgloss.NewStyle().Foreground(ColorWhite).Render("Time    ")
-		severityHeader := lipgloss.NewStyle().Foreground(ColorWhite).Render("Level")
-
-		// Use k8s headers if in k8s mode, otherwise use host/service headers
-		var col1Header, col2Header string
-		if m.isK8sMode() {
-			col1Header = lipgloss.NewStyle().Foreground(ColorWhite).Render("Namespace           ")
-			col2Header = lipgloss.NewStyle().Foreground(ColorWhite).Render("Pod                 ")
-		} else {
-			col1Header = lipgloss.NewStyle().Foreground(ColorWhite).Render("Host        ")
-			col2Header = lipgloss.NewStyle().Foreground(ColorWhite).Render("Service         ")
-		}
-		messageHeader := lipgloss.NewStyle().Foreground(ColorWhite).Render("Message")
-
-		headerLine := fmt.Sprintf("%s %s %s %s %s",
-			timestampHeader, severityHeader, col1Header, col2Header, messageHeader)
+		headerLine := m.renderDynamicColumnHeadersWithScroll(logWidth, columnWidths, m.logViewHorizontalOffset)
 		logLines = append(logLines, headerLine)
 		height-- // Reduce available height for logs
 	}
@@ -336,7 +353,7 @@ func (m *DashboardModel) renderLogScrollContent(height int, logWidth int) []stri
 	for i := startIdx; i < len(m.logEntries) && i < startIdx+maxLines; i++ {
 		entry := m.logEntries[i]
 		isSelected := (m.activeSection == SectionLogs || m.showLogViewerModal) && i == m.selectedLogIndex
-		formatted := m.formatLogEntry(entry, logWidth, isSelected)
+		formatted := m.formatLogEntry(entry, logWidth, isSelected, columnWidths, m.logViewHorizontalOffset)
 		logLines = append(logLines, formatted)
 	}
 
@@ -536,8 +553,60 @@ func (m *DashboardModel) renderLogScroll(height int) string {
 		Border(lipgloss.NormalBorder()).
 		BorderForeground(borderColor)
 
+	// Content width is smaller due to border (1 char each side)
+	contentWidth := logWidth - 2
+	if contentWidth < 20 {
+		contentWidth = 20
+	}
+
 	// Get log content
-	logLines := m.renderLogScrollContent(height, logWidth)
+	logLines := m.renderLogScrollContent(height, contentWidth)
 
 	return style.Render(lipgloss.JoinVertical(lipgloss.Left, logLines...))
+}
+
+// renderDynamicColumnHeadersWithScroll renders column headers with horizontal scroll support
+func (m *DashboardModel) renderDynamicColumnHeadersWithScroll(availableWidth int, columnWidths map[string]int, horizontalOffset int) string {
+	// Build raw header string first (no ANSI codes)
+	var rawHeaders []string
+
+	for _, col := range m.activeColumns {
+		if !col.Enabled {
+			continue
+		}
+
+		width := columnWidths[col.Key]
+		if width <= 0 {
+			width = len(col.Label)
+			if width < 3 {
+				width = 3
+			}
+		}
+
+		// Pad label to width
+		label := col.Label
+		if len(label) > width {
+			label = label[:width]
+		}
+		paddedLabel := fmt.Sprintf("%-*s", width, label)
+		rawHeaders = append(rawHeaders, paddedLabel)
+	}
+
+	fullHeader := strings.Join(rawHeaders, " ")
+
+	// Apply horizontal scroll
+	if horizontalOffset > 0 && horizontalOffset < len(fullHeader) {
+		fullHeader = fullHeader[horizontalOffset:]
+	} else if horizontalOffset >= len(fullHeader) {
+		fullHeader = ""
+	}
+
+	// Truncate to available width
+	if len(fullHeader) > availableWidth {
+		fullHeader = fullHeader[:availableWidth]
+	}
+
+	// Now apply styling to the visible portion
+	headerStyle := lipgloss.NewStyle().Foreground(ColorWhite)
+	return headerStyle.Render(fullHeader)
 }
