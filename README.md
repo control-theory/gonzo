@@ -5,6 +5,8 @@
 
 # Gonzo - The Go based TUI for log analysis
 
+📢 **UPCOMING LIVE SESSION:** Gonzo Roadmap & Pro Tips on Feb 18 → [Register here](https://us06web.zoom.us/webinar/register/8017701504789/WN_Jj-HJefySvOCK9krZB6czw)
+
 <p align="center"><img src="docs/gonzo-mascot-smaller.png" width="250" alt="Gonzo Mascot"></p>
 
 [![Go Version](https://img.shields.io/badge/go-%3E%3D1.21-blue)](https://go.dev/)
