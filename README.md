@@ -5,6 +5,8 @@
 
 # Gonzo - The Go based TUI for log analysis
 
+📢 **UPCOMING LIVE SESSION:** Gonzo Roadmap & Pro Tips on Feb 18 → [Register here](https://us06web.zoom.us/webinar/register/8017701504789/WN_Jj-HJefySvOCK9krZB6czw)
+
 <p align="center"><img src="docs/gonzo-mascot-smaller.png" width="250" alt="Gonzo Mascot"></p>
 
 [![Go Version](https://img.shields.io/badge/go-%3E%3D1.21-blue)](https://go.dev/)
@@ -147,8 +149,8 @@ gonzo -f "/var/log/*.log" --follow
 cat application.log | gonzo
 
 # Stream logs directly from Kubernetes clusters
-gonzo --k8s-enabled=true --k8s-namespace=default
-gonzo --k8s-enabled=true --k8s-namespace=production --k8s-namespace=staging
+gonzo --k8s-enabled=true --k8s-namespaces=default
+gonzo --k8s-enabled=true --k8s-namespaces=production --k8s-namespaces=staging
 gonzo --k8s-enabled=true --k8s-selector="app=my-app"
 
 # Stream logs from kubectl (traditional way)
@@ -433,7 +435,7 @@ Flags:
 
 Kubernetes Flags:
   --k8s-enabled=true               Enable Kubernetes log streaming mode
-  --k8s-namespace stringArray      Kubernetes namespace(s) to watch (can specify multiple, default: all)
+  --k8s-namespaces stringArray      Kubernetes namespace(s) to watch (can specify multiple, default: all)
   --k8s-selector string            Kubernetes label selector for filtering pods
   --k8s-tail int                   Number of previous log lines to retrieve (default: 10)
   --k8s-since int                  Only return logs newer than relative duration in seconds
@@ -706,11 +708,17 @@ plugins:
     description: "Gonzo log analysis"
     scopes:
       - po
+      - deploy
+      - sts
+      - ds
+      - svc
+      - job
+      - cj
     command: sh
     background: false
     args:
       - -c
-      - "kubectl logs -f --tail=0 $NAME -n $NAMESPACE --context $CONTEXT | gonzo"
+      - "kubectl logs -f --tail=0 $RESOURCE_NAME/$NAME -n $NAMESPACE --context $CONTEXT | gonzo"
 ```
 
 > ⚠️ NOTE: on `macOS` although it is not required, defining `XDG_CONFIG_HOME=~/.config` is recommended in order to maintain consistency with Linux configuration practices.
