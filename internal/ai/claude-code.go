@@ -7,6 +7,13 @@ import (
 	"strings"
 )
 
+// Available Claude models (shortnames supported by claude CLI)
+var claudeModels = []string{
+	"sonnet", // Default - Claude Sonnet (latest version)
+	"haiku",  // Claude Haiku (fastest, most efficient)
+	"opus",   // Claude Opus (most capable)
+}
+
 // ClaudeCodeClient handles Claude Code CLI requests
 type ClaudeCodeClient struct {
 	Model           string
@@ -28,10 +35,16 @@ func NewClaudeCodeClient(model string) *ClaudeCodeClient {
 		}
 	}
 
+	// Default to sonnet if no model specified
+	if model == "" {
+		model = "sonnet"
+	}
+
 	client := &ClaudeCodeClient{
-		ClaudePath:  claudePath,
-		Model:       model,
-		ServiceName: "Claude Code",
+		ClaudePath:      claudePath,
+		Model:           model,
+		ServiceName:     "Claude Code",
+		AvailableModels: claudeModels,
 	}
 
 	// Validate configuration
@@ -48,8 +61,8 @@ func (c *ClaudeCodeClient) AnalyzeLog(logMessage, severity, timestamp string, at
 
 	prompt := c.buildAnalysisPrompt(logMessage, severity, timestamp, attributes)
 
-	// Execute claude CLI in headless mode
-	cmd := exec.Command(c.ClaudePath, "-p", prompt)
+	// Execute claude CLI in headless mode with model selection
+	cmd := exec.Command(c.ClaudePath, "--model", c.Model, "-p", prompt)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -99,8 +112,8 @@ Log Details (for reference):
 
 	prompt += "\n\nPlease answer the user's specific question about this log entry. Be concise and helpful."
 
-	// Execute claude CLI in headless mode
-	cmd := exec.Command(c.ClaudePath, "-p", prompt)
+	// Execute claude CLI in headless mode with model selection
+	cmd := exec.Command(c.ClaudePath, "--model", c.Model, "-p", prompt)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -184,10 +197,20 @@ func (c *ClaudeCodeClient) ValidateConfiguration() {
 	c.Validated = true
 	c.ValidationErr = ""
 
-	// Claude Code CLI manages its own model selection via `claude config` or environment variables.
-	// We don't expose model selection in Gonzo since we can't control it.
-	c.AvailableModels = nil
-	c.Model = ""
+	// Model and AvailableModels are already set in NewClaudeCodeClient
+	// Validate that the selected model is in the available list
+	validModel := false
+	for _, m := range c.AvailableModels {
+		if c.Model == m {
+			validModel = true
+			break
+		}
+	}
+
+	// If model is not valid, default to sonnet
+	if !validModel {
+		c.Model = "sonnet"
+	}
 }
 
 // GetAvailableModels returns a list of Claude models
