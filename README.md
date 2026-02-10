@@ -522,6 +522,13 @@ gonzo --ai-provider=claude-code --ai-model=opus -f logs.json    # Most capable
 gonzo --ai-provider=claude-code --k8s-enabled
 cat logs.json | gonzo --ai-provider=claude-code
 tail -f /var/log/app.log | gonzo --ai-provider=claude-code --ai-model=haiku
+
+# Run Claude in a container (Podman/Docker)
+export GONZO_CLAUDE_PATH="podman exec -it claude-container claude"
+gonzo --ai-provider=claude-code -f logs.json
+
+export GONZO_CLAUDE_PATH="docker exec -it my-claude-container claude"
+gonzo --ai-provider=claude-code --ai-model=haiku -f /var/log/app.log --follow
 ```
 
 **Available Models:**
@@ -529,7 +536,9 @@ tail -f /var/log/app.log | gonzo --ai-provider=claude-code --ai-model=haiku
 - `haiku` - Fastest and most efficient, best for high-volume logs
 - `opus` - Most capable, best for complex analysis
 
-**Note:** Claude Code CLI manages authentication independently. The `OPENAI_API_KEY` environment variable is not needed when using Claude Code.
+**Notes:**
+- Claude Code CLI manages authentication independently. The `OPENAI_API_KEY` environment variable is not needed.
+- Use `GONZO_CLAUDE_PATH` to specify a custom path or command (useful for running Claude in containers).
 
 #### LM Studio (Local AI)
 
@@ -652,6 +661,7 @@ When you don't specify the `--ai-model` flag, Gonzo automatically selects the be
 | `OPENAI_API_KEY`        | API key for AI analysis (required for OpenAI-based AI features)                   |
 | `OPENAI_API_BASE`       | Custom API endpoint (default: <https://api.openai.com/v1>)             |
 | `GONZO_AI_PROVIDER`     | AI provider to use ('openai' or 'claude-code')                       |
+| `GONZO_CLAUDE_PATH`     | Custom path/command for Claude CLI (e.g., for container execution)   |
 | `GONZO_FILES`           | Comma-separated list of files/globs to read (equivalent to -f flags) |
 | `GONZO_FOLLOW`          | Enable follow mode (true/false)                                      |
 | `GONZO_UPDATE_INTERVAL` | Override update interval                                             |

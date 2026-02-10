@@ -3,6 +3,7 @@ package ai
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -12,6 +13,22 @@ var claudeModels = []string{
 	"sonnet", // Default - Claude Sonnet (latest version)
 	"haiku",  // Claude Haiku (fastest, most efficient)
 	"opus",   // Claude Opus (most capable)
+}
+
+// buildCommand creates an exec.Cmd for running Claude with the given arguments.
+// Handles both simple paths (e.g., "/usr/local/bin/claude") and complex commands
+// (e.g., "podman exec -it container claude").
+func (c *ClaudeCodeClient) buildCommand(args ...string) *exec.Cmd {
+	// If ClaudePath contains spaces, it's likely a full command (e.g., "podman exec container claude")
+	// Split it and use the first part as the command, rest as base args
+	if strings.Contains(c.ClaudePath, " ") {
+		parts := strings.Fields(c.ClaudePath)
+		allArgs := append(parts[1:], args...)
+		return exec.Command(parts[0], allArgs...)
+	}
+
+	// Simple path, just execute directly
+	return exec.Command(c.ClaudePath, args...)
 }
 
 // ClaudeCodeClient handles Claude Code CLI requests
@@ -26,12 +43,19 @@ type ClaudeCodeClient struct {
 
 // NewClaudeCodeClient creates a new Claude Code client
 func NewClaudeCodeClient(model string) *ClaudeCodeClient {
-	// Find the claude executable in PATH
-	claudePath, err := exec.LookPath("claude")
-	if err != nil {
-		return &ClaudeCodeClient{
-			Validated:     false,
-			ValidationErr: "claude CLI not found in PATH - install Claude Code from https://claude.ai/download",
+	// Check for custom Claude path from environment variable first
+	// This allows running Claude in containers: GONZO_CLAUDE_PATH="podman exec -it container claude"
+	claudePath := os.Getenv("GONZO_CLAUDE_PATH")
+
+	if claudePath == "" {
+		// Fall back to finding claude executable in PATH
+		var err error
+		claudePath, err = exec.LookPath("claude")
+		if err != nil {
+			return &ClaudeCodeClient{
+				Validated:     false,
+				ValidationErr: "claude CLI not found in PATH - install Claude Code from https://claude.ai/download or set GONZO_CLAUDE_PATH",
+			}
 		}
 	}
 
@@ -62,7 +86,7 @@ func (c *ClaudeCodeClient) AnalyzeLog(logMessage, severity, timestamp string, at
 	prompt := c.buildAnalysisPrompt(logMessage, severity, timestamp, attributes)
 
 	// Execute claude CLI in headless mode with model selection
-	cmd := exec.Command(c.ClaudePath, "--model", c.Model, "-p", prompt)
+	cmd := c.buildCommand("--model", c.Model, "-p", prompt)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -113,7 +137,7 @@ Log Details (for reference):
 	prompt += "\n\nPlease answer the user's specific question about this log entry. Be concise and helpful."
 
 	// Execute claude CLI in headless mode with model selection
-	cmd := exec.Command(c.ClaudePath, "--model", c.Model, "-p", prompt)
+	cmd := c.buildCommand("--model", c.Model, "-p", prompt)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -182,7 +206,7 @@ func (c *ClaudeCodeClient) ValidateConfiguration() {
 	}
 
 	// Try to execute claude with --version to verify it works
-	cmd := exec.Command(c.ClaudePath, "--version")
+	cmd := c.buildCommand("--version")
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
 
