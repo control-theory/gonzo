@@ -5,7 +5,9 @@
 
 # Gonzo - The Go based TUI for log analysis
 
-📢 **UPCOMING LIVE SESSION:** Gonzo Roadmap & Pro Tips on Feb 18 → [Register here](https://us06web.zoom.us/webinar/register/8017701504789/WN_Jj-HJefySvOCK9krZB6czw)
+📢 **LIVE SESSION RECORDING NOW AVAILABLE:**  
+**Gonzo Roadmap & Pro Tips Live Demo with Maintainers**  
+[Watch here](https://www.controltheory.com/videos/gonzo-roadmap-and-pro-tips-live-demo-session/)
 
 <p align="center"><img src="docs/gonzo-mascot-smaller.png" width="250" alt="Gonzo Mascot"></p>
 
