@@ -13,9 +13,9 @@ Get the AWS CLI from the official AWS documentation: [Installing or updating the
 A handy way to get your Log groups for your configured AWS region is:
 
 ```bash
-aws logs describe-log-groups \                                                                                                                                                              
-  --query 'logGroups[*].{Name:logGroupName,ARN:arn}' \           
-  --output json   
+aws logs describe-log-groups \
+  --query 'logGroups[*].{Name:logGroupName,ARN:arn}' \
+  --output json
 ```
 
 ## Using AWS CLI Tail with Gonzo
