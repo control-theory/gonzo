@@ -138,7 +138,7 @@ func (m *DashboardModel) restoreColumnConfig() {
 // renderColumnConfigModal renders the column configuration modal
 func (m *DashboardModel) renderColumnConfigModal() string {
 	// Status bar text determines the minimum width
-	statusBarText := "↑↓/jk: Navigate • Space/x: Toggle • Enter: Apply • ESC: Cancel"
+	statusBarText := "↑↓/jk: Navigate • Space: Toggle • Enter: Apply • ESC: Cancel"
 	statusBarWidth := len(statusBarText)
 
 	// Calculate dimensions

@@ -90,7 +90,7 @@ func (m *DashboardModel) renderStatusLine() string {
 		} else if medium {
 			statusText = "?: Help • ↑↓: Navigate • Home/End • PgUp/Dn • Enter: Details"
 		} else {
-			statusText = "?: Help • Wheel: scroll • ↑↓: Navigate • Home: Top • End: Latest • PgUp/PgDn: Page • Enter: Details"
+			statusText = "?: Help • Wheel: scroll • ↑↓ ←/→: Navigate • Home: Top • End: Latest • PgUp/PgDn: Page • Enter: Details"
 		}
 	} else if m.showModal {
 		statusText = "ESC: Close"
@@ -278,7 +278,7 @@ func (m *DashboardModel) renderLogScrollContent(height int, logWidth int) []stri
 	var logLines []string
 
 	// Calculate column widths based on content
-	columnWidths := m.calculateColumnWidths(m.logEntries)
+	columnWidths := m.calculateColumnWidths(m.allLogEntries)
 
 	// Calculate total content width for horizontal scrolling
 	totalContentWidth := 0

@@ -9,7 +9,7 @@ import (
 
 const (
 	// MaxColumnWidth is the maximum width for any column
-	MaxColumnWidth = 64
+	MaxColumnWidth = 100
 )
 
 // columnPart represents a column and its value for formatting
@@ -47,25 +47,33 @@ func (m *DashboardModel) calculateEffectiveColumnWidth(col ColumnConfig, value s
 	return width
 }
 
-// calculateColumnWidths calculates the width for each enabled column based on content
-// Returns a map of column key to width
+// calculateColumnWidths calculates the width for each enabled column based on content.
+// Widths only grow (never shrink) and are capped at MaxColumnWidth.
+// Returns a map of column key to width.
 func (m *DashboardModel) calculateColumnWidths(entries []LogEntry) map[string]int {
 	widths := make(map[string]int)
 
-	// Initialize with minimum widths (label length)
 	for _, col := range m.activeColumns {
 		if !col.Enabled {
 			continue
 		}
+		// Start from the highest of: label length, defined Width hint, previously seen max
 		minWidth := len(col.Label)
 		if minWidth < 3 {
 			minWidth = 3
 		}
-		widths[col.Key] = minWidth
+		w := minWidth
+		if col.Width > w {
+			w = col.Width
+		}
+		if m.columnMaxWidths[col.Key] > w {
+			w = m.columnMaxWidths[col.Key]
+		}
+		widths[col.Key] = w
 	}
 
-	// Sample entries to find max content width for each column
-	sampleSize := min(len(entries), 100) // Sample up to 100 entries
+	// Sample entries and grow widths (but never shrink)
+	sampleSize := min(len(entries), 100)
 	for i := 0; i < sampleSize; i++ {
 		entry := entries[i]
 		for _, col := range m.activeColumns {
@@ -73,17 +81,19 @@ func (m *DashboardModel) calculateColumnWidths(entries []LogEntry) map[string]in
 				continue
 			}
 			value := m.getColumnValue(entry, col.Key)
-			valueLen := len(value)
-			if valueLen > widths[col.Key] {
-				widths[col.Key] = valueLen
+			if len(value) > widths[col.Key] {
+				widths[col.Key] = len(value)
 			}
 		}
 	}
 
-	// Apply max constraint to all widths
+	// Cap at MaxColumnWidth and persist new maxima
 	for key := range widths {
 		if widths[key] > MaxColumnWidth {
 			widths[key] = MaxColumnWidth
+		}
+		if widths[key] > m.columnMaxWidths[key] {
+			m.columnMaxWidths[key] = widths[key]
 		}
 	}
 

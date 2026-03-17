@@ -355,6 +355,8 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if !m.showModal && !m.filterActive && !m.searchActive && !m.showSeverityFilterModal {
 			// Reset drain3 tracking as well
 			m.drain3LastProcessed = 0
+			// Reset column width tracking so widths are recalculated from current buffer
+			m.columnMaxWidths = make(map[string]int)
 			// Send manual reset message to trigger reset in app immediately
 			return m, func() tea.Msg {
 				return ManualResetMsg{}
@@ -455,7 +457,7 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case " ":
 		// Spacebar: Global pause/unpause toggle for entire UI
-		if !m.showModal && !m.filterActive && !m.searchActive && !m.showSeverityFilterModal && !m.showK8sFilterModal {
+		if !m.showModal && !m.filterActive && !m.searchActive && !m.showSeverityFilterModal && !m.showK8sFilterModal && !m.showColumnConfigModal {
 			wasPaused := m.viewPaused
 			m.viewPaused = !m.viewPaused
 
@@ -555,8 +557,8 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 
-		case " ", "x":
-			// Toggle selection (space or x key)
+		case " ":
+			// Toggle selection
 			m.toggleColumnConfigSelection()
 			return m, nil
 
