@@ -1339,10 +1339,6 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.activeSection == SectionLogs {
 			// Reset column width tracking so widths are recalculated from current buffer
 			m.columnMaxWidths = make(map[string]int)
-			// Send manual reset message to trigger reset in app immediately
-			return m, func() tea.Msg {
-				return ManualResetMsg{}
-			}
 		}
 
 	case "enter":
