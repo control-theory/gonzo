@@ -320,7 +320,7 @@ cat logs.json | gonzo --ai-model="gpt-4"
 | `Ctrl+f`       | Open severity filter modal                |
 | `Ctrl+k`       | Open Kubernetes filter modal (k8s mode)   |
 | `f`            | Open fullscreen log viewer modal          |
-| `c`            | Toggle Namespace/Pod or Host/Service cols |
+| `c`            | Toggle columns (Host/Service ↔ Namespace/Pod in k8s mode) |
 | `C`            | Configure visible columns (column picker) |
 | `r`            | Reset all data (manual reset)             |
 | `u` / `U`      | Cycle update intervals (forward/backward) |
