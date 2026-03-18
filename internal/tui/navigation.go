@@ -1335,7 +1335,7 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 
 	case "ctrl+r":
-		// Manual reset of frequency data and patterns
+		// Manual reset of column widths in log section
 		if m.activeSection == SectionLogs {
 			// Reset column width tracking so widths are recalculated from current buffer
 			m.columnMaxWidths = make(map[string]int)
