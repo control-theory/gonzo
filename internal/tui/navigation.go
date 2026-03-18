@@ -420,7 +420,7 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case "ctrl+f":
 		// Severity filter modal
-		if !m.showModal && !m.filterActive && !m.searchActive && !m.showHelp && !m.showPatternsModal && !m.showModelSelectionModal && !m.showStatsModal && !m.showCountsModal && !m.showK8sFilterModal {
+		if !m.showModal && !m.filterActive && !m.searchActive && !m.showHelp && !m.showPatternsModal && !m.showModelSelectionModal && !m.showStatsModal && !m.showCountsModal && !m.showK8sFilterModal && !m.showColumnConfigModal {
 			// Store original state for ESC cancellation
 			m.severityFilterOriginal = make(map[string]bool)
 			for k, v := range m.severityFilter {
@@ -433,7 +433,7 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case "ctrl+k":
 		// Kubernetes filter modal
-		if !m.showModal && !m.filterActive && !m.searchActive && !m.showHelp && !m.showPatternsModal && !m.showModelSelectionModal && !m.showStatsModal && !m.showCountsModal && !m.showSeverityFilterModal {
+		if !m.showModal && !m.filterActive && !m.searchActive && !m.showHelp && !m.showPatternsModal && !m.showModelSelectionModal && !m.showStatsModal && !m.showCountsModal && !m.showSeverityFilterModal && !m.showColumnConfigModal {
 			// Update namespaces and pods from Kubernetes API
 			m.updateK8sNamespacesFromAPI()
 			m.updateK8sPodsFromAPI()
@@ -1321,6 +1321,28 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.logViewHorizontalOffset += 5
 			// Max offset will be bounded in renderLogScrollContent
 			return m, nil
+		}
+
+	case "ctrl+l":
+		// Toggle column width limit (100 char max) in log section
+		if m.activeSection == SectionLogs {
+			m.columnWidthLimitEnabled = !m.columnWidthLimitEnabled
+			// When re-enabling the limit, reset sticky widths so columns shrink back immediately
+			if m.columnWidthLimitEnabled {
+				m.columnMaxWidths = make(map[string]int)
+			}
+			return m, nil
+		}
+
+	case "ctrl+r":
+		// Manual reset of frequency data and patterns
+		if m.activeSection == SectionLogs {
+			// Reset column width tracking so widths are recalculated from current buffer
+			m.columnMaxWidths = make(map[string]int)
+			// Send manual reset message to trigger reset in app immediately
+			return m, func() tea.Msg {
+				return ManualResetMsg{}
+			}
 		}
 
 	case "enter":

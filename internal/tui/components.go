@@ -84,11 +84,11 @@ func (m *DashboardModel) renderStatusLine() string {
 		}
 	} else if m.activeSection == SectionLogs {
 		if veryNarrow {
-			statusText = "?: Help • ↑↓ Nav • Enter"
+			statusText = "?: Help • ↑↓←→ Nav • Enter"
 		} else if narrow {
-			statusText = "?: Help • ↑↓ Navigate • Enter: Details"
+			statusText = "?: Help • ↑↓←→ Navigate • Enter: Details"
 		} else if medium {
-			statusText = "?: Help • ↑↓: Navigate • Home/End • PgUp/Dn • Enter: Details"
+			statusText = "?: Help • ↑↓ ←/→: Navigate • Home/End • PgUp/Dn • Enter: Details"
 		} else {
 			statusText = "?: Help • Wheel: scroll • ↑↓ ←/→: Navigate • Home: Top • End: Latest • PgUp/PgDn: Page • Enter: Details"
 		}

@@ -39,8 +39,8 @@ func (m *DashboardModel) calculateEffectiveColumnWidth(col ColumnConfig, value s
 		width = minWidth
 	}
 
-	// Apply max constraint
-	if width > MaxColumnWidth {
+	// Apply max constraint (only when width limit is enabled)
+	if m.columnWidthLimitEnabled && width > MaxColumnWidth {
 		width = MaxColumnWidth
 	}
 
@@ -87,9 +87,9 @@ func (m *DashboardModel) calculateColumnWidths(entries []LogEntry) map[string]in
 		}
 	}
 
-	// Cap at MaxColumnWidth and persist new maxima
+	// Cap at MaxColumnWidth (only when limit is enabled) and persist new maxima
 	for key := range widths {
-		if widths[key] > MaxColumnWidth {
+		if m.columnWidthLimitEnabled && widths[key] > MaxColumnWidth {
 			widths[key] = MaxColumnWidth
 		}
 		if widths[key] > m.columnMaxWidths[key] {

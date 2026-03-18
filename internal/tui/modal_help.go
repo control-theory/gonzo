@@ -77,6 +77,8 @@ ACTIONS:
   Space          - Pause/unpause UI updates
   c              - Toggle columns (Host/Service ↔ Namespace/Pod in k8s mode)
   C              - Configure visible columns (add/remove columns)
+  Ctrl+l         - Toggle column width limit (100 char max)
+  Ctrl+r         - Reset column widths to accomodate current buffer
   T              - Toggle timestamp mode (Log Time / Receive Time)
   r              - Reset all data (manual reset)
   u/U            - Cycle update intervals (forward/backward)

@@ -195,6 +195,7 @@ type DashboardModel struct {
 	availableColumns         []ColumnConfig  // All available columns (defaults + discovered)
 	discoveredAttributes     map[string]bool // Track all unique attribute keys seen across logs
 	columnMaxWidths          map[string]int  // Tracks the max observed width for each column (never shrinks)
+	columnWidthLimitEnabled  bool            // Whether the MaxColumnWidth cap is applied
 	logViewHorizontalOffset  int             // Horizontal scroll offset for log viewer
 	autoSwitchedToK8sMode    bool            // Track if we've already auto-switched to k8s columns
 
@@ -333,6 +334,7 @@ func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiModel s
 		// Initialize column customization
 		discoveredAttributes:     make(map[string]bool),
 		columnMaxWidths:          make(map[string]int),
+		columnWidthLimitEnabled:  true, // Enable 100-char column width cap by default
 		activeColumns:            getDefaultActiveColumns(),
 		availableColumns:         getDefaultAvailableColumns(),
 		columnConfigSelected:     0,
