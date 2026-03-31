@@ -102,7 +102,7 @@ func runApp(cmd *cobra.Command, args []string) error {
 	freqMemory := memory.NewFrequencyMemory(cfg.MemorySize)
 
 	// Initialize TUI model with components
-	dashboard := tui.NewDashboardModel(cfg.LogBuffer, cfg.UpdateInterval, cfg.AIModel, textAnalyzer.GetStopWords(), cfg.ReverseScrollWheel, cfg.UseLogTime)
+	dashboard := tui.NewDashboardModel(cfg.LogBuffer, cfg.UpdateInterval, cfg.AIProvider, cfg.AIModel, textAnalyzer.GetStopWords(), cfg.ReverseScrollWheel, cfg.UseLogTime)
 	if versionChecker != nil {
 		dashboard.SetVersionChecker(versionChecker)
 	}

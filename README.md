@@ -5,6 +5,10 @@
 
 # Gonzo - The Go based TUI for log analysis
 
+📢 **LIVE SESSION RECORDING NOW AVAILABLE:**  
+**Gonzo Roadmap & Pro Tips Live Demo with Maintainers**  
+[Watch here](https://www.controltheory.com/videos/gonzo-roadmap-and-pro-tips-live-demo-session/)
+
 <p align="center"><img src="docs/gonzo-mascot-smaller.png" width="250" alt="Gonzo Mascot"></p>
 
 [![Go Version](https://img.shields.io/badge/go-%3E%3D1.21-blue)](https://go.dev/)
@@ -86,8 +90,8 @@ Here are some references to get you started:
 - **Pattern detection** - Automatically identify recurring issues
 - **Anomaly analysis** - Spot unusual patterns in your logs
 - **Root cause suggestions** - Get AI-powered debugging assistance
-- **Configurable models** - Choose from GPT-4, GPT-3.5, or any custom model
-- **Multiple providers** - Works with OpenAI, LM Studio, Ollama, or any OpenAI-compatible API
+- **Configurable models** - Choose from GPT-4, GPT-3.5, Claude Sonnet/Haiku/Opus, or any custom model
+- **Multiple providers** - Works with OpenAI, Claude Code, LM Studio, Ollama, or any OpenAI-compatible API
 - **Local AI support** - Run completely offline with local models
 
 ## 🚀 Quick Start
@@ -291,6 +295,12 @@ export OPENAI_API_KEY="ollama"
 export OPENAI_API_BASE="http://localhost:11434"
 gonzo -f logs.json --follow
 
+# Using Claude Code (uses sonnet by default)
+gonzo --ai-provider=claude-code -f logs.json
+
+# Claude Code with specific model
+gonzo --ai-provider=claude-code --ai-model=haiku -f /var/log/app.log --follow
+
 # Traditional stdin approach still works
 export OPENAI_API_KEY=sk-your-key-here
 cat logs.json | gonzo --ai-model="gpt-4"
@@ -437,6 +447,7 @@ Flags:
   -u, --update-interval duration   Dashboard update interval (default: 1s)
   -b, --log-buffer int             Maximum log entries to keep (default: 1000)
   -m, --memory-size int            Maximum frequency entries (default: 10000)
+  --ai-provider string             AI provider to use: 'openai' (default), 'claude-code'
   --ai-model string                AI model for analysis (auto-selects best available if not specified)
   -s, --skin string                Color scheme/skin to use (default, or name of a skin file)
   --stop-words strings             Additional stop words to filter out from analysis (adds to built-in list)
@@ -488,6 +499,7 @@ stop-words:
 test-mode: false
 
 # AI configuration
+ai-provider: "openai"  # Options: "openai" (default), "claude-code"
 ai-model: "gpt-4"
 ```
 
@@ -509,6 +521,45 @@ cat logs.json | gonzo
 # Or specify a particular model
 cat logs.json | gonzo --ai-model="gpt-4"
 ```
+
+#### Claude Code (Anthropic Claude)
+
+```bash
+# 1. Install Claude Code CLI
+# Download from https://claude.ai/download
+
+# 2. Authenticate (if not already done)
+claude auth login
+
+# 3. Run Gonzo with Claude Code (uses sonnet by default)
+gonzo --ai-provider=claude-code -f application.log
+
+# Specify a model
+gonzo --ai-provider=claude-code --ai-model=sonnet -f logs.json  # Default, balanced
+gonzo --ai-provider=claude-code --ai-model=haiku -f logs.json   # Faster, efficient
+gonzo --ai-provider=claude-code --ai-model=opus -f logs.json    # Most capable
+
+# Works with all input methods
+gonzo --ai-provider=claude-code --k8s-enabled
+cat logs.json | gonzo --ai-provider=claude-code
+tail -f /var/log/app.log | gonzo --ai-provider=claude-code --ai-model=haiku
+
+# Run Claude in a container (Podman/Docker)
+export GONZO_CLAUDE_PATH="podman exec -it claude-container claude"
+gonzo --ai-provider=claude-code -f logs.json
+
+export GONZO_CLAUDE_PATH="docker exec -it my-claude-container claude"
+gonzo --ai-provider=claude-code --ai-model=haiku -f /var/log/app.log --follow
+```
+
+**Available Models:**
+- `sonnet` (default) - Claude Sonnet, balanced performance and capability
+- `haiku` - Fastest and most efficient, best for high-volume logs
+- `opus` - Most capable, best for complex analysis
+
+**Notes:**
+- Claude Code CLI manages authentication independently. The `OPENAI_API_KEY` environment variable is not needed.
+- Use `GONZO_CLAUDE_PATH` to specify a custom path or command (useful for running Claude in containers).
 
 #### LM Studio (Local AI)
 
@@ -569,6 +620,10 @@ The model selection modal shows:
 
 **Note:** Model switching requires the AI service to be properly configured and running. The modal will only appear if models are available from your AI provider.
 
+**Provider-Specific Behavior:**
+- **OpenAI/Ollama/LM Studio**: Shows all models available from the API
+- **Claude Code**: Shows sonnet, haiku, and opus (managed by Claude CLI)
+
 #### Auto Model Selection
 
 When you don't specify the `--ai-model` flag, Gonzo automatically selects the best available model:
@@ -576,9 +631,10 @@ When you don't specify the `--ai-model` flag, Gonzo automatically selects the be
 **Selection Priority:**
 
 1. **OpenAI**: Prefers `gpt-4` → `gpt-3.5-turbo` → first available
-2. **Ollama**: Prefers `gpt-oss:20b` → `llama3` → `mistral` → `codellama` → first available
-3. **LM Studio**: Uses first available model from the server
-4. **Other providers**: Uses first available model
+2. **Claude Code**: Defaults to `sonnet` (haiku and opus also available)
+3. **Ollama**: Prefers `gpt-oss:20b` → `llama3` → `mistral` → `codellama` → first available
+4. **LM Studio**: Uses first available model from the server
+5. **Other providers**: Uses first available model
 
 **Benefits:**
 
@@ -611,12 +667,22 @@ When you don't specify the `--ai-model` flag, Gonzo automatically selects the be
 - ✅ Verify API key is valid and has credits
 - ✅ Check model availability (gpt-4 requires API access)
 
+**Claude Code Issues:**
+
+- ✅ Ensure Claude Code CLI is installed: `claude --version`
+- ✅ Authenticate with Claude: `claude auth login`
+- ✅ Test CLI access: `claude -p "test prompt"`
+- ✅ Available models: `sonnet` (default), `haiku`, `opus`
+- ✅ Use `--ai-provider=claude-code` flag when running Gonzo
+
 ### Environment Variables
 
 | Variable                | Description                                                          |
 | ----------------------- | -------------------------------------------------------------------- |
-| `OPENAI_API_KEY`        | API key for AI analysis (required for AI features)                   |
+| `OPENAI_API_KEY`        | API key for AI analysis (required for OpenAI-based AI features)                   |
 | `OPENAI_API_BASE`       | Custom API endpoint (default: <https://api.openai.com/v1>)             |
+| `GONZO_AI_PROVIDER`     | AI provider to use ('openai' or 'claude-code')                       |
+| `GONZO_CLAUDE_PATH`     | Custom path/command for Claude CLI (e.g., for container execution)   |
 | `GONZO_FILES`           | Comma-separated list of files/globs to read (equivalent to -f flags) |
 | `GONZO_FOLLOW`          | Enable follow mode (true/false)                                      |
 | `GONZO_UPDATE_INTERVAL` | Override update interval                                             |

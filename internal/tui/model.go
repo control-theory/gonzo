@@ -150,7 +150,7 @@ type DashboardModel struct {
 	currentIntervalIdx int
 
 	// AI Analysis
-	aiClient         *ai.OpenAIClient
+	aiClient         ai.Client
 	aiAnalyzing      bool
 	currentLogEntry  *LogEntry // Track current log entry being viewed for AI analysis
 	aiAnalysisResult string    // Store the AI analysis result for display
@@ -267,7 +267,7 @@ func initializeDrain3BySeverity() map[string]*Drain3Manager {
 }
 
 // NewDashboardModel creates a new dashboard model with stop words
-func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiModel string, stopWords map[string]bool, reverseScrollWheel bool, useLogTime bool) *DashboardModel {
+func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiProvider string, aiModel string, stopWords map[string]bool, reverseScrollWheel bool, useLogTime bool) *DashboardModel {
 	filterInput := textinput.New()
 	filterInput.Placeholder = "Filter logs by message or attributes (regex supported)..."
 	filterInput.CharLimit = 200
@@ -319,10 +319,9 @@ func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiModel s
 		heatmapData:         make([]HeatmapMinute, 0),
 		drain3BySeverity:    initializeDrain3BySeverity(),
 		servicesBySeverity:  make(map[string][]ServiceCount),
-		availableIntervals:  availableIntervals,
-		currentIntervalIdx:  currentIdx,
-		aiClient:            ai.NewOpenAIClient(aiModel), // Initialize AI client with configurable model
-		infoViewport:        viewport.New(80, 20),        // Will be resized later
+		availableIntervals: availableIntervals,
+		currentIntervalIdx: currentIdx,
+		infoViewport:       viewport.New(80, 20), // Will be resized later
 		chatViewport:        viewport.New(30, 20),        // Will be resized later
 		modalActiveSection:  "info",                      // Start with info section active
 		chatHistory:         make([]string, 0),
@@ -376,14 +375,29 @@ func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiModel s
 		severityFilterOriginal: make(map[string]bool), // Initialize empty map for modal state backup
 	}
 
-	// Initialize AI status based on client validation
-	if m.aiClient != nil {
-		m.aiConfigured, m.aiErrorMessage, m.aiServiceName, m.aiModelName = m.aiClient.GetValidationStatus()
+	// Initialize AI client via factory
+	aiClient, err := ai.NewClient(ai.ProviderType(aiProvider), aiModel)
+	if err != nil {
+		// Provider error (e.g., invalid provider or missing API key when explicitly requested)
+		m.aiClient = nil
+		m.aiConfigured = false
+		m.aiServiceName = "None"
+		m.aiModelName = ""
+		m.aiErrorMessage = err.Error()
+	} else if aiClient != nil {
+		m.aiClient = aiClient
+		status := aiClient.GetValidationStatus()
+		m.aiConfigured = status.Validated
+		m.aiErrorMessage = status.ErrorMessage
+		m.aiServiceName = status.ServiceName
+		m.aiModelName = status.ModelName
 		// Get available models list for model selection modal
 		if m.aiConfigured {
-			m.availableModelsList = m.aiClient.AvailableModels
+			m.availableModelsList = aiClient.CachedModels()
 		}
 	} else {
+		// nil client, nil error = AI disabled (no API key in auto mode)
+		m.aiClient = nil
 		m.aiConfigured = false
 		m.aiServiceName = "None"
 		m.aiModelName = ""
@@ -400,7 +414,7 @@ func (m *DashboardModel) switchToModel(newModel string) (tea.Model, tea.Cmd) {
 	}
 
 	// Update the model in the AI client
-	m.aiClient.Model = newModel
+	m.aiClient.SetModel(newModel)
 	m.aiModelName = newModel
 
 	// Close the model selection modal
