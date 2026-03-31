@@ -2,196 +2,288 @@ package tui
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 )
 
-// formatLogEntry formats a log entry with colors
-func (m *DashboardModel) formatLogEntry(entry LogEntry, availableWidth int, isSelected bool) string {
-	// Use getDisplayTimestamp to respect the useLogTime setting
-	timestamp := m.getDisplayTimestamp(entry).Format("15:04:05")
+const (
+	// MaxColumnWidth is the maximum width for any column
+	MaxColumnWidth = 100
+)
 
-	// If selected, apply selection style to entire row
-	if isSelected {
-		// Format the entire row without individual component styling
-		severity := fmt.Sprintf("%-5s", entry.Severity)
-
-		var logLine string
-		if m.showColumns {
-			// Check if this is a k8s log (has k8s.namespace or k8s.pod attributes)
-			namespace := entry.Attributes["k8s.namespace"]
-			pod := entry.Attributes["k8s.pod"]
-			isK8s := namespace != "" || pod != ""
-
-			var col1Str, col2Str string
-			var columnsWidth int
-
-			if isK8s {
-				// K8s mode: show namespace and pod (both truncated to 20 chars)
-				if len(namespace) > 20 {
-					namespace = namespace[:17] + "..."
-				}
-				if len(pod) > 20 {
-					pod = pod[:17] + "..."
-				}
-
-				// Format fixed-width columns
-				col1Str = fmt.Sprintf("%-20s", namespace)
-				col2Str = fmt.Sprintf("%-20s", pod)
-				columnsWidth = 42 // 20 + 20 + 2 spaces
-			} else {
-				// Normal mode: show host.name and service.name from OTLP attributes
-				host := entry.Attributes["host.name"]
-				service := entry.Attributes["service.name"]
-
-				// Truncate to fit column width
-				if len(host) > 12 {
-					host = host[:9] + "..."
-				}
-				if len(service) > 16 {
-					service = service[:13] + "..."
-				}
-
-				// Format fixed-width columns
-				col1Str = fmt.Sprintf("%-12s", host)
-				col2Str = fmt.Sprintf("%-16s", service)
-				columnsWidth = 30 // 12 + 16 + 2 spaces
-			}
-
-			// Calculate remaining space for message
-			// Use same calculation as non-selected: availableWidth - 18 - columnsWidth
-			maxMessageLen := availableWidth - 18 - columnsWidth
-			if maxMessageLen < 10 {
-				maxMessageLen = 10
-			}
-
-			message := entry.Message
-			if len(message) > maxMessageLen {
-				message = message[:maxMessageLen-3] + "..."
-			}
-
-			logLine = fmt.Sprintf("%s %-5s %s %s %s", timestamp, severity, col1Str, col2Str, message)
-		} else {
-			// Calculate space for message - use same as non-selected: availableWidth - 18
-			maxMessageLen := availableWidth - 18
-			if maxMessageLen < 10 {
-				maxMessageLen = 10
-			}
-
-			message := entry.Message
-			if len(message) > maxMessageLen {
-				message = message[:maxMessageLen-3] + "..."
-			}
-
-			logLine = fmt.Sprintf("%s %-5s %s", timestamp, severity, message)
-		}
-
-		// Apply selection style to entire line
-		selectedStyle := lipgloss.NewStyle().
-			Background(ColorBlue).
-			Foreground(ColorWhite)
-		return selectedStyle.Render(logLine)
-	}
-
-	// Normal (non-selected) formatting with individual component colors
-	severityColor := GetSeverityColor(entry.Severity)
-
-	styledSeverity := lipgloss.NewStyle().
-		Foreground(severityColor).
-		Bold(true).
-		Render(fmt.Sprintf("%-5s", entry.Severity))
-
-	styledTimestamp := lipgloss.NewStyle().
-		Foreground(ColorGray).
-		Render(timestamp)
-
-	// Extract columns if enabled (K8s or Host/Service)
-	var col1, col2 string
-	columnsWidth := 0
-	if m.showColumns {
-		// Check if this is a k8s log (has k8s.namespace or k8s.pod attributes)
-		namespace := entry.Attributes["k8s.namespace"]
-		pod := entry.Attributes["k8s.pod"]
-		isK8s := namespace != "" || pod != ""
-
-		if isK8s {
-			// K8s mode: show namespace and pod (both truncated to 20 chars)
-			if len(namespace) > 20 {
-				namespace = namespace[:17] + "..."
-			}
-			if len(pod) > 20 {
-				pod = pod[:17] + "..."
-			}
-
-			// Style the k8s columns
-			col1 = lipgloss.NewStyle().
-				Foreground(ColorGreen).
-				Render(fmt.Sprintf("%-20s", namespace))
-
-			col2 = lipgloss.NewStyle().
-				Foreground(ColorBlue).
-				Render(fmt.Sprintf("%-20s", pod))
-
-			columnsWidth = 42 // 20 + 20 + 2 spaces
-		} else {
-			// Normal mode: show host.name and service.name from OTLP attributes
-			host := entry.Attributes["host.name"]
-			service := entry.Attributes["service.name"]
-
-			// Truncate to fit column width (12 chars / 16 chars)
-			if len(host) > 12 {
-				host = host[:9] + "..."
-			}
-			if len(service) > 16 {
-				service = service[:13] + "..."
-			}
-
-			// Style the columns
-			col1 = lipgloss.NewStyle().
-				Foreground(ColorGreen).
-				Render(fmt.Sprintf("%-12s", host))
-
-			col2 = lipgloss.NewStyle().
-				Foreground(ColorBlue).
-				Render(fmt.Sprintf("%-16s", service))
-
-			columnsWidth = 30 // 12 + 16 + 2 spaces
-		}
-	}
-
-	// Truncate message if too long
-	message := entry.Message
-
-	maxMessageLen := availableWidth - 18 - columnsWidth // Account for timestamp, severity, and columns
-	if maxMessageLen < 10 {
-		maxMessageLen = 10 // Absolute minimum
-	}
-	if len(message) > maxMessageLen {
-		message = message[:maxMessageLen-3] + "..."
-	}
-
-	// Apply search term highlighting to message (word-level highlighting)
-	if m.searchTerm != "" {
-		message = m.highlightText(message, m.searchTerm)
-	}
-
-	// Create the complete log line
-	var logLine string
-	if m.showColumns {
-		logLine = fmt.Sprintf("%s %s %s %s %s", styledTimestamp, styledSeverity, col1, col2, message)
-	} else {
-		logLine = fmt.Sprintf("%s %s %s", styledTimestamp, styledSeverity, message)
-	}
-
-	return logLine
+// columnPart represents a column and its value for formatting
+type columnPart struct {
+	col   ColumnConfig
+	value string
+	width int // calculated width for this column
 }
 
-// highlightText highlights search term within text (for 's' command)
-func (m *DashboardModel) highlightText(text, searchTerm string) string {
+// calculateEffectiveColumnWidth returns the effective width for a column
+// Min width = label length, Max width = 64 characters
+func (m *DashboardModel) calculateEffectiveColumnWidth(col ColumnConfig, value string) int {
+	minWidth := len(col.Label)
+	if minWidth < 3 {
+		minWidth = 3 // Absolute minimum
+	}
+
+	// For columns with defined width, use it as a hint but respect min/max
+	width := col.Width
+	if width == 0 {
+		// No defined width - use content length
+		width = len(value)
+	}
+
+	// Apply min constraint (header must be visible)
+	if width < minWidth {
+		width = minWidth
+	}
+
+	// Apply max constraint (only when width limit is enabled)
+	if m.columnWidthLimitEnabled && width > MaxColumnWidth {
+		width = MaxColumnWidth
+	}
+
+	return width
+}
+
+// calculateColumnWidths calculates the width for each enabled column based on content.
+// Widths only grow (never shrink) and are capped at MaxColumnWidth.
+// Returns a map of column key to width.
+func (m *DashboardModel) calculateColumnWidths(entries []LogEntry) map[string]int {
+	widths := make(map[string]int)
+
+	for _, col := range m.activeColumns {
+		if !col.Enabled {
+			continue
+		}
+		// Start from the highest of: label length, defined Width hint, previously seen max
+		minWidth := len(col.Label)
+		if minWidth < 3 {
+			minWidth = 3
+		}
+		w := minWidth
+		if col.Width > w {
+			w = col.Width
+		}
+		if m.columnMaxWidths[col.Key] > w {
+			w = m.columnMaxWidths[col.Key]
+		}
+		widths[col.Key] = w
+	}
+
+	// Sample entries and grow widths (but never shrink)
+	sampleSize := min(len(entries), 100)
+	for i := 0; i < sampleSize; i++ {
+		entry := entries[i]
+		for _, col := range m.activeColumns {
+			if !col.Enabled {
+				continue
+			}
+			value := m.getColumnValue(entry, col.Key)
+			if len(value) > widths[col.Key] {
+				widths[col.Key] = len(value)
+			}
+		}
+	}
+
+	// Cap at MaxColumnWidth (only when limit is enabled) and persist new maxima
+	for key := range widths {
+		if m.columnWidthLimitEnabled && widths[key] > MaxColumnWidth {
+			widths[key] = MaxColumnWidth
+		}
+		if widths[key] > m.columnMaxWidths[key] {
+			m.columnMaxWidths[key] = widths[key]
+		}
+	}
+
+	return widths
+}
+
+// formatLogEntry formats a log entry with colors using dynamic columns
+func (m *DashboardModel) formatLogEntry(entry LogEntry, availableWidth int, isSelected bool, columnWidths map[string]int, horizontalOffset int) string {
+	// Build the log line using active columns
+	var parts []columnPart
+
+	// Collect parts with pre-calculated widths
+	for _, col := range m.activeColumns {
+		if !col.Enabled {
+			continue
+		}
+
+		value := m.getColumnValue(entry, col.Key)
+		width := columnWidths[col.Key]
+		if width == 0 {
+			width = m.calculateEffectiveColumnWidth(col, value)
+		}
+
+		parts = append(parts, columnPart{col, value, width})
+	}
+
+	// Always use per-column styling which handles horizontal scrolling properly
+	return m.formatLogEntryStyled(entry, parts, availableWidth, isSelected, horizontalOffset)
+}
+
+// formatLogEntryStyled formats a log entry with per-column styling, supporting horizontal scroll and selection
+func (m *DashboardModel) formatLogEntryStyled(entry LogEntry, parts []columnPart, availableWidth int, isSelected bool, horizontalOffset int) string {
+	// Build the full raw line to calculate positions for horizontal scrolling
+	type styledSegment struct {
+		start int    // start position in the raw line
+		end   int    // end position in the raw line
+		text  string // padded text value
+		col   ColumnConfig
+	}
+
+	var segments []styledSegment
+	currentPos := 0
+
+	for i, p := range parts {
+		width := p.width
+		if width <= 0 {
+			continue
+		}
+
+		value := p.value
+		// Truncate if needed (with ellipsis)
+		if len(value) > width {
+			if width > 3 {
+				value = value[:width-3] + "..."
+			} else {
+				value = value[:width]
+			}
+		}
+		paddedValue := fmt.Sprintf("%-*s", width, value)
+
+		// Add space separator between columns (except before first)
+		if i > 0 && len(segments) > 0 {
+			currentPos++ // account for the space separator
+		}
+
+		segments = append(segments, styledSegment{
+			start: currentPos,
+			end:   currentPos + len(paddedValue),
+			text:  paddedValue,
+			col:   p.col,
+		})
+		currentPos += len(paddedValue)
+	}
+
+	totalWidth := currentPos
+
+	// Calculate visible range after horizontal offset
+	visibleStart := horizontalOffset
+	visibleEnd := horizontalOffset + availableWidth
+	if visibleStart > totalWidth {
+		visibleStart = totalWidth
+	}
+	if visibleEnd > totalWidth {
+		visibleEnd = totalWidth
+	}
+
+	// Build the visible line by processing each segment
+	var result strings.Builder
+	outputPos := 0
+
+	// Define selected style once for reuse
+	selectedStyle := lipgloss.NewStyle().
+		Background(ColorBlue).
+		Foreground(ColorWhite)
+
+	for i, seg := range segments {
+		// Add space separator between columns
+		if i > 0 {
+			spacePos := seg.start - 1
+			if spacePos >= visibleStart && spacePos < visibleEnd {
+				if isSelected {
+					result.WriteString(selectedStyle.Render(" "))
+				} else {
+					result.WriteString(" ")
+				}
+				outputPos++
+			}
+		}
+
+		// Calculate the visible portion of this segment
+		segVisibleStart := max(0, visibleStart-seg.start)
+		segVisibleEnd := min(len(seg.text), visibleEnd-seg.start)
+
+		if segVisibleStart >= segVisibleEnd {
+			continue // segment is not visible
+		}
+
+		visibleText := seg.text[segVisibleStart:segVisibleEnd]
+
+		// Apply styling based on column type and selection state
+		var styled string
+		if isSelected {
+			styled = selectedStyle.Render(visibleText)
+		} else {
+			// Apply per-column styling with search highlighting
+			styled = m.styleColumnValue(visibleText, seg.col.Key, entry)
+		}
+
+		result.WriteString(styled)
+		outputPos += len(visibleText)
+	}
+
+	// Pad to available width for selected rows
+	if isSelected && outputPos < availableWidth {
+		padding := strings.Repeat(" ", availableWidth-outputPos)
+		result.WriteString(selectedStyle.Render(padding))
+	}
+
+	return result.String()
+}
+
+// styleColumnValue applies appropriate styling for a column value, including search highlighting
+func (m *DashboardModel) styleColumnValue(value string, colKey string, entry LogEntry) string {
+	// Get the base style for this column type
+	var baseStyle lipgloss.Style
+	switch colKey {
+	case "timestamp":
+		baseStyle = lipgloss.NewStyle().Foreground(ColorGray)
+	case "severity":
+		baseStyle = lipgloss.NewStyle().Foreground(GetSeverityColor(entry.Severity)).Bold(true)
+	case "host.name", "k8s.namespace":
+		baseStyle = lipgloss.NewStyle().Foreground(ColorGreen)
+	case "service.name", "k8s.pod":
+		baseStyle = lipgloss.NewStyle().Foreground(ColorBlue)
+	case "message":
+		baseStyle = lipgloss.NewStyle().Foreground(ColorWhite)
+	default:
+		baseStyle = lipgloss.NewStyle().Foreground(ColorWhite)
+	}
+
+	// Apply search highlighting if active
+	if m.searchTerm != "" {
+		return m.highlightTextWithBaseStyle(value, m.searchTerm, baseStyle)
+	}
+
+	return baseStyle.Render(value)
+}
+
+// getColumnValue extracts the value for a column from a log entry
+func (m *DashboardModel) getColumnValue(entry LogEntry, key string) string {
+	switch key {
+	case "timestamp":
+		return m.getDisplayTimestamp(entry).Format("15:04:05")
+	case "severity":
+		return entry.Severity
+	case "message":
+		return entry.Message
+	default:
+		// Look up in attributes
+		if val, ok := entry.Attributes[key]; ok {
+			return val
+		}
+		return ""
+	}
+}
+
+// highlightTextWithBaseStyle highlights search term within text, applying a base style to non-highlighted portions
+func (m *DashboardModel) highlightTextWithBaseStyle(text, searchTerm string, baseStyle lipgloss.Style) string {
 	if searchTerm == "" {
-		return text
+		return baseStyle.Render(text)
 	}
 
 	// Case-insensitive search
@@ -205,16 +297,20 @@ func (m *DashboardModel) highlightText(text, searchTerm string) string {
 	for {
 		index := strings.Index(lowerText[lastIndex:], lowerSearch)
 		if index == -1 {
-			// No more matches, append the rest
-			result.WriteString(text[lastIndex:])
+			// No more matches, append the rest with base style
+			if lastIndex < len(text) {
+				result.WriteString(baseStyle.Render(text[lastIndex:]))
+			}
 			break
 		}
 
 		// Calculate actual position in original text
 		actualIndex := lastIndex + index
 
-		// Append text before match
-		result.WriteString(text[lastIndex:actualIndex])
+		// Append text before match with base style
+		if actualIndex > lastIndex {
+			result.WriteString(baseStyle.Render(text[lastIndex:actualIndex]))
+		}
 
 		// Append highlighted match
 		highlightStyle := lipgloss.NewStyle().
@@ -229,29 +325,6 @@ func (m *DashboardModel) highlightText(text, searchTerm string) string {
 	}
 
 	return result.String()
-}
-
-// containsWord checks if a word appears in text using word boundary matching
-// This matches how words are extracted for frequency analysis
-func (m *DashboardModel) containsWord(text, word string) bool {
-	if word == "" {
-		return false
-	}
-
-	// Convert both to lowercase for case-insensitive matching
-	lowerText := strings.ToLower(text)
-	lowerWord := strings.ToLower(word)
-
-	// Use regex to match word boundaries - this ensures we match whole words
-	// even when they're surrounded by punctuation
-	pattern := `\b` + regexp.QuoteMeta(lowerWord) + `\b`
-	matched, err := regexp.MatchString(pattern, lowerText)
-	if err != nil {
-		// Fallback to simple contains if regex fails
-		return strings.Contains(lowerText, lowerWord)
-	}
-
-	return matched
 }
 
 // wrapTextToWidth wraps text to fit within the specified width

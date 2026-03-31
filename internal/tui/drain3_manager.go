@@ -11,9 +11,9 @@ import (
 
 // Drain3Manager manages the drain3 instance for pattern extraction
 type Drain3Manager struct {
-	drain       *drain3.Drain
-	lastReset   time.Time
-	totalCount  int
+	drain      *drain3.Drain
+	lastReset  time.Time
+	totalCount int
 }
 
 // PatternInfo represents a log pattern with its statistics
@@ -27,10 +27,10 @@ type PatternInfo struct {
 func NewDrain3Manager() *Drain3Manager {
 	// Use optimized config for real-time log processing
 	config := &drain3.Config{
-		Depth:        4,    // Moderate depth for balanced pattern extraction
-		SimilarityTh: 0.5,  // 50% similarity threshold - balanced clustering
-		MaxChildren:  50,   // Lower for performance in real-time
-		MaxClusters:  100,  // Keep top 100 patterns
+		Depth:        4,   // Moderate depth for balanced pattern extraction
+		SimilarityTh: 0.5, // 50% similarity threshold - balanced clustering
+		MaxChildren:  50,  // Lower for performance in real-time
+		MaxClusters:  100, // Keep top 100 patterns
 	}
 
 	return &Drain3Manager{
@@ -114,10 +114,10 @@ func formatTemplate(cluster *goDrain.LogCluster) string {
 
 	// Join tokens and replace placeholders with more readable format
 	template := strings.Join(cluster.LogTemplateTokens, " ")
-	
+
 	// Replace drain3 placeholders (<*>) with more readable ones
 	template = strings.ReplaceAll(template, "<*>", "***")
-	
+
 	// Truncate very long templates
 	if len(template) > 100 {
 		template = template[:97] + "..."
