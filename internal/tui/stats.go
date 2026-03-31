@@ -448,14 +448,14 @@ func (m *DashboardModel) renderAttributeSection(stats []AttributeStatFormatted, 
 
 	// Calculate column widths using full available width
 	availableWidth := width - 4 // Account for section borders and padding
-	
+
 	// Reserve fixed space for count column and separators
 	countColumnWidth := 15 // Fixed width for "Count (%)" column
 	separatorWidth := 6    // " │ " separators (2 * 3 chars)
-	
+
 	// Use remaining space for key and value columns
 	keyValueWidth := availableWidth - countColumnWidth - separatorWidth
-	
+
 	// Find actual max lengths in the data
 	actualMaxKeyLen := 0
 	actualMaxValueLen := 0
@@ -467,21 +467,21 @@ func (m *DashboardModel) renderAttributeSection(stats []AttributeStatFormatted, 
 			actualMaxValueLen = len(stat.Value)
 		}
 	}
-	
+
 	// Distribute available space between key and value columns
 	// Give them proportional space based on their actual content, with reasonable minimums
-	minKeyLen := max(8, min(actualMaxKeyLen, 15))  // At least 8, prefer actual up to 15
+	minKeyLen := max(8, min(actualMaxKeyLen, 15))      // At least 8, prefer actual up to 15
 	minValueLen := max(12, min(actualMaxValueLen, 20)) // At least 12, prefer actual up to 20
-	
+
 	var maxKeyLen, maxValueLen int
-	
-	if minKeyLen + minValueLen <= keyValueWidth {
+
+	if minKeyLen+minValueLen <= keyValueWidth {
 		// If we have enough space, distribute the extra proportionally
 		extraSpace := keyValueWidth - minKeyLen - minValueLen
-		if actualMaxKeyLen + actualMaxValueLen > 0 {
-			keyRatio := float64(actualMaxKeyLen) / float64(actualMaxKeyLen + actualMaxValueLen)
-			maxKeyLen = minKeyLen + int(float64(extraSpace) * keyRatio)
-			maxValueLen = minValueLen + int(float64(extraSpace) * (1 - keyRatio))
+		if actualMaxKeyLen+actualMaxValueLen > 0 {
+			keyRatio := float64(actualMaxKeyLen) / float64(actualMaxKeyLen+actualMaxValueLen)
+			maxKeyLen = minKeyLen + int(float64(extraSpace)*keyRatio)
+			maxValueLen = minValueLen + int(float64(extraSpace)*(1-keyRatio))
 		} else {
 			// Equal split if no actual data
 			maxKeyLen = minKeyLen + extraSpace/2
@@ -489,9 +489,9 @@ func (m *DashboardModel) renderAttributeSection(stats []AttributeStatFormatted, 
 		}
 	} else {
 		// If we don't have enough space, scale down proportionally
-		ratio := float64(keyValueWidth) / float64(minKeyLen + minValueLen)
-		maxKeyLen = max(8, int(float64(minKeyLen) * ratio))
-		maxValueLen = max(8, int(float64(minValueLen) * ratio))
+		ratio := float64(keyValueWidth) / float64(minKeyLen+minValueLen)
+		maxKeyLen = max(8, int(float64(minKeyLen)*ratio))
+		maxValueLen = max(8, int(float64(minValueLen)*ratio))
 	}
 
 	// Header

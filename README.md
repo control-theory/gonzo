@@ -330,7 +330,8 @@ cat logs.json | gonzo --ai-model="gpt-4"
 | `Ctrl+f`       | Open severity filter modal                |
 | `Ctrl+k`       | Open Kubernetes filter modal (k8s mode)   |
 | `f`            | Open fullscreen log viewer modal          |
-| `c`            | Toggle Namespace/Pod or Host/Service cols |
+| `c`            | Toggle columns (Host/Service ↔ Namespace/Pod in k8s mode) |
+| `C`            | Configure visible columns (column picker) |
 | `r`            | Reset all data (manual reset)             |
 | `u` / `U`      | Cycle update intervals (forward/backward) |
 | `i`            | AI analysis (in detail view)              |
@@ -374,6 +375,22 @@ The severity filter modal (`Ctrl+f`) provides fine-grained control over which lo
 - **Real-time count** - Header shows how many levels are currently active
 - **Persistent filtering** - Applied filters remain active until changed
 - **Quick shortcuts** - Press Enter on Select All/None to apply immediately
+
+#### Column Picker Modal
+
+The column picker modal (`C` key) lets you configure which columns are visible in the log viewer:
+
+| Key                | Action                              |
+| ------------------ | ----------------------------------- |
+| `↑`/`↓` or `k`/`j` | Navigate column options             |
+| `Space`            | Toggle selected column on/off       |
+| `Enter`            | Apply changes and close modal       |
+| `ESC`              | Discard changes and close modal     |
+
+**Features:**
+- **Default Columns** - Built-in columns like Timestamp, Severity, Host, Service, and Message
+- **Discovered Attributes** - Dynamically detected attribute keys from incoming log data
+- **Active counter** - Header shows `(N/M active)` indicating how many columns are currently enabled
 
 ### Log Counts Analysis Modal
 
