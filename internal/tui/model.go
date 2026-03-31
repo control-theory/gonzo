@@ -45,6 +45,15 @@ type LogEntry struct {
 	Attributes    map[string]string
 }
 
+// ColumnConfig represents a configurable column in the log viewer
+type ColumnConfig struct {
+	Key       string // Attribute key (e.g., "host.name", "k8s.namespace", "timestamp", "severity", "message")
+	Label     string // Display label (e.g., "Host", "Namespace")
+	Width     int    // Display width in characters (0 means fill remaining space)
+	Enabled   bool   // Whether column is visible
+	IsDefault bool   // Is this a built-in default column (vs discovered from log attributes)
+}
+
 // HeatmapMinute represents severity counts for one minute in the heatmap
 type HeatmapMinute struct {
 	Timestamp time.Time
@@ -66,16 +75,16 @@ type ServiceCount struct {
 // DashboardModel represents the main TUI model
 type DashboardModel struct {
 	// Dashboard state
-	width              int
-	height             int
-	activeSection      Section
-	showModal          bool
-	modalContent       string
-	showHelp           bool
-	showPatternsModal  bool
-	showStatsModal     bool
-	showCountsModal    bool
-	showLogViewerModal    bool
+	width                   int
+	height                  int
+	activeSection           Section
+	showModal               bool
+	modalContent            string
+	showHelp                bool
+	showPatternsModal       bool
+	showStatsModal          bool
+	showCountsModal         bool
+	showLogViewerModal      bool
 	showSeverityFilterModal bool
 
 	// Data
@@ -112,26 +121,26 @@ type DashboardModel struct {
 	severityFilterOriginal map[string]bool // Original state when modal opened (for ESC cancellation)
 
 	// Kubernetes Filter (requires integration with k8s log source)
-	showK8sFilterModal     bool                // Whether to show K8s filter modal
-	k8sNamespaces          map[string]bool     // Available namespaces and their selection state
-	k8sPods                map[string]bool     // Available pods and their selection state
-	k8sFilterSelected      int                 // Selected index in K8s filter modal
-	k8sScrollOffset        int                 // Scroll offset for K8s filter modal
-	k8sFilterOriginal      map[string]bool     // Original namespace state (for ESC cancellation)
-	k8sPodsOriginal        map[string]bool     // Original pod state (for ESC cancellation)
-	k8sActiveView          string              // "namespaces" or "pods"
-	k8sFilterActive        bool                // Whether K8s filtering is currently active
-	k8sSource              K8sSourceInterface  // Reference to K8s source for listing namespaces/pods
+	showK8sFilterModal bool               // Whether to show K8s filter modal
+	k8sNamespaces      map[string]bool    // Available namespaces and their selection state
+	k8sPods            map[string]bool    // Available pods and their selection state
+	k8sFilterSelected  int                // Selected index in K8s filter modal
+	k8sScrollOffset    int                // Scroll offset for K8s filter modal
+	k8sFilterOriginal  map[string]bool    // Original namespace state (for ESC cancellation)
+	k8sPodsOriginal    map[string]bool    // Original pod state (for ESC cancellation)
+	k8sActiveView      string             // "namespaces" or "pods"
+	k8sFilterActive    bool               // Whether K8s filtering is currently active
+	k8sSource          K8sSourceInterface // Reference to K8s source for listing namespaces/pods
 
 	// Charts data for rendering
 	chartsInitialized bool
 
 	// Selection state
-	selectedIndex    map[Section]int
-	selectedLogIndex int  // For log section navigation
-	viewPaused       bool // Pause view updates when navigating logs
-	logAutoScroll    bool // Auto-scroll to latest logs in log viewer
-	instructionsScrollOffset int // Scroll position for instructions/filter status screen
+	selectedIndex            map[Section]int
+	selectedLogIndex         int  // For log section navigation
+	viewPaused               bool // Pause view updates when navigating logs
+	logAutoScroll            bool // Auto-scroll to latest logs in log viewer
+	instructionsScrollOffset int  // Scroll position for instructions/filter status screen
 
 	// Modal display options
 	attributeWrappingEnabled bool // Whether to wrap attribute values instead of truncating them
@@ -176,6 +185,19 @@ type DashboardModel struct {
 
 	// Column display
 	showColumns bool // Toggle Host and Service columns in log view
+
+	// Column customization
+	showColumnConfigModal    bool            // Whether to show column config modal
+	columnConfigSelected     int             // Selected index in column config modal
+	columnConfigScrollOffset int             // Scroll offset for column config modal
+	columnConfigOriginal     []ColumnConfig  // Original state for ESC cancellation
+	activeColumns            []ColumnConfig  // Currently enabled columns in display order
+	availableColumns         []ColumnConfig  // All available columns (defaults + discovered)
+	discoveredAttributes     map[string]bool // Track all unique attribute keys seen across logs
+	columnMaxWidths          map[string]int  // Tracks the max observed width for each column (never shrinks)
+	columnWidthLimitEnabled  bool            // Whether the MaxColumnWidth cap is applied
+	logViewHorizontalOffset  int             // Horizontal scroll offset for log viewer
+	autoSwitchedToK8sMode    bool            // Track if we've already auto-switched to k8s columns
 
 	// Drain3 pattern extraction
 	drain3Manager       *Drain3Manager
@@ -308,8 +330,16 @@ func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiProvide
 		drain3LastProcessed: 0,                  // Initialize drain3 tracking
 		logAutoScroll:       true,               // Start with auto-scroll enabled
 		showColumns:         true,               // Show Host/Service columns by default
-		instructionsScrollOffset: 0,             // Start at top of instructions
-		attributeWrappingEnabled: false,         // Default to truncating (not wrapping)
+		// Initialize column customization
+		discoveredAttributes:     make(map[string]bool),
+		columnMaxWidths:          make(map[string]int),
+		columnWidthLimitEnabled:  true, // Enable 100-char column width cap by default
+		activeColumns:            getDefaultActiveColumns(),
+		availableColumns:         getDefaultAvailableColumns(),
+		columnConfigSelected:     0,
+		logViewHorizontalOffset:  0,     // Start with no horizontal scroll
+		instructionsScrollOffset: 0,     // Start at top of instructions
+		attributeWrappingEnabled: false, // Default to truncating (not wrapping)
 		// Initialize statistics tracking
 		statsStartTime:      time.Now(),
 		statsTotalBytes:     0,
@@ -478,6 +508,76 @@ func (m *DashboardModel) isK8sMode() bool {
 	return false
 }
 
+// toggleColumnsMode switches between normal (Host/Service) and k8s (Namespace/Pod) column modes
+func (m *DashboardModel) toggleColumnsMode() {
+	if m.isK8sMode() {
+		// In k8s mode: swap between k8s columns and host/service columns
+		hasK8sColumns := false
+		hasNormalColumns := false
+
+		for _, col := range m.activeColumns {
+			if col.Key == "k8s.namespace" || col.Key == "k8s.pod" {
+				hasK8sColumns = true
+			}
+			if col.Key == "host.name" || col.Key == "service.name" {
+				hasNormalColumns = true
+			}
+		}
+
+		// Toggle: if showing k8s columns, switch to normal; otherwise switch to k8s
+		newColumns := []ColumnConfig{}
+		if hasK8sColumns && !hasNormalColumns {
+			// Switch to normal mode (Host/Service)
+			for _, col := range m.activeColumns {
+				if col.Key == "k8s.namespace" {
+					// Replace with host.name
+					newColumns = append(newColumns, ColumnConfig{
+						Key: "host.name", Label: "Host", Width: 12, Enabled: true, IsDefault: true,
+					})
+				} else if col.Key == "k8s.pod" {
+					// Replace with service.name
+					newColumns = append(newColumns, ColumnConfig{
+						Key: "service.name", Label: "Service", Width: 16, Enabled: true, IsDefault: true,
+					})
+				} else {
+					newColumns = append(newColumns, col)
+				}
+			}
+		} else {
+			// Switch to k8s mode (Namespace/Pod)
+			for _, col := range m.activeColumns {
+				if col.Key == "host.name" {
+					// Replace with k8s.namespace
+					newColumns = append(newColumns, ColumnConfig{
+						Key: "k8s.namespace", Label: "Namespace", Width: 20, Enabled: true, IsDefault: true,
+					})
+				} else if col.Key == "service.name" {
+					// Replace with k8s.pod
+					newColumns = append(newColumns, ColumnConfig{
+						Key: "k8s.pod", Label: "Pod", Width: 20, Enabled: true, IsDefault: true,
+					})
+				} else {
+					newColumns = append(newColumns, col)
+				}
+			}
+		}
+		m.activeColumns = newColumns
+
+		// Also update availableColumns to reflect the change
+		for i := range m.availableColumns {
+			if m.availableColumns[i].Key == "host.name" || m.availableColumns[i].Key == "service.name" {
+				m.availableColumns[i].Enabled = hasK8sColumns
+			}
+			if m.availableColumns[i].Key == "k8s.namespace" || m.availableColumns[i].Key == "k8s.pod" {
+				m.availableColumns[i].Enabled = !hasK8sColumns
+			}
+		}
+	} else {
+		// Not in k8s mode: just toggle showColumns visibility
+		m.showColumns = !m.showColumns
+	}
+}
+
 // Init initializes the model
 func (m *DashboardModel) Init() tea.Cmd {
 	var cmds []tea.Cmd
@@ -509,4 +609,28 @@ func (m *DashboardModel) getSpinner() string {
 func (m *DashboardModel) getChatSpinner() string {
 	spinners := []string{"⠋", "⠙", "⠹", "⠸"}
 	return spinners[m.chatSpinnerFrame]
+}
+
+// getDefaultActiveColumns returns the default columns that are shown initially
+func getDefaultActiveColumns() []ColumnConfig {
+	return []ColumnConfig{
+		{Key: "timestamp", Label: "Time", Width: 8, Enabled: true, IsDefault: true},
+		{Key: "severity", Label: "Level", Width: 5, Enabled: true, IsDefault: true},
+		{Key: "host.name", Label: "Host", Width: 12, Enabled: true, IsDefault: true},
+		{Key: "service.name", Label: "Service", Width: 16, Enabled: true, IsDefault: true},
+		{Key: "message", Label: "Message", Width: 0, Enabled: true, IsDefault: true}, // Width 0 = fill remaining
+	}
+}
+
+// getDefaultAvailableColumns returns all default columns (including K8s ones that start disabled)
+func getDefaultAvailableColumns() []ColumnConfig {
+	return []ColumnConfig{
+		{Key: "timestamp", Label: "Time", Width: 8, Enabled: true, IsDefault: true},
+		{Key: "severity", Label: "Level", Width: 5, Enabled: true, IsDefault: true},
+		{Key: "host.name", Label: "Host", Width: 12, Enabled: true, IsDefault: true},
+		{Key: "service.name", Label: "Service", Width: 16, Enabled: true, IsDefault: true},
+		{Key: "k8s.namespace", Label: "Namespace", Width: 20, Enabled: false, IsDefault: true},
+		{Key: "k8s.pod", Label: "Pod", Width: 20, Enabled: false, IsDefault: true},
+		{Key: "message", Label: "Message", Width: 0, Enabled: true, IsDefault: true},
+	}
 }

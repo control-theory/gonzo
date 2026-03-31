@@ -75,7 +75,10 @@ ACTIONS:
   Ctrl+f         - Open severity filter modal
   f              - Open fullscreen log viewer modal
   Space          - Pause/unpause UI updates
-  c              - Toggle Host/Service columns in log view
+  c              - Toggle columns (Host/Service ↔ Namespace/Pod in k8s mode)
+  C              - Configure visible columns (add/remove columns)
+  Ctrl+l         - Toggle column width limit (100 char max)
+  Ctrl+r         - Reset column widths to accomodate current buffer
   T              - Toggle timestamp mode (Log Time / Receive Time)
   r              - Reset all data (manual reset)
   u/U            - Cycle update intervals (forward/backward)
@@ -90,6 +93,7 @@ LOG VIEWER NAVIGATION:
   End            - Jump to latest logs (resumes auto-scroll)
   PgUp/PgDn      - Navigate by pages (10 entries at a time)
   ↑/↓ or k/j     - Navigate individual entries with smart auto-scroll
+  ←/→            - Scroll columns horizontally (when content exceeds width)
 
 SECTIONS:
   Words          - Most frequent words in logs
