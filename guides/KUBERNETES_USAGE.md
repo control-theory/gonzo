@@ -65,10 +65,10 @@ gonzo --k8s-enabled=true --k8s-tail=50
 
 ```bash
 # Single namespace
-gonzo --k8s-enabled=true --k8s-namespace=production
+gonzo --k8s-enabled=true --k8s-namespaces=production
 
 # Multiple namespaces
-gonzo --k8s-enabled=true --k8s-namespace=production --k8s-namespace=staging
+gonzo --k8s-enabled=true --k8s-namespaces=production --k8s-namespaces=staging
 ```
 
 ### Filter by Labels
@@ -87,13 +87,13 @@ gonzo --k8s-enabled=true --k8s-selector="environment in (production,staging)"
 ```bash
 # Specific namespace with label selector
 gonzo --k8s-enabled=true \
-  --k8s-namespace=production \
+  --k8s-namespaces=production \
   --k8s-selector="app=api"
 
 # Multiple namespaces with label selector
 gonzo --k8s-enabled=true \
-  --k8s-namespace=production \
-  --k8s-namespace=staging \
+  --k8s-namespaces=production \
+  --k8s-namespaces=staging \
   --k8s-selector="tier=backend"
 ```
 
@@ -103,7 +103,7 @@ gonzo --k8s-enabled=true \
 
 ```bash
 --k8s-enabled=true          # Enable Kubernetes mode
---k8s-namespace NAMESPACE   # Target namespace (can specify multiple times)
+--k8s-namespaces NAMESPACE   # Target namespace (can specify multiple times)
 --k8s-selector SELECTOR     # Kubernetes label selector
 --k8s-tail N                # Number of previous log lines per pod (default: 10)
 --k8s-since SECONDS         # Only logs newer than N seconds
@@ -232,17 +232,17 @@ Time     Level Host         Service          Message
 
 ```bash
 # Watch your development namespace
-gonzo --k8s-enabled=true --k8s-namespace=dev --k8s-selector="app=myapp"
+gonzo --k8s-enabled=true --k8s-namespaces=dev --k8s-selector="app=myapp"
 
 # Quick check of specific pod
-gonzo --k8s-enabled=true --k8s-namespace=dev --k8s-selector="app=myapp,version=v1.2.3"
+gonzo --k8s-enabled=true --k8s-namespaces=dev --k8s-selector="app=myapp,version=v1.2.3"
 ```
 
 ### Production Monitoring
 
 ```bash
 # Monitor production with error focus (using severity filter)
-gonzo --k8s-enabled=true --k8s-namespace=production
+gonzo --k8s-enabled=true --k8s-namespaces=production
 
 # Then press Ctrl+f and select only ERROR and FATAL levels
 ```
@@ -252,8 +252,8 @@ gonzo --k8s-enabled=true --k8s-namespace=production
 ```bash
 # Watch both production and staging
 gonzo --k8s-enabled=true \
-  --k8s-namespace=production \
-  --k8s-namespace=staging \
+  --k8s-namespaces=production \
+  --k8s-namespaces=staging \
   --k8s-selector="tier=backend"
 ```
 
@@ -262,7 +262,7 @@ gonzo --k8s-enabled=true \
 ```bash
 # Check recent deployment logs
 gonzo --k8s-enabled=true \
-  --k8s-namespace=production \
+  --k8s-namespaces=production \
   --k8s-selector="app=nginx,version=v2.0.0" \
   --k8s-since=300  # Last 5 minutes
 ```
@@ -278,7 +278,7 @@ VERSION="v1.2.3"
 
 # Start monitoring
 gonzo --k8s-enabled=true \
-  --k8s-namespace=$NAMESPACE \
+  --k8s-namespaces=$NAMESPACE \
   --k8s-selector="app=$APP,version=$VERSION" \
   --k8s-tail=100 &
 
@@ -389,7 +389,7 @@ kubectl get namespace production
 ```bash
 # Use more specific selectors
 gonzo --k8s-enabled=true \
-  --k8s-namespace=production \
+  --k8s-namespaces=production \
   --k8s-selector="app=api,critical=true"
 
 # Limit to recent logs
@@ -406,7 +406,7 @@ gonzo --k8s-enabled=true --log-buffer=5000
 
 ```bash
 # Run with verbose output
-GONZO_DEBUG=1 gonzo --k8s-enabled=true --k8s-namespace=default
+GONZO_DEBUG=1 gonzo --k8s-enabled=true --k8s-namespaces=default
 ```
 
 ## Best Practices
