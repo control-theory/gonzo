@@ -31,7 +31,6 @@ type FileReader struct {
 // fileState tracks the current position and state of a file being followed
 type fileState struct {
 	file     *os.File
-	scanner  *bufio.Scanner
 	size     int64
 	modified time.Time
 }
@@ -214,17 +213,11 @@ func (fr *FileReader) setupFileWatcher(filePath string) error {
 		return err
 	}
 
-	scanner := bufio.NewScanner(file)
-	const maxScanTokenSize = 1024 * 1024 // 1MB
-	buf := make([]byte, maxScanTokenSize)
-	scanner.Buffer(buf, maxScanTokenSize)
-
 	// Store file state
 	fr.mu.Lock()
 	fr.watchers[filePath] = watcher
 	fr.fileStates[filePath] = &fileState{
 		file:     file,
-		scanner:  scanner,
 		size:     currentSize,
 		modified: info.ModTime(),
 	}
@@ -292,12 +285,20 @@ func (fr *FileReader) handleFileWrite(filePath string) {
 		return
 	}
 
+	// Create a fresh scanner each time — bufio.Scanner caches EOF internally
+	// and once it returns false, subsequent Scan() calls always return false
+	// even if new data has been appended to the underlying file.
+	scanner := bufio.NewScanner(state.file)
+	const maxScanTokenSize = 1024 * 1024 // 1MB
+	buf := make([]byte, maxScanTokenSize)
+	scanner.Buffer(buf, maxScanTokenSize)
+
 	// Read new lines
-	for state.scanner.Scan() {
+	for scanner.Scan() {
 		select {
 		case <-fr.ctx.Done():
 			return
-		case fr.lineChan <- state.scanner.Text():
+		case fr.lineChan <- scanner.Text():
 		}
 	}
 
@@ -334,15 +335,8 @@ func (fr *FileReader) reopenFile(filePath string) {
 		return
 	}
 
-	// Create new scanner
-	scanner := bufio.NewScanner(file)
-	const maxScanTokenSize = 1024 * 1024 // 1MB
-	buf := make([]byte, maxScanTokenSize)
-	scanner.Buffer(buf, maxScanTokenSize)
-
 	// Update state
 	state.file = file
-	state.scanner = scanner
 	state.size = 0
 
 	log.Printf("Reopened file %s (likely rotated)", filePath)
