@@ -7,6 +7,8 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -317,6 +319,11 @@ func (m *simpleTuiModel) Init() tea.Cmd {
 			// Start goroutine to read stdin without blocking
 			go m.readStdinAsync()
 		}
+	}
+
+	// Auto-detect log source if nothing was explicitly configured
+	if !m.hasK8sInput && !m.hasVmlogsInput && !m.hasOTLPInput && !m.hasFileInput && !m.hasStdinData && !hasExplicitSourceFlag() {
+		m.autoDetectLogSource()
 	}
 
 	// Start the dashboard
@@ -691,4 +698,98 @@ func (m *simpleTuiModel) periodicUpdate() tea.Cmd {
 			sequence: sequence,
 		}
 	})
+}
+
+// hasExplicitSourceFlag returns true if the user explicitly provided any log source flag.
+func hasExplicitSourceFlag() bool {
+	return cfg.K8sEnabled ||
+		len(cfg.Files) > 0 ||
+		cfg.OTLPEnabled ||
+		cfg.VmlogsURL != ""
+}
+
+// autoDetectLogSource tries to automatically find a log source:
+// 1. If a kubeconfig exists, enable Kubernetes log streaming (all namespaces)
+// 2. Otherwise, fall back to OS system logs
+func (m *simpleTuiModel) autoDetectLogSource() {
+	// Try kubeconfig first
+	kubeconfigPath := os.Getenv("KUBECONFIG")
+	if kubeconfigPath == "" {
+		home, err := os.UserHomeDir()
+		if err == nil {
+			kubeconfigPath = filepath.Join(home, ".kube", "config")
+		}
+	}
+
+	if kubeconfigPath != "" {
+		if _, err := os.Stat(kubeconfigPath); err == nil {
+			// Kubeconfig found — auto-enable Kubernetes with all namespaces
+			log.Printf("Auto-detected kubeconfig at %s, enabling Kubernetes log streaming", kubeconfigPath)
+			m.inputChan = make(chan string, 100)
+
+			k8sConfig := &k8s.Config{
+				Kubeconfig: kubeconfigPath,
+				Context:    cfg.K8sContext,
+				Namespaces: cfg.K8sNamespaces,
+				Selector:   cfg.K8sSelector,
+				Since:      cfg.K8sSince,
+				TailLines:  cfg.K8sTailLines,
+			}
+
+			k8sSource, err := k8s.NewKubernetesLogSource(k8sConfig)
+			if err == nil {
+				if err := k8sSource.Start(); err == nil {
+					m.hasK8sInput = true
+					m.k8sReceiver = k8sSource
+					m.dashboard.SetK8sSource(k8sSource)
+					go m.readK8sAsync()
+					return
+				}
+				log.Printf("Auto-detect: Kubernetes start failed: %v", err)
+			} else {
+				log.Printf("Auto-detect: Kubernetes init failed: %v", err)
+			}
+		}
+	}
+
+	// No kubeconfig — fall back to OS system logs
+	logPath := systemLogPath()
+	if logPath == "" {
+		log.Printf("Auto-detect: no kubeconfig and no known system log path for %s", runtime.GOOS)
+		return
+	}
+
+	if _, err := os.Stat(logPath); err != nil {
+		log.Printf("Auto-detect: system log %s not accessible: %v", logPath, err)
+		return
+	}
+
+	log.Printf("Auto-detected system log at %s", logPath)
+	m.inputChan = make(chan string, 100)
+
+	var err error
+	m.fileReader, err = filereader.New([]string{logPath}, true) // follow mode
+	if err != nil {
+		log.Printf("Auto-detect: failed to read %s: %v", logPath, err)
+		return
+	}
+	m.hasFileInput = true
+	go m.readFilesAsync()
+}
+
+// systemLogPath returns the default system log file path for the current OS.
+func systemLogPath() string {
+	switch runtime.GOOS {
+	case "darwin":
+		return "/var/log/system.log"
+	case "linux":
+		for _, p := range []string{"/var/log/syslog", "/var/log/messages"} {
+			if _, err := os.Stat(p); err == nil {
+				return p
+			}
+		}
+		return ""
+	default:
+		return ""
+	}
 }
