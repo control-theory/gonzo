@@ -5,7 +5,7 @@
 
 # Gonzo - The Go based TUI for log analysis
 
-🆕 **NEW:** Press `d` from any Gonzo view to launch [Dstl8.Lite](#dstl8-lite) ↓ — a local browser-based dashboard with workspaces, log search, and severity heatmaps.
+🆕 **NEW:** Press `d` from any Gonzo view to launch [Dstl8.Lite](#dstl8-lite) ↓ - a local browser-based dashboard with workspaces, log search, and severity heatmaps.
 
 <p align="center"><img src="docs/gonzo-mascot-smaller.png" width="250" alt="Gonzo Mascot"></p>
 
