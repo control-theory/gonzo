@@ -5,9 +5,7 @@
 
 # Gonzo - The Go based TUI for log analysis
 
-📢 **LIVE SESSION RECORDING NOW AVAILABLE:**  
-**Gonzo Roadmap & Pro Tips Live Demo with Maintainers**  
-[Watch here](https://www.controltheory.com/videos/gonzo-roadmap-and-pro-tips-live-demo-session/)
+🆕 **NEW:** Press `d` from any Gonzo view to launch [Dstl8.Lite](#dstl8-lite) ↓ — a local browser-based dashboard with workspaces, log search, and severity heatmaps.
 
 <p align="center"><img src="docs/gonzo-mascot-smaller.png" width="250" alt="Gonzo Mascot"></p>
 
@@ -43,6 +41,22 @@ Here are some references to get you started:
 ### Everyone loves a heatmap
 
 ![Gonzo Heatmap](docs/gonzo-heatmap.png)
+
+<a id="dstl8-lite"></a>
+
+### Press `d` for Dstl8.Lite
+
+Hit `d` from any Gonzo view to launch Dstl8.Lite — a local GUI that streams the same logs Gonzo is analyzing into a richer, browser-based dashboard with workspaces, pattern detection, severity heatmaps, and live log search. All running locally and powered by Gonzo under the hood.
+
+![Dstl8.Lite Live Logs](docs/dstl8-lite-live-logs.gif)
+
+#### Log viewer with severity filtering and live search
+
+![Dstl8.Lite Logs](docs/dstl8-lite-logs.png)
+
+#### Severity heatmap across pods
+
+![Dstl8.Lite Heatmap](docs/dstl8-lite-heatmap-by-pod.png)
 
 ## ✨ Features
 
@@ -881,6 +895,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Victoria Logs Integration](guides/VICTORIA_LOGS_USAGE.md) - Using Gonzo with Victoria Logs API
 - [Contributing Guide](CONTRIBUTING.md) - How to contribute
 - [Changelog](CHANGELOG.md) - Version history
+
+## 🎥 Talks & Demos
+
+* **[Gonzo Roadmap & Pro Tips Live Demo with Maintainers](https://www.controltheory.com/videos/gonzo-roadmap-and-pro-tips-live-demo-session/)** - Live session covering the roadmap, advanced features, and Q&A with the maintainers
 
 ## 💬 Slack Community
 
