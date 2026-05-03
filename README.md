@@ -15,7 +15,7 @@
 [![Docs](https://img.shields.io/badge/Docs-Getting%20Started-cyan.svg)](https://docs.controltheory.com/)
 
 
-A powerful, real-time log analysis terminal UI inspired by k9s. Analyze log streams with beautiful charts, AI-powered insights, and advanced filtering - all from your terminal.
+A powerful, real-time log analysis terminal UI inspired by k9s. Analyze log streams with beautiful charts, AI-powered insights, and advanced filtering.
 
 Here are some references to get you started:
 
@@ -183,6 +183,8 @@ docker logs -f my-container 2>&1 | gonzo
 # With AI analysis (requires API key)
 export OPENAI_API_KEY=sk-your-key-here
 gonzo -f application.log --ai-model="gpt-4"
+
+# Press `d` once Gonzo is running to launch the Dstl8.Lite GUI in your browser
 ```
 
 ### Custom Log Formats
@@ -343,6 +345,7 @@ cat logs.json | gonzo --ai-model="gpt-4"
 | `Space`        | Pause/unpause entire dashboard            |
 | `/`            | Enter filter mode (regex supported)       |
 | `s`            | Search and highlight text in logs         |
+| `d`            | Launch Dstl8.Lite GUI in browser          |
 | `Ctrl+f`       | Open severity filter modal                |
 | `Ctrl+k`       | Open Kubernetes filter modal (k8s mode)   |
 | `f`            | Open fullscreen log viewer modal          |
