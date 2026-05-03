@@ -46,7 +46,7 @@ Here are some references to get you started:
 
 ### Press `d` for Dstl8.Lite
 
-Hit `d` from any Gonzo view to launch Dstl8.Lite — a local GUI that streams the same logs Gonzo is analyzing into a richer, browser-based dashboard with workspaces, pattern detection, severity heatmaps, and live log search. All running locally and powered by Gonzo under the hood.
+Hit `d` from any Gonzo view to launch Dstl8.Lite - a local GUI that streams the same logs Gonzo is analyzing into a richer, browser-based dashboard with workspaces, pattern detection, severity heatmaps, and live log search. All running locally and powered by Gonzo under the hood.
 
 ![Dstl8.Lite Live Logs](docs/dstl8-lite-live-logs.gif)
 
