@@ -68,6 +68,17 @@ Here are some references to get you started:
 - **Log Counts analysis** - Detailed modal with heatmap visualization, pattern analysis by severity, and service distribution
 - **AI analysis** - Get intelligent insights about log patterns and anomalies with configurable models
 
+### 🌐 Web Dashboard (Dstl8 Lite)
+
+- **Embedded React UI** - Full web dashboard served directly from the Gonzo binary (no external dependencies)
+- **Real-time updates** - WebSocket-powered live streaming with 1-second refresh
+- **Severity distribution** - Interactive time-series severity charts with stream-level filtering
+- **Sentiment heatmap** - Color-coded heatmap visualization grouped by pod, namespace, service, host, or deployment
+- **Pattern analysis** - Drain3-powered log pattern detection and classification
+- **Log viewer** - Searchable, auto-scrolling log viewer with click-to-expand details
+- **Source browser** - Explore log sources with dimension breakdowns
+- **Light/dark mode** - Automatic theme support
+
 ### 🔍 Advanced Filtering
 
 - **Regex support** - Filter logs with regular expressions
@@ -306,6 +317,30 @@ export OPENAI_API_KEY=sk-your-key-here
 cat logs.json | gonzo --ai-model="gpt-4"
 ```
 
+### Web Dashboard (Dstl8 Lite)
+
+Gonzo includes an embedded web dashboard that runs alongside the TUI. It starts automatically on port 5718.
+
+```bash
+# Gonzo starts the web dashboard automatically
+gonzo -f application.log --follow
+# Open http://localhost:5718 in your browser
+
+# Use a custom port
+gonzo -f application.log --web-port=3000
+
+# Disable the web dashboard
+gonzo -f application.log --web-disabled
+```
+
+The dashboard includes:
+- **Workspaces** - Overview of all active log streams with sparkline previews
+- **Stream Details** - Severity distribution, top attributes, pattern analysis, and live log viewer per stream
+- **Sentiment Heatmap** - Real-time heatmap grouped by pod, namespace, service, host, or deployment with auto-detection of available dimensions
+- **Sources** - Browse log sources with dimension breakdowns
+
+All data updates in real-time via WebSocket, matching what you see in the TUI.
+
 ### Keyboard Shortcuts
 
 #### Navigation
@@ -452,6 +487,10 @@ Flags:
   -s, --skin string                Color scheme/skin to use (default, or name of a skin file)
   --stop-words strings             Additional stop words to filter out from analysis (adds to built-in list)
 
+Web Dashboard Flags:
+  --web-port int                   Port for the Dstl8 Lite web dashboard (default: 5718)
+  --web-disabled                   Disable the web dashboard
+
 Kubernetes Flags:
   --k8s-enabled=true               Enable Kubernetes log streaming mode
   --k8s-namespaces stringArray      Kubernetes namespace(s) to watch (can specify multiple, default: all)
@@ -501,6 +540,10 @@ test-mode: false
 # AI configuration
 ai-provider: "openai"  # Options: "openai" (default), "claude-code"
 ai-model: "gpt-4"
+
+# Web dashboard (Dstl8 Lite)
+web-port: 5718       # Port for the web dashboard
+web-disabled: false   # Set to true to disable
 ```
 
 See [examples/config.yml](examples/config.yml) for a complete configuration example with detailed comments.
@@ -689,6 +732,8 @@ When you don't specify the `--ai-model` flag, Gonzo automatically selects the be
 | `GONZO_LOG_BUFFER`      | Override log buffer size                                             |
 | `GONZO_MEMORY_SIZE`     | Override memory size                                                 |
 | `GONZO_AI_MODEL`        | Override default AI model                                            |
+| `GONZO_WEB_PORT`        | Override web dashboard port (default: 5718)                          |
+| `GONZO_WEB_DISABLED`    | Disable web dashboard (true/false)                                   |
 | `GONZO_TEST_MODE`       | Enable test mode                                                     |
 | `NO_COLOR`              | Disable colored output                                               |
 
@@ -760,16 +805,19 @@ Gonzo is built with:
 - **OpenTelemetry** - Native OTLP support
 - **Large amounts of** ☕️
 
-The architecture follows a clean separation:
+The architecture follows a clean separation with a shared analysis engine:
 
 ```
 cmd/gonzo/              # Main application entry
 internal/
-├── tui/                # Terminal UI implementation
-├── analyzer/           # Log analysis engine
+├── engine/            # Shared analysis engine (feeds TUI and web)
+├── tui/               # Terminal UI implementation
+├── web/               # Dstl8 Lite web dashboard (embedded React)
+├── analyzer/          # Log analysis engine
 ├── memory/            # Frequency tracking
 ├── otlplog/           # OTLP format handling
 └── ai/                # AI integration
+web/                    # React frontend source (Vite + TypeScript)
 ```
 
 ## 🧪 Development
@@ -782,8 +830,12 @@ internal/
 ### Building
 
 ```bash
-# Quick build
+# Quick build (includes web dashboard)
 make build
+
+# Build web dashboard only
+make web-deps    # Install npm dependencies
+make web-build   # Build React app
 
 # Run tests
 make test
@@ -879,6 +931,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [AWS CloudWatch Logs Usage Guide](guides/CLOUDWATCH_USAGE_GUIDE.md) - Usage instructions for AWS CLI log tail and live tail with Gonzo
 - [Stern Usage Guide](guides/STERN_USAGE_GUIDE.md) - Usage and examples for using Stern with Gonzo
 - [Victoria Logs Integration](guides/VICTORIA_LOGS_USAGE.md) - Using Gonzo with Victoria Logs API
+- [Web Dashboard](guides/WEB_DASHBOARD_USAGE.md) - Dstl8 Lite web UI setup
 - [Contributing Guide](CONTRIBUTING.md) - How to contribute
 - [Changelog](CHANGELOG.md) - Version history
 

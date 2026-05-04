@@ -63,6 +63,10 @@ tmp/
 # Testing artifacts
 testdata/output/
 
+# Web dashboard
+web/node_modules/
+web/dist/
+
 # Claude Code settings
 .claude/settings.local.json
 result

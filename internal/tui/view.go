@@ -22,6 +22,11 @@ func (m *DashboardModel) View() string {
 		return m.renderHelpModal()
 	}
 
+	// Show what's new modal
+	if m.showWhatsNewModal {
+		return m.renderWhatsNewModal()
+	}
+
 	// Show patterns modal
 	if m.showPatternsModal {
 		return m.renderPatternsModal()

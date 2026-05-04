@@ -34,6 +34,11 @@ func (m *DashboardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, func() tea.Msg { return msg }
 
 	case TickMsg:
+		// Check if we should auto-show the what's-new modal (once)
+		if !m.whatsNewCheckDone {
+			m.checkWhatsNewAutoShow()
+		}
+
 		// Update processing rate statistics on every tick
 		m.updateProcessingRateStats()
 

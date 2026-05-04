@@ -1,12 +1,15 @@
 package tui
 
 import (
+	"os/exec"
 	"regexp"
+	"runtime"
 	"sort"
 	"time"
 
 	"github.com/control-theory/gonzo/internal/ai"
 	"github.com/control-theory/gonzo/internal/memory"
+	"github.com/control-theory/gonzo/internal/releases"
 	versioncheck "github.com/control-theory/gonzo/internal/version"
 
 	"github.com/charmbracelet/bubbles/textarea"
@@ -225,6 +228,19 @@ type DashboardModel struct {
 
 	// Version checking
 	versionChecker *versioncheck.Checker // Version checker for update notifications
+
+	// Web dashboard
+	webPort int // Port for the Dstl8 Lite web dashboard (for browser open shortcut)
+
+	// What's New modal
+	showWhatsNewModal      bool
+	releasesFetcher        *releases.Fetcher
+	currentVersion         string
+	lastSeenVersion        string
+	whatsNewCheckDone      bool   // true after we've checked whether to auto-show
+	whatsNewRetries        int    // retry counter for waiting on background fetch
+	whatsNewRenderedCache  string // pre-rendered content (glamour is expensive)
+	whatsNewCacheWidth     int    // width the cache was rendered at
 }
 
 // UpdateMsg contains data updates for the dashboard
@@ -254,8 +270,8 @@ type AIAnalysisMsg struct {
 // ManualResetMsg represents a manual reset request triggered by user
 type ManualResetMsg struct{}
 
-// initializeDrain3BySeverity creates separate drain3 instances for each severity level
-func initializeDrain3BySeverity() map[string]*Drain3Manager {
+// InitializeDrain3BySeverity creates separate drain3 instances for each severity level
+func InitializeDrain3BySeverity() map[string]*Drain3Manager {
 	severities := []string{"FATAL", "ERROR", "WARN", "INFO", "DEBUG", "TRACE", "UNKNOWN"}
 	drain3Map := make(map[string]*Drain3Manager)
 
@@ -317,7 +333,7 @@ func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiProvide
 		allLogEntries:       make([]LogEntry, 0, maxLogBuffer),
 		countsHistory:       make([]SeverityCounts, 0),
 		heatmapData:         make([]HeatmapMinute, 0),
-		drain3BySeverity:    initializeDrain3BySeverity(),
+		drain3BySeverity:    InitializeDrain3BySeverity(),
 		servicesBySeverity:  make(map[string][]ServiceCount),
 		availableIntervals: availableIntervals,
 		currentIntervalIdx: currentIdx,
@@ -484,6 +500,40 @@ func (m *DashboardModel) getLifetimeAttributeEntries() []*memory.AttributeStatsE
 // SetVersionChecker sets the version checker for update notifications
 func (m *DashboardModel) SetVersionChecker(checker *versioncheck.Checker) {
 	m.versionChecker = checker
+}
+
+// SetWebPort sets the web dashboard port for the browser open shortcut
+func (m *DashboardModel) SetWebPort(port int) {
+	m.webPort = port
+}
+
+// SetReleasesFetcher sets the releases fetcher for the what's-new modal
+func (m *DashboardModel) SetReleasesFetcher(f *releases.Fetcher) {
+	m.releasesFetcher = f
+}
+
+// SetCurrentVersion sets the current app version for the what's-new modal
+func (m *DashboardModel) SetCurrentVersion(v string) {
+	m.currentVersion = v
+}
+
+// SetLastSeenVersion sets the last version the user has seen
+func (m *DashboardModel) SetLastSeenVersion(v string) {
+	m.lastSeenVersion = v
+}
+
+// openBrowser opens the given URL in the default browser
+func (m *DashboardModel) openBrowser(url string) {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("open", url)
+	case "windows":
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
+	default:
+		cmd = exec.Command("xdg-open", url)
+	}
+	cmd.Start()
 }
 
 // SetK8sSource sets the Kubernetes log source for the dashboard

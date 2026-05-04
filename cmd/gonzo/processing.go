@@ -151,6 +151,11 @@ func (m *simpleTuiModel) processSingleLogEntry(result *analyzer.AnalysisResult, 
 		// Count severity for this interval
 		m.severityCounts.AddCount(logEntry.Severity)
 
+		// Feed the shared analysis engine (for web dashboard)
+		if m.engine != nil {
+			m.engine.Ingest(*logEntry)
+		}
+
 		updateMsg := tui.UpdateMsg{NewLogEntry: logEntry}
 		m.dashboard.Update(updateMsg)
 	}

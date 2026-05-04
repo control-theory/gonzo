@@ -143,8 +143,12 @@ cat test.log | ./build/gonzo
     --reverse-scroll-wheel       # Reverse scroll wheel direction (natural scrolling)
     --config string              # Config file (default: ~/.gonzo.yaml)
 
+# Web dashboard (Dstl8 Lite)
+    --web-port=5718              # Port for the web dashboard
+    --web-disabled               # Disable the web dashboard
+
 # Version and help
--v, --version                    # Show version information  
+-v, --version                    # Show version information
 -h, --help                       # Show help message
 
 # Commands
@@ -272,6 +276,44 @@ This affects all scrollable areas:
 - **MacOS users**: Match trackpad natural scrolling behavior
 - **Consistency**: Keep same scroll direction across all applications
 - **Personal preference**: Use whichever feels more intuitive to you
+
+## Web Dashboard (Dstl8 Lite)
+
+Gonzo includes an embedded web dashboard that starts automatically alongside the TUI.
+
+### Accessing the Dashboard
+
+```bash
+# Start Gonzo — web dashboard is available at http://localhost:5718
+./build/gonzo -f test.log --follow
+
+# Custom port
+./build/gonzo -f test.log --web-port=3000
+
+# Disable the web dashboard
+./build/gonzo -f test.log --web-disabled
+```
+
+Open `http://localhost:5718` in your browser to see:
+- **Workspaces** - Overview of active log streams with live sparklines
+- **Stream Details** - Severity distribution, top attributes, pattern analysis, and live log viewer
+- **Sentiment Heatmap** - Real-time heatmap grouped by pod, namespace, service, host, or deployment
+- **Sources** - Browse log sources and their dimensions
+
+The dashboard updates in real-time via WebSocket — the same data that powers the TUI.
+
+### Building the Web Dashboard
+
+The web dashboard is built with Vite + React + TypeScript and embedded into the Go binary.
+
+```bash
+# Install dependencies and build (included in make build)
+make web-deps
+make web-build
+
+# Full build including web dashboard
+make build
+```
 
 ### Supported Integrations
 

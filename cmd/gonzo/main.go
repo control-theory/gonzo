@@ -55,6 +55,10 @@ type Config struct {
 	DisableVersionCheck  bool          `mapstructure:"disable-version-check"`
 	ReverseScrollWheel   bool          `mapstructure:"reverse-scroll-wheel"`
 	UseLogTime           bool          `mapstructure:"use-log-time"`
+
+	// Web dashboard (Dstl8 Lite)
+	WebPort     int  `mapstructure:"web-port"`
+	WebDisabled bool `mapstructure:"web-disabled"`
 }
 
 var (
@@ -186,6 +190,10 @@ func init() {
 	rootCmd.Flags().Bool("reverse-scroll-wheel", false, "Reverse scroll wheel direction (natural scrolling)")
 	rootCmd.Flags().Bool("use-log-time", false, "Use original log timestamps instead of receive time for heatmap and display (falls back to receive time if log has no timestamp)")
 
+	// Dstl8 Lite web dashboard flags
+	rootCmd.Flags().Int("web-port", 5718, "Port for the Dstl8 Lite web dashboard")
+	rootCmd.Flags().Bool("web-disabled", false, "Disable the web dashboard")
+
 	// Bind flags to viper
 	viper.BindPFlag("memory-size", rootCmd.Flags().Lookup("memory-size"))
 	viper.BindPFlag("update-interval", rootCmd.Flags().Lookup("update-interval"))
@@ -215,7 +223,8 @@ func init() {
 	viper.BindPFlag("disable-version-check", rootCmd.Flags().Lookup("disable-version-check"))
 	viper.BindPFlag("reverse-scroll-wheel", rootCmd.Flags().Lookup("reverse-scroll-wheel"))
 	viper.BindPFlag("use-log-time", rootCmd.Flags().Lookup("use-log-time"))
-
+	viper.BindPFlag("web-port", rootCmd.Flags().Lookup("web-port"))
+	viper.BindPFlag("web-disabled", rootCmd.Flags().Lookup("web-disabled"))
 	// Add version command
 	rootCmd.AddCommand(versionCmd)
 }

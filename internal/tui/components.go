@@ -99,13 +99,13 @@ func (m *DashboardModel) renderStatusLine() string {
 	} else {
 		// Default status showing main actions
 		if veryNarrow {
-			statusText = "Tab • Space • i • ? • q"
+			statusText = "Tab • Space • i • d • ? • q"
 		} else if narrow {
-			statusText = "?: Help • Tab: Nav • Space: Pause • i: Stats • q: Quit"
+			statusText = "?: Help • d: Web UI • Tab: Nav • Space: Pause • i: Stats • q: Quit"
 		} else if medium {
-			statusText = "Tab: Navigate • Space: Pause • i: Stats • Enter: Select • q: Quit"
+			statusText = "?: Help • d: Web UI • Tab: Navigate • Space: Pause • i: Stats • Enter: Select • q: Quit"
 		} else {
-			statusText = "?: Help • Click sections • Wheel: scroll • Space: Pause • Tab: Navigate • i: Stats • Enter: Select • q: Quit"
+			statusText = "?: Help • d: Web UI • Click sections • Wheel: scroll • Space: Pause • Tab: Navigate • i: Stats • Enter: Select • q: Quit"
 		}
 	}
 

@@ -201,6 +201,10 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 
 	case "escape", "esc":
+		if m.showWhatsNewModal {
+			m.showWhatsNewModal = false
+			return m, m.saveWhatsNewState()
+		}
 		if m.showModelSelectionModal {
 			m.showModelSelectionModal = false
 			return m, nil
@@ -455,6 +459,26 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+	case "d":
+		// Open Dstl8 Lite web dashboard in browser
+		if !m.showModal && !m.filterActive && !m.searchActive && !m.showSeverityFilterModal && !m.showK8sFilterModal && !m.showColumnConfigModal {
+			if m.webPort > 0 {
+				m.openBrowser(fmt.Sprintf("http://localhost:%d", m.webPort))
+			}
+			return m, nil
+		}
+
+	case "w":
+		// Open What's New modal
+		if !m.showModal && !m.showWhatsNewModal && !m.filterActive && !m.searchActive && !m.showSeverityFilterModal && !m.showK8sFilterModal && !m.showColumnConfigModal && !m.showHelp && !m.showPatternsModal && !m.showStatsModal && !m.showCountsModal {
+			if m.releasesFetcher != nil {
+				m.showWhatsNewModal = true
+				m.whatsNewRenderedCache = "" // force fresh render
+				m.infoViewport.GotoTop()
+			}
+			return m, nil
+		}
+
 	case " ":
 		// Spacebar: Global pause/unpause toggle for entire UI
 		if !m.showModal && !m.filterActive && !m.searchActive && !m.showSeverityFilterModal && !m.showK8sFilterModal && !m.showColumnConfigModal {
@@ -577,7 +601,6 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	// Patterns modal shortcuts
 	if m.showPatternsModal {
 		switch msg.String() {
 		case "up", "k":
@@ -598,6 +621,35 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 
 		// Update patterns modal viewport with scroll messages
+		var cmd tea.Cmd
+		m.infoViewport, cmd = m.infoViewport.Update(msg)
+		return m, cmd
+	}
+
+	// What's New modal shortcuts (same pattern as stats/patterns modals)
+	if m.showWhatsNewModal {
+		switch msg.String() {
+		case "up", "k":
+			m.infoViewport.ScrollUp(1)
+			return m, nil
+		case "down", "j":
+			m.infoViewport.ScrollDown(1)
+			return m, nil
+		case "pgup":
+			m.infoViewport.HalfPageUp()
+			return m, nil
+		case "pgdown":
+			m.infoViewport.HalfPageDown()
+			return m, nil
+		case "w":
+			// Allow 'w' to toggle what's-new modal off
+			m.showWhatsNewModal = false
+			return m, m.saveWhatsNewState()
+		case "escape", "esc":
+			m.showWhatsNewModal = false
+			return m, m.saveWhatsNewState()
+		}
+
 		var cmd tea.Cmd
 		m.infoViewport, cmd = m.infoViewport.Update(msg)
 		return m, cmd
