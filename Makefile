@@ -183,6 +183,8 @@ fmt: ## Format code
 
 vet: ## Run go vet
 	@echo "$(BLUE)Running go vet...$(NC)"
+	@mkdir -p web/dist
+	@test -f web/dist/index.html || echo '<!DOCTYPE html><html><body></body></html>' > web/dist/index.html
 	@$(GO) vet ./...
 
 lint: ## Run linter (requires golangci-lint)
