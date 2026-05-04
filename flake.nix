@@ -22,7 +22,13 @@
         src = ./.;
         modules = ./gomod2nix.toml;
 
-        # If you split binaries later, enable: subPackages = [ "cmd/gonzo" ];
+        # Create stub web/dist so //go:embed all:dist compiles
+        # Full web dashboard is built separately via `make build`
+        preBuild = ''
+          mkdir -p web/dist
+          echo '<!DOCTYPE html><html><body></body></html>' > web/dist/index.html
+        '';
+
         ldflags = ["-s" "-w"];
 
         meta = with pkgs.lib; {
