@@ -77,6 +77,11 @@ web-clean: ## Clean web build artifacts
 	@rm -rf web/dist web/node_modules
 	@echo "$(GREEN)✓ Web artifacts cleaned$(NC)"
 
+# Ensure web/dist exists for go:embed (stub if not built)
+ensure-web-dist:
+	@mkdir -p web/dist
+	@test -f web/dist/index.html || echo '<!DOCTYPE html><html><body></body></html>' > web/dist/index.html
+
 # Build targets
 build: deps web-build ## Build binary with embedded web dashboard
 	@echo "$(BLUE)Building Gonzo with web dashboard...$(NC)"
@@ -91,17 +96,15 @@ build-signed: build ## Build and codesign for macOS (set CODESIGN_IDENTITY for d
 	@echo "$(GREEN)✓ Signed $(BUILD_DIR)/$(BINARY_NAME)$(NC)"
 	@codesign -dvv $(BUILD_DIR)/$(BINARY_NAME) 2>&1 | head -5
 
-build-tui: deps ## Build TUI-only binary (placeholder web dashboard)
+build-tui: deps ensure-web-dist ## Build TUI-only binary (placeholder web dashboard)
 	@echo "$(BLUE)Building TUI-only version...$(NC)"
 	@mkdir -p $(BUILD_DIR)
-	@mkdir -p web/dist
-	@test -f web/dist/index.html || echo '<!DOCTYPE html><html><body><p>Run make build to embed the full web dashboard</p></body></html>' > web/dist/index.html
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) \
 		$(GO) build $(BUILD_FLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) $(CMD_DIR)
 	@echo "$(GREEN)✓ Built $(BUILD_DIR)/$(BINARY_NAME) (TUI only)$(NC)"
 
 # Cross-platform builds
-cross-build: clean deps ## Build for multiple platforms
+cross-build: clean deps ensure-web-dist ## Build for multiple platforms
 	@echo "$(BLUE)Building for multiple platforms...$(NC)"
 	@mkdir -p $(DIST_DIR)
 	
@@ -147,11 +150,11 @@ deps-tidy: ## Clean up dependencies
 	@$(GO) mod tidy
 
 # Testing
-test: deps ## Run tests
+test: deps ensure-web-dist ## Run tests
 	@echo "$(BLUE)Running tests...$(NC)"
 	@$(GO) test -v ./...
 
-test-race: deps ## Run tests with race detection
+test-race: deps ensure-web-dist ## Run tests with race detection
 	@echo "$(BLUE)Running tests with race detection...$(NC)"
 	@$(GO) test -race -v ./...
 
@@ -181,10 +184,8 @@ fmt: ## Format code
 	@echo "$(BLUE)Formatting code...$(NC)"
 	@$(GO) fmt ./...
 
-vet: ## Run go vet
+vet: ensure-web-dist ## Run go vet
 	@echo "$(BLUE)Running go vet...$(NC)"
-	@mkdir -p web/dist
-	@test -f web/dist/index.html || echo '<!DOCTYPE html><html><body></body></html>' > web/dist/index.html
 	@$(GO) vet ./...
 
 lint: ## Run linter (requires golangci-lint)
