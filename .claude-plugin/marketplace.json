@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "gonzo",
+  "description": "Gonzo: the open source terminal companion for log analysis and runtime triage. Pipe logs from any source: Vercel, Supabase, K8s, Docker, AWS, Cloudflare, Fly, Render, Railway, Netlify, into a fast TUI with patterns, heatmaps, and anomaly detection. Free. No account required.",
+  "owner": {
+    "name": "ControlTheory",
+    "email": "support@controltheory.com",
+    "url": "https://controltheory.com"
+  },
+  "plugins": [
+    {
+      "name": "gonzo",
+      "source": "./",
+      "category": "debugging",
+      "tags": ["log-analysis", "tui", "open-source", "claude-code", "vercel", "supabase", "kubernetes", "docker", "cloudflare"]
+    }
+  ]
+}

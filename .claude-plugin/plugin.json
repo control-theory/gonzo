@@ -1,0 +1,27 @@
+{
+  "name": "gonzo",
+  "version": "0.1.5",
+  "description": "Set up and use Gonzo, the open-source terminal log analysis tool. Detects deployment platforms (Vercel, Supabase, K8s, Docker, AWS, Cloudflare, Fly, Render, Railway, Netlify), generates the right pipe command with platform-specific normalizers, and configures AI analysis. Use when the user wants to tail, watch, stream, or analyze logs in their terminal.",
+  "author": {
+    "name": "ControlTheory",
+    "email": "support@controltheory.com",
+    "url": "https://controltheory.com"
+  },
+  "homepage": "https://github.com/control-theory/gonzo",
+  "repository": "https://github.com/control-theory/gonzo",
+  "license": "MIT",
+  "keywords": [
+    "logs",
+    "observability",
+    "terminal",
+    "tail",
+    "tui",
+    "vercel",
+    "supabase",
+    "kubernetes",
+    "cloudflare",
+    "fly",
+    "render",
+    "railway"
+  ]
+}
