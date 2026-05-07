@@ -104,7 +104,7 @@ build-tui: deps ensure-web-dist ## Build TUI-only binary (placeholder web dashbo
 	@echo "$(GREEN)✓ Built $(BUILD_DIR)/$(BINARY_NAME) (TUI only)$(NC)"
 
 # Cross-platform builds
-cross-build: clean deps ensure-web-dist ## Build for multiple platforms
+cross-build: clean deps web-build ## Build for multiple platforms
 	@echo "$(BLUE)Building for multiple platforms...$(NC)"
 	@mkdir -p $(DIST_DIR)
 	

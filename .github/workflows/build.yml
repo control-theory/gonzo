@@ -58,9 +58,6 @@ jobs:
           cache: 'npm'
           cache-dependency-path: web/package-lock.json
 
-      - name: Build web dashboard
-        run: make web-build
-
       - name: Cross-platform build
         run: make cross-build
 
