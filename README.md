@@ -155,6 +155,17 @@ cd gonzo
 make build
 ```
 
+#### Using with Claude Code (plugin and skill)
+
+This repo includes a Claude Code plugin with a guided log-analysis skill. Inside Claude Code:
+
+```
+/plugin marketplace add control-theory/gonzo
+/plugin install gonzo@gonzo
+```
+
+Then ask Claude to "tail my logs", "watch my Vercel logs", or "analyze my Kubernetes logs". The skill detects your deployment platform, installs Gonzo if needed, configures AI analysis, and generates the right pipe command with platform-specific normalizers. See `skills/gonzo/` for the skill content.
+
 ## 📖 Usage
 
 ### Basic Usage
@@ -958,10 +969,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 * **[Gonzo Roadmap & Pro Tips Live Demo with Maintainers](https://www.controltheory.com/videos/gonzo-roadmap-and-pro-tips-live-demo-session/)** - Live session covering the roadmap, advanced features, and Q&A with the maintainers
 
-## 💬 Slack Community
+## 💬 Community
 
-- [Invite/Join](https://join.slack.com/t/ctrltheorycommunity/shared_invite/zt-3dr6rke5w-GlcRaW2bvn4zcSaV8byZgA)
-- [Channel Link](https://ctrltheorycommunity.slack.com)
+- [Discord](https://discord.gg/nRBUFYByta)
+- [Slack Invite/Join](https://join.slack.com/t/ctrltheorycommunity/shared_invite/zt-3dr6rke5w-GlcRaW2bvn4zcSaV8byZgA)
+- [Slack Channel Link](https://ctrltheorycommunity.slack.com)
 
 ## 🐛 Reporting Issues
 
