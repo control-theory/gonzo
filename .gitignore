@@ -65,7 +65,7 @@ testdata/output/
 
 # Web dashboard
 web/node_modules/
-web/dist/
+web/dist/assets/
 
 # Claude Code settings
 .claude/settings.local.json

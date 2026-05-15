@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dstl8 Lite — powered by Gonzo</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: #0a0a14;
+    color: #e2e8f0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .container {
+    max-width: 560px;
+    padding: 48px 32px;
+    text-align: center;
+  }
+  .logo { width: 200px; margin: 0 auto 12px; }
+  .lite-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    background: #2563eb;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-bottom: 32px;
+  }
+  h2 {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #fff;
+  }
+  .subtitle {
+    font-size: 14px;
+    color: #94a3b8;
+    line-height: 1.6;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: #111827;
+    border: 1px solid #1e293b;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    text-align: left;
+  }
+  .card h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .install-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #1e293b;
+  }
+  .install-row:last-child { border-bottom: none; }
+  .install-label {
+    font-size: 12px;
+    color: #94a3b8;
+    min-width: 90px;
+    flex-shrink: 0;
+  }
+  .install-cmd {
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 12px;
+    color: #38bdf8;
+    background: #0f172a;
+    padding: 6px 12px;
+    border-radius: 6px;
+    flex: 1;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .features {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .feature {
+    font-size: 12px;
+    color: #94a3b8;
+    padding: 8px 12px;
+    background: #111827;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    text-align: center;
+  }
+  .feature-icon { margin-right: 4px; }
+  .cta-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #2563eb, #0ea5e9);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px 28px;
+    border-radius: 8px;
+    text-decoration: none;
+    margin-bottom: 12px;
+    transition: opacity 0.15s;
+  }
+  .cta-btn:hover { opacity: 0.9; }
+  .docs-link {
+    display: block;
+    font-size: 12px;
+    color: #64748b;
+    text-decoration: none;
+    margin-top: 8px;
+  }
+  .docs-link:hover { color: #94a3b8; }
+  .tui-note {
+    font-size: 12px;
+    color: #475569;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #1e293b;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Dstl8 logo (light version, inlined) -->
+  <div class="logo">
+    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 669.41 388.65"><defs><style>.s1{fill:url(#g5)}.s2{fill:url(#g6)}.s3{fill:url(#g4)}.s4{fill:url(#g2)}.s4,.s5{mix-blend-mode:multiply}.s5{fill:url(#g3)}.s6{fill:url(#g1)}.s7{isolation:isolate}.s8{fill:#fff}</style><linearGradient id="g1" x1="593.01" y1="370.45" x2="593.01" y2="140.78" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#0f9efc"/><stop offset=".51" stop-color="#20b2b2"/><stop offset="1" stop-color="#49e209"/></linearGradient><linearGradient id="g2" x1="641.16" y1="200.64" x2="592.89" y2="256.61" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#081c39"/></linearGradient><linearGradient id="g3" x1="548.43" y1="308.77" x2="586.92" y2="255.76" xlink:href="#g2"/><linearGradient id="g4" x1="275.43" y1="199.15" x2="266.95" y2="31.73" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#0f9efc"/><stop offset=".51" stop-color="#20b2b2"/><stop offset="1" stop-color="#49e209"/></linearGradient><linearGradient id="g5" x1="337.87" y1="195.98" x2="329.39" y2="28.57" xlink:href="#g4"/><linearGradient id="g6" x1="278.08" y1="199.01" x2="269.6" y2="31.6" xlink:href="#g4"/></defs><g class="s7"><g><path class="s8" d="M178.93,222.24c-4.38-12.82-10.77-23.65-19.16-32.5-8.39-8.85-18.47-15.01-30.24-18.47-8.76-2.55-21.48-3.83-38.18-3.83H17.32v200.61h76.22c14.96,0,26.91-1.41,35.85-4.24,11.95-3.83,21.44-9.17,28.46-16.01,9.3-9.03,16.47-20.84,21.48-35.44,4.11-11.95,6.16-26.18,6.16-42.69,0-18.79-2.19-34.6-6.57-47.42ZM139.52,304.62c-2.74,8.99-6.27,15.44-10.61,19.36-4.33,3.92-9.78,6.71-16.35,8.35-5.02,1.28-13.18,1.92-24.49,1.92h-30.24v-132.87h18.2c16.51,0,27.59.64,33.25,1.92,7.57,1.64,13.82,4.79,18.75,9.44,4.93,4.65,8.76,11.13,11.5,19.43,2.74,8.3,4.1,20.21,4.1,35.72s-1.37,27.76-4.1,36.74Z"/><path class="s8" d="M329.73,294.01c-8.12-6.75-22.42-12.45-42.9-17.11-20.48-4.65-32.46-8.26-35.92-10.81-2.55-1.92-3.83-4.24-3.83-6.98,0-3.19,1.46-5.79,4.38-7.8,4.38-2.83,11.63-4.24,21.76-4.24,8.03,0,14.21,1.51,18.54,4.52,4.33,3.01,7.27,7.34,8.83,13l36.26-6.71c-3.65-12.68-10.31-22.26-19.98-28.74-9.67-6.48-24.45-9.72-44.34-9.72-20.89,0-36.31,4.29-46.25,12.86-9.95,8.58-14.92,19.16-14.92,31.75,0,13.96,5.75,24.86,17.24,32.71,8.3,5.66,27.96,11.91,58.98,18.75,6.66,1.55,10.95,3.24,12.86,5.06,1.82,1.92,2.74,4.33,2.74,7.25,0,4.29-1.69,7.71-5.06,10.26-5.02,3.65-12.5,5.47-22.44,5.47-9.03,0-16.06-1.94-21.08-5.82-5.02-3.88-8.35-9.55-9.99-17.04l-38.59,5.88c3.56,13.78,11.11,24.68,22.65,32.71,11.54,8.03,27.21,12.04,47.01,12.04,21.8,0,38.27-4.79,49.4-14.37,11.13-9.58,16.69-21.03,16.69-34.35,0-12.22-4.01-21.76-12.04-28.6Z"/><path class="s8" d="M426.48,339.44c-2.55,0-4.72-.64-6.5-1.92-1.78-1.28-2.92-2.9-3.42-4.86-.5-1.96-.75-8.87-.75-20.73v-58.57h26.27v-30.65h-26.27v-51.32l-38.59,22.44v28.87h-17.65v30.65h17.65v63.36c0,13.59.41,22.63,1.23,27.09,1,6.29,2.81,11.29,5.41,14.98,2.6,3.69,6.68,6.71,12.25,9.03,5.56,2.33,11.81,3.49,18.75,3.49,11.31,0,21.44-1.92,30.38-5.75l-3.28-29.83c-6.75,2.46-11.9,3.69-15.46,3.69Z"/><rect class="s8" x="468.76" y="167.43" width="38.45" height="200.61"/><g><path class="s6" d="M650.48,299.44c-.07-.36-.12-.71-.19-1.07-2.12-10.67-8.62-22.55-16.11-30.35-2.68-2.78-8.52-8.54-11.02-10.82-.6-.54-1.24-1.1-1.9-1.67l.73-.67c.73-.62,1.45-1.25,2.17-1.89l.15-.13c11.07-9.89,21.01-22.13,25.23-36.61,1.18-4.04,2.99-13.77,2.48-22.63-1.63-28.13-26.3-52.66-53.94-53.98-1.72-.08-3.4-.08-5.05-.04-1.66-.04-3.33-.04-5.05.04-27.64,1.32-52.32,25.85-53.94,53.98-.51,8.86,1.3,18.59,2.48,22.63,4.22,14.48,14.16,26.72,25.23,36.61l.15.13c.72.64,1.44,1.27,2.17,1.89l.73.67c-.66.56-1.3,1.12-1.9,1.67-2.5,2.28-8.55,7.76-11.02,10.82-6.8,8.41-13.99,19.68-16.11,30.35-.07.36-.13.71-.19,1.07-1.75,7.23-2.13,14.76-.82,22.48.17,1.25.34,2.16.44,2.68,3.13,16.2,12.14,28.45,23.86,36.35,10.1,7.06,22.06,10.45,33.99,10.38,11.93.07,23.89-3.32,33.99-10.38,11.72-7.89,20.73-20.14,23.86-36.35.1-.52.27-1.43.44-2.68,1.31-7.72.93-15.24-.82-22.48ZM571.43,322.36c-1.82-4.19-2.37-8.23-1.98-12.12.51-4.1,2.02-8.13,4.19-11.96,4.48-7.52,11.86-14.31,19.37-20.32,7.51,6.01,14.89,12.81,19.37,20.32,2.17,3.82,3.68,7.85,4.19,11.96.39,3.89-.15,7.93-1.98,12.12-3.9,8.95-12.71,13.81-21.58,13.92-8.87-.11-17.68-4.97-21.58-13.92ZM581.08,222.6c-8.23-9.61-15.36-20.71-9.65-33.81.94-2.16,2.1-4.02,3.42-5.65,4.57-5.14,11.35-8.05,18.16-8.21,6.81.16,13.59,3.07,18.17,8.21,1.31,1.63,2.48,3.49,3.42,5.65,5.7,13.1-1.42,24.2-9.65,33.81-3.54,3.7-7.63,7.35-11.93,10.88-4.29-3.53-8.39-7.18-11.93-10.88Z"/><path class="s4" d="M621.98,254.88c.73-.62,1.45-1.25,2.17-1.89l.15-.13c11.07-9.89,21.01-22.13,25.23-36.61,1.11-3.81,2.78-12.67,2.54-21.09h-35.67c1.47,10.38-4.6,19.43-11.46,27.45-3.54,3.7-7.63,7.35-11.93,10.88l28.24,22.06.73-.67Z"/><path class="s5" d="M569.45,310.24c.51-4.1,2.02-8.13,4.19-11.96,4.48-7.52,11.86-14.31,19.37-20.32l-28.24-22.42c-.66.56-1.3,1.12-1.9,1.67-2.5,2.28-8.55,7.76-11.02,10.82-6.8,8.41-13.99,19.68-16.11,30.35-.07.36-.13.71-.19,1.07-1.29,5.35-1.83,10.86-1.5,16.49h35.53c-.28-1.93-.31-3.83-.13-5.69Z"/></g><g><circle class="s3" cx="273.22" cy="155.63" r="40.01"/><circle class="s1" cx="332.42" cy="88.25" r="27.37"/><circle class="s2" cx="270.06" cy="40.68" r="23.36"/></g></g></g></svg>
+  </div>
+  <span class="lite-badge">LITE</span>
+
+  <h2>Web Dashboard Available with Full Install</h2>
+  <p class="subtitle">
+    You're running Gonzo via <code style="background:#1e293b;padding:2px 6px;border-radius:4px;font-size:12px">go install</code>, which includes the full TUI but can't bundle the web dashboard.
+    Install via one of the methods below to get the complete Dstl8 Lite experience.
+  </p>
+
+  <div class="features">
+    <div class="feature"><span class="feature-icon">📊</span> Live Severity Heatmap</div>
+    <div class="feature"><span class="feature-icon">📋</span> Log Viewer & Search</div>
+    <div class="feature"><span class="feature-icon">🔍</span> Pattern Analysis</div>
+    <div class="feature"><span class="feature-icon">⚡</span> Real-time WebSocket Updates</div>
+    <div class="feature"><span class="feature-icon">🎨</span> Dark & Light Themes</div>
+    <div class="feature"><span class="feature-icon">🤖</span> AI-Powered Insights</div>
+  </div>
+
+  <div class="card">
+    <h3>Install with Full Dashboard</h3>
+    <div class="install-row">
+      <span class="install-label">Homebrew</span>
+      <span class="install-cmd">brew install gonzo</span>
+    </div>
+    <div class="install-row">
+      <span class="install-label">Releases</span>
+      <span class="install-cmd">github.com/control-theory/gonzo/releases</span>
+    </div>
+    <div class="install-row">
+      <span class="install-label">From source</span>
+      <span class="install-cmd">git clone &amp;&amp; make build</span>
+    </div>
+  </div>
+
+  <a class="cta-btn" href="https://docs.controltheory.com/controltheory-documentation/gonzo-docs" target="_blank" rel="noopener">
+    View Documentation
+  </a>
+  <a class="docs-link" href="https://github.com/control-theory/gonzo" target="_blank" rel="noopener">
+    github.com/control-theory/gonzo
+  </a>
+
+  <div class="tui-note">
+    Your TUI is fully functional — this page is only for the web dashboard.<br>
+    Press <code style="background:#1e293b;padding:1px 5px;border-radius:3px;font-size:11px">d</code> in the TUI to open this page, or <code style="background:#1e293b;padding:1px 5px;border-radius:3px;font-size:11px">?</code> for help.
+  </div>
+</div>
+</body>
+</html>

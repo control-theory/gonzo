@@ -74,7 +74,7 @@ web-dev: web-deps ## Start web dev server with API proxy
 
 web-clean: ## Clean web build artifacts
 	@echo "$(BLUE)Cleaning web artifacts...$(NC)"
-	@rm -rf web/dist web/node_modules
+	@rm -rf web/dist/assets web/node_modules
 	@echo "$(GREEN)✓ Web artifacts cleaned$(NC)"
 
 # Ensure web/dist exists for go:embed (stub if not built)
@@ -253,7 +253,7 @@ clean: ## Clean build artifacts
 	@echo "$(BLUE)Cleaning build artifacts...$(NC)"
 	@rm -rf $(BUILD_DIR)
 	@rm -rf $(DIST_DIR)
-	@rm -rf web/dist
+	@rm -rf web/dist/assets
 	@rm -f $(BINARY_NAME)
 	@echo "$(GREEN)✓ Cleaned$(NC)"
 
