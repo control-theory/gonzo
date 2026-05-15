@@ -37,6 +37,9 @@ jobs:
       - name: Build web dashboard
         run: make web-build
 
+      - name: Mark web/dist as unchanged for GoReleaser
+        run: git update-index --assume-unchanged web/dist/index.html
+
       - name: Run tests
         run: make test
 
