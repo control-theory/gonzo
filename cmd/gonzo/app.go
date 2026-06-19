@@ -10,20 +10,21 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"io/fs"
 
 	"github.com/control-theory/gonzo/internal/analyzer"
 	"github.com/control-theory/gonzo/internal/engine"
-	"github.com/control-theory/gonzo/internal/releases"
-	"github.com/control-theory/gonzo/internal/state"
 	"github.com/control-theory/gonzo/internal/filereader"
 	"github.com/control-theory/gonzo/internal/formats"
 	"github.com/control-theory/gonzo/internal/k8s"
 	"github.com/control-theory/gonzo/internal/memory"
 	"github.com/control-theory/gonzo/internal/otlplog"
 	"github.com/control-theory/gonzo/internal/otlpreceiver"
+	"github.com/control-theory/gonzo/internal/releases"
+	"github.com/control-theory/gonzo/internal/state"
 	"github.com/control-theory/gonzo/internal/tui"
 	versioncheck "github.com/control-theory/gonzo/internal/version"
 	"github.com/control-theory/gonzo/internal/vmlogs"
@@ -213,6 +214,13 @@ type simpleTuiModel struct {
 	cancelFunc     context.CancelFunc
 	versionChecker *versioncheck.Checker
 
+	// stdin is the source for stdin-mode reading. It defaults to os.Stdin but is
+	// an interface so the quit-teardown path can be unit-tested. On quit we close
+	// it to unblock a goroutine parked in a blocking read(2) on a live pipe
+	// (e.g. `kubectl logs -f ... | gonzo`); see handleQuitKey and issue #58.
+	stdin         io.ReadCloser
+	stopStdinOnce sync.Once
+
 	// Internal state
 	finished       bool
 	logCount       int
@@ -354,6 +362,7 @@ func (m *simpleTuiModel) Init() tea.Cmd {
 			// stdin is a pipe or file, we have data
 			m.hasStdinData = true
 			m.inputChan = make(chan string, 100)
+			m.stdin = os.Stdin
 
 			// Start goroutine to read stdin without blocking
 			go m.readStdinAsync()
@@ -512,11 +521,45 @@ func (m *simpleTuiModel) readFilesAsync() {
 	}
 }
 
+// handleQuitKey cancels the app context and stops the input reader when the
+// user presses a quit key ("q" or Ctrl-C). This is the lifecycle teardown seam
+// for issue #58: on quit, bubbletea restores the terminal via tea.Quit, but the
+// stdin-reading goroutine can stay parked in a blocking read(2) on a live pipe
+// (e.g. `kubectl logs -f ... | gonzo`) whose writer never sends EOF. Without
+// closing stdin, that read holds the terminal and control is not returned to the
+// parent (K9s) until a follow-up Ctrl-C. It returns true if msg was a quit key.
+func (m *simpleTuiModel) handleQuitKey(msg tea.KeyMsg) bool {
+	if s := msg.String(); s != "q" && s != "ctrl+c" {
+		return false
+	}
+	if m.cancelFunc != nil {
+		m.cancelFunc()
+	}
+	m.stopInput()
+	return true
+}
+
+// stopInput unblocks the stdin reader by closing the stdin source exactly once.
+// Closing the read end makes a blocked Scan/read(2) return immediately so the
+// reader goroutine can exit and the terminal is released to the parent process.
+func (m *simpleTuiModel) stopInput() {
+	m.stopStdinOnce.Do(func() {
+		if m.stdin != nil {
+			_ = m.stdin.Close()
+		}
+	})
+}
+
 // readStdinAsync reads from stdin in a goroutine without blocking
 func (m *simpleTuiModel) readStdinAsync() {
 	defer close(m.inputChan)
 
-	scanner := bufio.NewScanner(os.Stdin)
+	// Default to os.Stdin; tests inject a different reader via m.stdin.
+	if m.stdin == nil {
+		m.stdin = os.Stdin
+	}
+
+	scanner := bufio.NewScanner(m.stdin)
 
 	// Set larger buffer size (1MB) to handle long OTLP JSON lines
 	const maxScanTokenSize = 1024 * 1024 // 1MB
@@ -535,11 +578,15 @@ func (m *simpleTuiModel) readStdinAsync() {
 		// Wait for either scan result or context cancellation
 		select {
 		case <-m.ctx.Done():
+			// On quit, stopInput closes stdin, which unblocks the in-flight
+			// scanner.Scan above so its goroutine can exit instead of leaking.
+			m.stopInput()
 			return
 		case hasLine := <-scanChan:
 			if !hasLine {
-				// EOF or error - exit gracefully
-				break
+				// EOF or error - exit gracefully (return, not break, so we do
+				// not re-spawn Scan and busy-spin on a closed input).
+				return
 			}
 
 			line := scanner.Text()
@@ -547,6 +594,7 @@ func (m *simpleTuiModel) readStdinAsync() {
 				select {
 				case m.inputChan <- line:
 				case <-m.ctx.Done():
+					m.stopInput()
 					return
 				}
 			}
@@ -582,12 +630,10 @@ func (m *simpleTuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// Check for quit keys and cancel context
-		if msg.String() == "q" || msg.String() == "ctrl+c" {
-			if m.cancelFunc != nil {
-				m.cancelFunc()
-			}
-		}
+		// On a quit key, cancel the app context and stop the stdin reader so
+		// control returns to the parent process (e.g. K9s) without requiring a
+		// follow-up Ctrl-C. See handleQuitKey and issue #58.
+		m.handleQuitKey(msg)
 		// Always forward to dashboard first - let it decide whether to quit
 		newDashboard, cmd := m.dashboard.Update(msg)
 		m.dashboard = newDashboard.(*tui.DashboardModel)
