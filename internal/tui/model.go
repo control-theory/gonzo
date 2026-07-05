@@ -173,6 +173,10 @@ type DashboardModel struct {
 	// Modal section navigation
 	modalActiveSection string // "info" or "chat"
 
+	// Clipboard feedback (transient status message shown after a copy action)
+	copyFeedback       string
+	copyFeedbackExpiry time.Time
+
 	// Model selection modal
 	showModelSelectionModal bool
 	selectedModelIndex      int

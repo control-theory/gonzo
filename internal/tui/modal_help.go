@@ -84,6 +84,8 @@ ACTIONS:
   u/U            - Cycle update intervals (forward/backward)
   i              - Show comprehensive statistics modal
   i              - AI analysis (when viewing log details)
+  y              - Copy log message (when viewing log details)
+  Ctrl+y         - Copy full log entry + attributes + AI analysis (when viewing log details)
   m              - Switch AI model (shows available models)
   d              - Open Dstl8 Lite web dashboard in browser
   w              - Show what's new (release notes)

@@ -1184,6 +1184,22 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					}
 					return m, nil
 				}
+			case "ctrl+y":
+				// Copy full log entry (message, severity, timestamps, attributes,
+				// and AI analysis if present) to the clipboard - only when not
+				// actively typing in chat
+				if !m.chatActive && m.currentLogEntry != nil {
+					text := m.formatLogEntryForClipboard(*m.currentLogEntry)
+					m.setCopyFeedback(copyToClipboard(text), "full log entry")
+					return m, nil
+				}
+			case "y", "alt+y":
+				// Copy just the log message to the clipboard - only when not
+				// actively typing in chat
+				if !m.chatActive && m.currentLogEntry != nil {
+					m.setCopyFeedback(copyToClipboard(m.currentLogEntry.Message), "message")
+					return m, nil
+				}
 			case "escape", "esc": // escape to close modal (only if not in chat mode)
 				m.showModal = false
 				m.modalContent = ""

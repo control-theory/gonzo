@@ -42,6 +42,11 @@ func (m *DashboardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Update processing rate statistics on every tick
 		m.updateProcessingRateStats()
 
+		// Clear transient copy-to-clipboard feedback once it has expired
+		if m.copyFeedback != "" && time.Now().After(m.copyFeedbackExpiry) {
+			m.copyFeedback = ""
+		}
+
 		// Only refresh charts when not paused
 		if !m.viewPaused {
 			m.updateCharts()
