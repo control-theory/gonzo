@@ -105,6 +105,7 @@ func (m *DashboardModel) renderModalStatusBar() string {
 			} else {
 				statusItems = append(statusItems, "w: Enable wrapping")
 			}
+			statusItems = append(statusItems, "y: Copy message", "Ctrl+y: Copy all")
 			statusItems = append(statusItems, "↑↓/Wheel: Scroll", "PgUp/PgDn: Page")
 		}
 	} else {
@@ -119,7 +120,16 @@ func (m *DashboardModel) renderModalStatusBar() string {
 	statusStyle := lipgloss.NewStyle().
 		Foreground(ColorGray)
 
-	return statusStyle.Render(strings.Join(statusItems, " • "))
+	rendered := statusStyle.Render(strings.Join(statusItems, " • "))
+
+	// Prepend transient copy feedback (e.g. "Copied message to clipboard"),
+	// cleared automatically on TickMsg once copyFeedbackExpiry passes.
+	if m.copyFeedback != "" {
+		feedbackStyle := lipgloss.NewStyle().Foreground(ColorGreen)
+		rendered = feedbackStyle.Render(m.copyFeedback) + statusStyle.Render(" • ") + rendered
+	}
+
+	return rendered
 }
 
 // getSeverityColor returns the appropriate color for a severity level
