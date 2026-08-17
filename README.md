@@ -989,7 +989,7 @@ Found a bug? Please [open an issue](https://github.com/control-theory/gonzo/issu
 
 If you find this project useful, please consider giving it a star! It helps others discover the tool.
 
-[![Star History Chart](https://api.star-history.com/svg?repos=control-theory/gonzo&type=Date)](https://www.star-history.com/#control-theory/gonzo&Date)
+[![Star History Chart](https://star-history.dera.page/svg?repos=control-theory/gonzo&type=Date)](https://star-history.dera.page/#control-theory/gonzo&Date)
 
 ---
 
