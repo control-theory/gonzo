@@ -107,7 +107,7 @@ gonzo --k8s-enabled=true \
 --k8s-selector SELECTOR     # Kubernetes label selector
 --k8s-tail N                # Number of previous log lines per pod (default: 10)
 --k8s-since SECONDS         # Only logs newer than N seconds
---k8s-kubeconfig PATH       # Path to kubeconfig (default: ~/.kube/config)
+--k8s-kubeconfig PATH       # Path to kubeconfig (default: $KUBECONFIG or ~/.kube/config)
 --k8s-context CONTEXT       # Kubernetes context to use
 ```
 
@@ -148,6 +148,10 @@ See [examples/k8s_config.yml](../examples/k8s_config.yml) for a complete example
 ```bash
 # Use specific kubeconfig
 export KUBECONFIG=/path/to/custom/kubeconfig
+
+# Multiple kubeconfig files are merged, as described in the Kubernetes docs
+# (https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/#set-the-kubeconfig-environment-variable)
+export KUBECONFIG=~/.kube/config:~/.kube/other-config
 
 # Set default Kubernetes context
 export KUBE_CONTEXT=production-cluster

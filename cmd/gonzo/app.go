@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -808,42 +807,32 @@ func hasExplicitSourceFlag() bool {
 // 2. Otherwise, fall back to OS system logs
 func (m *simpleTuiModel) autoDetectLogSource() {
 	// Try kubeconfig first
-	kubeconfigPath := os.Getenv("KUBECONFIG")
-	if kubeconfigPath == "" {
-		home, err := os.UserHomeDir()
-		if err == nil {
-			kubeconfigPath = filepath.Join(home, ".kube", "config")
+	if kubeconfigs := k8s.DetectKubeconfig(); len(kubeconfigs) > 0 {
+		// Kubeconfig found — auto-enable Kubernetes with all namespaces
+		log.Printf("Auto-detected kubeconfig(s): %s; enabling Kubernetes log streaming", strings.Join(kubeconfigs, ", "))
+		m.inputChan = make(chan string, 100)
+
+		// Kubeconfig left empty so client-go resolves KUBECONFIG itself
+		k8sConfig := &k8s.Config{
+			Context:    cfg.K8sContext,
+			Namespaces: cfg.K8sNamespaces,
+			Selector:   cfg.K8sSelector,
+			Since:      cfg.K8sSince,
+			TailLines:  cfg.K8sTailLines,
 		}
-	}
 
-	if kubeconfigPath != "" {
-		if _, err := os.Stat(kubeconfigPath); err == nil {
-			// Kubeconfig found — auto-enable Kubernetes with all namespaces
-			log.Printf("Auto-detected kubeconfig at %s, enabling Kubernetes log streaming", kubeconfigPath)
-			m.inputChan = make(chan string, 100)
-
-			k8sConfig := &k8s.Config{
-				Kubeconfig: kubeconfigPath,
-				Context:    cfg.K8sContext,
-				Namespaces: cfg.K8sNamespaces,
-				Selector:   cfg.K8sSelector,
-				Since:      cfg.K8sSince,
-				TailLines:  cfg.K8sTailLines,
+		k8sSource, err := k8s.NewKubernetesLogSource(k8sConfig)
+		if err == nil {
+			if err := k8sSource.Start(); err == nil {
+				m.hasK8sInput = true
+				m.k8sReceiver = k8sSource
+				m.dashboard.SetK8sSource(k8sSource)
+				go m.readK8sAsync()
+				return
 			}
-
-			k8sSource, err := k8s.NewKubernetesLogSource(k8sConfig)
-			if err == nil {
-				if err := k8sSource.Start(); err == nil {
-					m.hasK8sInput = true
-					m.k8sReceiver = k8sSource
-					m.dashboard.SetK8sSource(k8sSource)
-					go m.readK8sAsync()
-					return
-				}
-				log.Printf("Auto-detect: Kubernetes start failed: %v", err)
-			} else {
-				log.Printf("Auto-detect: Kubernetes init failed: %v", err)
-			}
+			log.Printf("Auto-detect: Kubernetes start failed: %v", err)
+		} else {
+			log.Printf("Auto-detect: Kubernetes init failed: %v", err)
 		}
 	}
 
