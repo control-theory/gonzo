@@ -809,7 +809,7 @@ func (m *simpleTuiModel) autoDetectLogSource() {
 	// Try kubeconfig first
 	if kubeconfigs := k8s.DetectKubeconfig(); len(kubeconfigs) > 0 {
 		// Kubeconfig found — auto-enable Kubernetes with all namespaces
-		log.Printf("Auto-detected kubeconfig at %s, enabling Kubernetes log streaming", strings.Join(kubeconfigs, ", "))
+		log.Printf("Auto-detected kubeconfig(s): %s; enabling Kubernetes log streaming", strings.Join(kubeconfigs, ", "))
 		m.inputChan = make(chan string, 100)
 
 		// Kubeconfig left empty so client-go resolves KUBECONFIG itself
