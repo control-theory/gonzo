@@ -2,8 +2,6 @@ package k8s
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -24,22 +22,21 @@ type Config struct {
 func NewDefaultConfig() *Config {
 	tailLines := int64(10) // Default to last 10 lines to avoid overwhelming UI
 	return &Config{
-		Kubeconfig: getDefaultKubeconfig(),
 		Namespaces: []string{""}, // Empty string means all namespaces
 		TailLines:  tailLines,    // Show only recent logs by default
 	}
 }
 
-// getDefaultKubeconfig returns the default kubeconfig path
-func getDefaultKubeconfig() string {
-	if kubeconfig := os.Getenv("KUBECONFIG"); kubeconfig != "" {
-		return kubeconfig
+// DetectKubeconfig returns the kubeconfig files to load if they hold at least
+// one context, otherwise nil. KUBECONFIG may list several paths, which
+// client-go splits and merges.
+func DetectKubeconfig() []string {
+	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	config, err := loadingRules.Load()
+	if err != nil || len(config.Contexts) == 0 {
+		return nil
 	}
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return ""
-	}
-	return filepath.Join(home, ".kube", "config")
+	return loadingRules.GetLoadingPrecedence()
 }
 
 // BuildClientset creates a kubernetes clientset from the configuration
@@ -47,13 +44,12 @@ func (c *Config) BuildClientset() (*kubernetes.Clientset, error) {
 	// Try in-cluster config first
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		// Fall back to kubeconfig
-		if c.Kubeconfig == "" {
-			c.Kubeconfig = getDefaultKubeconfig()
+		// Fall back to kubeconfig: client-go resolves KUBECONFIG (which may list
+		// several files to merge) and ~/.kube/config on its own.
+		loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+		if c.Kubeconfig != "" {
+			loadingRules.ExplicitPath = c.Kubeconfig
 		}
-
-		// Load kubeconfig
-		loadingRules := &clientcmd.ClientConfigLoadingRules{ExplicitPath: c.Kubeconfig}
 		configOverrides := &clientcmd.ConfigOverrides{}
 
 		// Override context if specified

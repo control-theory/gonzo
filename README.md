@@ -528,7 +528,7 @@ Kubernetes Flags:
   --k8s-selector string            Kubernetes label selector for filtering pods
   --k8s-tail int                   Number of previous log lines to retrieve (default: 10)
   --k8s-since int                  Only return logs newer than relative duration in seconds
-  --k8s-kubeconfig string          Path to kubeconfig file (default: $HOME/.kube/config)
+  --k8s-kubeconfig string          Path to kubeconfig file (default: $KUBECONFIG or $HOME/.kube/config)
   --k8s-context string             Kubernetes context to use
 
   -t, --test-mode                  Run without TTY for testing
