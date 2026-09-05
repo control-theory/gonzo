@@ -12,6 +12,10 @@ const (
 	// ProviderClaudeCode uses the Claude Code CLI
 	ProviderClaudeCode ProviderType = "claude-code"
 
+	// ProviderLiteLLM uses a LiteLLM proxy (OpenAI-wire compatible gateway
+	// to 100+ providers). Requires LITELLM_API_KEY.
+	ProviderLiteLLM ProviderType = "litellm"
+
 	// ProviderAuto auto-detects the provider based on environment.
 	// This is the default and maintains backwards compatibility:
 	// - If OPENAI_API_KEY is set, uses OpenAI client
@@ -43,6 +47,11 @@ func NewClient(provider ProviderType, model string) (Client, error) {
 		// so TUI can display the validation error
 		return NewClaudeCodeClient(model), nil
 
+	case ProviderLiteLLM:
+		// Explicitly requested LiteLLM - returns client even if not validated
+		// so TUI can display the validation error
+		return NewLiteLLMClient(model), nil
+
 	case ProviderAuto:
 		// Auto-detect: maintain backwards compatibility
 		// Only try OpenAI (the previous default behavior)
@@ -60,5 +69,5 @@ func NewClient(provider ProviderType, model string) (Client, error) {
 
 // ValidProviders returns the list of valid provider type strings
 func ValidProviders() []string {
-	return []string{string(ProviderOpenAI), string(ProviderClaudeCode)}
+	return []string{string(ProviderOpenAI), string(ProviderClaudeCode), string(ProviderLiteLLM)}
 }

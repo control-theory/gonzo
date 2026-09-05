@@ -165,7 +165,7 @@ func init() {
 	rootCmd.Flags().IntP("log-buffer", "b", 1000, "Maximum log buffer size")
 	rootCmd.Flags().BoolP("test-mode", "t", false, "Run in test mode (works without TTY)")
 	rootCmd.Flags().BoolP("version", "v", false, "Print version information")
-	rootCmd.Flags().String("ai-provider", "", "AI provider to use: 'openai' (default, requires OPENAI_API_KEY), 'claude-code' (requires claude CLI)")
+	rootCmd.Flags().String("ai-provider", "", "AI provider to use: 'openai' (default, requires OPENAI_API_KEY), 'claude-code' (requires claude CLI), 'litellm' (requires LITELLM_API_KEY)")
 	rootCmd.Flags().String("ai-model", "", "AI model to use for log analysis (auto-selects best available if not specified)")
 	rootCmd.Flags().StringSliceP("file", "f", []string{}, "Files or file globs to read logs from (can specify multiple)")
 	rootCmd.Flags().Bool("follow", false, "Follow log files like 'tail -f' (watch for new lines in real-time)")
