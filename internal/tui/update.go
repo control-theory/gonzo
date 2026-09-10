@@ -286,6 +286,11 @@ func (m *DashboardModel) handleModalMouseEvent(msg tea.MouseMsg) (tea.Model, tea
 
 // handleModalClick processes mouse clicks within modals to switch sections
 func (m *DashboardModel) handleModalClick(x, _ int) (tea.Model, tea.Cmd) {
+	// When chat pane is hidden, all clicks are in the info pane
+	if !m.chatPaneVisible {
+		return m, nil
+	}
+
 	// Calculate modal layout to determine which section was clicked
 	// Based on renderSplitModal layout: 70% info, 30% chat
 

@@ -118,6 +118,7 @@ func runApp(cmd *cobra.Command, args []string) error {
 	if !cfg.WebDisabled {
 		dashboard.SetWebPort(cfg.WebPort)
 	}
+	dashboard.SetChatPaneVisible(!cfg.HideChatPane)
 
 	// What's New: fetch GitHub releases in background and wire up auto-show
 	currentVersion, _ := GetVersionInfo()

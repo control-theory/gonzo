@@ -189,6 +189,7 @@ type DashboardModel struct {
 	chatAutoScroll   bool     // Whether to auto-scroll chat to bottom
 	chatAiAnalyzing  bool     // Whether chat AI is working (separate from info AI)
 	chatSpinnerFrame int      // Animation frame for chat spinner
+	chatPaneVisible  bool     // Whether the chat pane is visible in log detail modal
 
 	// Column display
 	showColumns bool // Toggle Host and Service columns in log view
@@ -346,6 +347,7 @@ func NewDashboardModel(maxLogBuffer int, updateInterval time.Duration, aiProvide
 		modalActiveSection:  "info",                      // Start with info section active
 		chatHistory:         make([]string, 0),
 		chatAutoScroll:      true,               // Enable auto-scroll for new messages
+		chatPaneVisible:     true,               // Chat pane visible by default
 		drain3Manager:       NewDrain3Manager(), // Initialize drain3 manager
 		drain3LastProcessed: 0,                  // Initialize drain3 tracking
 		logAutoScroll:       true,               // Start with auto-scroll enabled
@@ -509,6 +511,11 @@ func (m *DashboardModel) SetVersionChecker(checker *versioncheck.Checker) {
 // SetWebPort sets the web dashboard port for the browser open shortcut
 func (m *DashboardModel) SetWebPort(port int) {
 	m.webPort = port
+}
+
+// SetChatPaneVisible sets whether the chat pane is visible in the log detail modal
+func (m *DashboardModel) SetChatPaneVisible(visible bool) {
+	m.chatPaneVisible = visible
 }
 
 // SetReleasesFetcher sets the releases fetcher for the what's-new modal
