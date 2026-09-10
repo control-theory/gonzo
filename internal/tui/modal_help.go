@@ -93,10 +93,8 @@ ACTIONS:
   q/Ctrl+C       - Quit
 
 LOG DETAIL MODAL:
-  Enter          - Open log detail modal
-  Tab            - Switch between Details and Chat panes
+  Tab            - Switch between Details and Chat panes (when chat is visible)
   x              - Toggle chat pane visibility
-  i              - AI analysis of current log
   m              - Switch AI model
   y              - Copy log message
   Ctrl+y         - Copy full log entry
