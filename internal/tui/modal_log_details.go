@@ -14,8 +14,14 @@ func (m *DashboardModel) renderSplitModal() string {
 	modalHeight := m.height - 6 // 3 lines margin top and bottom
 
 	// Account for borders and headers
-	contentWidth := modalWidth - 4   // Modal borders
-	contentHeight := modalHeight - 6 // Header + status
+	contentWidth := modalWidth - 4 // Modal borders
+	// contentHeight depends on whether the tabs row is rendered:
+	// outer border (2) + header (1) + status bar (1) + inner border (1) = 5,
+	// plus 1 more for the tabs row when the chat pane is visible.
+	contentHeight := modalHeight - 5
+	if m.chatPaneVisible {
+		contentHeight-- // tabs row takes one line
+	}
 
 	// Layout depends on whether chat pane is visible
 	var infoWidth int
