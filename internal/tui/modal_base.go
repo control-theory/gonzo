@@ -91,7 +91,12 @@ func (m *DashboardModel) renderModalStatusBar() string {
 
 	if m.currentLogEntry != nil {
 		// Split modal help text
-		statusItems = append(statusItems, "Tab/Click: Switch panes (Details/Chat)")
+		if m.chatPaneVisible {
+			statusItems = append(statusItems, "Tab/Click: Switch panes (Details/Chat)")
+			statusItems = append(statusItems, "x: Hide chat")
+		} else {
+			statusItems = append(statusItems, "x: Show chat pane")
+		}
 
 		if m.modalActiveSection == "chat" && m.chatActive {
 			statusItems = append(statusItems, "Enter: Send message", "ESC: Stop typing")

@@ -14,18 +14,93 @@ func (m *DashboardModel) renderSplitModal() string {
 	modalHeight := m.height - 6 // 3 lines margin top and bottom
 
 	// Account for borders and headers
-	contentWidth := modalWidth - 4   // Modal borders
-	contentHeight := modalHeight - 6 // Header + status
+	contentWidth := modalWidth - 4 // Modal borders
+	// contentHeight depends on whether the tabs row is rendered:
+	// outer border (2) + header (1) + status bar (1) + inner border (1) = 5,
+	// plus 1 more for the tabs row when the chat pane is visible.
+	contentHeight := modalHeight - 5
+	if m.chatPaneVisible {
+		contentHeight-- // tabs row takes one line
+	}
 
-	// Split layout: 70% info, 30% chat
-	infoWidth := int(float64(contentWidth)*0.7) - 1 // -1 for separator
-	chatWidth := contentWidth - infoWidth - 1
+	// Layout depends on whether chat pane is visible
+	var infoWidth int
+	if m.chatPaneVisible {
+		// Split layout: 70% info, 30% chat
+		infoWidth = int(float64(contentWidth)*0.7) - 1 // -1 for separator
+		chatWidth := contentWidth - infoWidth - 1
 
-	// Update viewport sizes
-	m.infoViewport.Width = infoWidth
-	m.infoViewport.Height = contentHeight
-	m.chatViewport.Width = chatWidth
-	m.chatViewport.Height = contentHeight
+		// Update viewport sizes
+		m.infoViewport.Width = infoWidth
+		m.infoViewport.Height = contentHeight
+		m.chatViewport.Width = chatWidth
+		m.chatViewport.Height = contentHeight
+
+		// Prepare chat content with proper text wrapping
+		var chatContent strings.Builder
+
+		// Show chat history with proper colors
+		if len(m.chatHistory) > 0 {
+			for i, msg := range m.chatHistory {
+				if i > 0 {
+					chatContent.WriteString("\n")
+				}
+
+				// Apply colors and wrap text to viewport width
+				var styledMsg string
+				// Account for viewport's internal rendering - use most of the width
+				msgWidth := chatWidth - 2 // Minimal padding for clean display
+
+				if strings.HasPrefix(msg, "You:") {
+					// User messages in light gray
+					userStyle := lipgloss.NewStyle().Foreground(ColorGray)
+					wrappedMsg := m.wrapTextToWidth(msg, msgWidth)
+					styledMsg = userStyle.Render(wrappedMsg)
+				} else {
+					// AI messages in blue
+					aiStyle := lipgloss.NewStyle().Foreground(ColorBlue)
+					wrappedMsg := m.wrapTextToWidth(msg, msgWidth)
+					styledMsg = aiStyle.Render(wrappedMsg)
+				}
+
+				chatContent.WriteString(styledMsg)
+			}
+		}
+
+		// Add chat input section
+		if len(m.chatHistory) > 0 {
+			chatContent.WriteString("\n\n")
+		}
+
+		// Show chat input or prompt text
+		if m.modalActiveSection == "chat" && m.chatActive {
+			chatContent.WriteString(m.chatInput.View())
+		} else {
+			// Wrap prompt text to viewport width
+			msgWidth := chatWidth - 2
+			if len(m.chatHistory) == 0 {
+				promptText := m.wrapTextToWidth("No chat yet.\nTab here to start chatting", msgWidth)
+				chatContent.WriteString(promptText)
+			} else {
+				promptText := m.wrapTextToWidth("Tab here to continue chatting", msgWidth)
+				chatContent.WriteString(promptText)
+			}
+		}
+
+		// Set pre-wrapped content to viewport (no double-wrapping)
+		m.chatViewport.SetContent(chatContent.String())
+
+		// Only auto-scroll to bottom when flagged (new content added)
+		if m.chatAutoScroll {
+			m.chatViewport.GotoBottom()
+			m.chatAutoScroll = false // Reset flag after auto-scrolling
+		}
+	} else {
+		// Full-width info pane
+		infoWidth = contentWidth
+		m.infoViewport.Width = infoWidth
+		m.infoViewport.Height = contentHeight
+	}
 
 	// Update content with proper text wrapping
 	if m.currentLogEntry != nil {
@@ -39,93 +114,45 @@ func (m *DashboardModel) renderSplitModal() string {
 		m.infoViewport.SetContent(wrappedInfoContent)
 	}
 
-	// Prepare chat content with proper text wrapping
-	var chatContent strings.Builder
+	// Build the content area
+	var content string
 
-	// Show chat history with proper colors
-	if len(m.chatHistory) > 0 {
-		for i, msg := range m.chatHistory {
-			if i > 0 {
-				chatContent.WriteString("\n")
-			}
+	if m.chatPaneVisible {
+		// Create side-by-side layout using lipgloss
+		infoPane := lipgloss.NewStyle().
+			Width(infoWidth).
+			Height(contentHeight).
+			Border(lipgloss.NormalBorder()).
+			BorderForeground(func() lipgloss.Color {
+				if m.modalActiveSection == "info" {
+					return ColorBlue
+				}
+				return ColorGray
+			}()).
+			Render(m.infoViewport.View())
 
-			// Apply colors and wrap text to viewport width
-			var styledMsg string
-			// Account for viewport's internal rendering - use most of the width
-			msgWidth := chatWidth - 2 // Minimal padding for clean display
+		chatPane := lipgloss.NewStyle().
+			Width(contentWidth - infoWidth - 1).
+			Height(contentHeight).
+			Border(lipgloss.NormalBorder()).
+			BorderForeground(func() lipgloss.Color {
+				if m.modalActiveSection == "chat" {
+					return ColorBlue
+				}
+				return ColorGray
+			}()).
+			Render(m.chatViewport.View())
 
-			if strings.HasPrefix(msg, "You:") {
-				// User messages in light gray
-				userStyle := lipgloss.NewStyle().Foreground(ColorGray)
-				wrappedMsg := m.wrapTextToWidth(msg, msgWidth)
-				styledMsg = userStyle.Render(wrappedMsg)
-			} else {
-				// AI messages in blue
-				aiStyle := lipgloss.NewStyle().Foreground(ColorBlue)
-				wrappedMsg := m.wrapTextToWidth(msg, msgWidth)
-				styledMsg = aiStyle.Render(wrappedMsg)
-			}
-
-			chatContent.WriteString(styledMsg)
-		}
-	}
-
-	// Add chat input section
-	if len(m.chatHistory) > 0 {
-		chatContent.WriteString("\n\n")
-	}
-
-	// Show chat input or prompt text
-	if m.modalActiveSection == "chat" && m.chatActive {
-		chatContent.WriteString(m.chatInput.View())
+		content = lipgloss.JoinHorizontal(lipgloss.Top, infoPane, chatPane)
 	} else {
-		// Wrap prompt text to viewport width
-		msgWidth := chatWidth - 2
-		if len(m.chatHistory) == 0 {
-			promptText := m.wrapTextToWidth("No chat yet.\nTab here to start chatting", msgWidth)
-			chatContent.WriteString(promptText)
-		} else {
-			promptText := m.wrapTextToWidth("Tab here to continue chatting", msgWidth)
-			chatContent.WriteString(promptText)
-		}
+		// Full-width info pane, no chat
+		content = lipgloss.NewStyle().
+			Width(infoWidth).
+			Height(contentHeight).
+			Border(lipgloss.NormalBorder()).
+			BorderForeground(ColorBlue).
+			Render(m.infoViewport.View())
 	}
-
-	// Set pre-wrapped content to viewport (no double-wrapping)
-	m.chatViewport.SetContent(chatContent.String())
-
-	// Only auto-scroll to bottom when flagged (new content added)
-	if m.chatAutoScroll {
-		m.chatViewport.GotoBottom()
-		m.chatAutoScroll = false // Reset flag after auto-scrolling
-	}
-
-	// Create side-by-side layout using lipgloss
-	infoPane := lipgloss.NewStyle().
-		Width(infoWidth).
-		Height(contentHeight).
-		Border(lipgloss.NormalBorder()).
-		BorderForeground(func() lipgloss.Color {
-			if m.modalActiveSection == "info" {
-				return ColorBlue
-			}
-			return ColorGray
-		}()).
-		Render(m.infoViewport.View())
-
-	chatPane := lipgloss.NewStyle().
-		Width(chatWidth).
-		Height(contentHeight).
-		Border(lipgloss.NormalBorder()).
-		BorderForeground(func() lipgloss.Color {
-			if m.modalActiveSection == "chat" {
-				return ColorBlue
-			}
-			return ColorGray
-		}()).
-		Render(m.chatViewport.View())
-
-	// Combine panes horizontally
-	content := lipgloss.JoinHorizontal(lipgloss.Top, infoPane, chatPane)
 
 	// Add header with AI status
 	headerTitle := "Log Detail Modal"
@@ -163,38 +190,47 @@ func (m *DashboardModel) renderSplitModal() string {
 		headerRight,
 	)
 
-	// Add tab indicators
-	infoTab := "Details"
-	chatTab := "Chat"
-	if m.modalActiveSection == "info" {
-		infoTab = "► " + infoTab
-		chatTab = "  " + chatTab
-	} else {
-		infoTab = "  " + infoTab
-		chatTab = "► " + chatTab
-	}
+	// Build tabs and status bar
+	var tabs string
+	if m.chatPaneVisible {
+		// Add tab indicators when chat pane is visible
+		infoTab := "Details"
+		chatTab := "Chat"
+		if m.modalActiveSection == "info" {
+			infoTab = "► " + infoTab
+			chatTab = "  " + chatTab
+		} else {
+			infoTab = "  " + infoTab
+			chatTab = "► " + chatTab
+		}
 
-	tabs := lipgloss.JoinHorizontal(lipgloss.Left,
-		lipgloss.NewStyle().Foreground(func() lipgloss.Color {
-			if m.modalActiveSection == "info" {
-				return ColorGreen
-			}
-			return ColorGray
-		}()).Render(infoTab),
-		strings.Repeat(" ", contentWidth-len(infoTab)-len(chatTab)),
-		lipgloss.NewStyle().Foreground(func() lipgloss.Color {
-			if m.modalActiveSection == "chat" {
-				return ColorGreen
-			}
-			return ColorGray
-		}()).Render(chatTab),
-	)
+		tabs = lipgloss.JoinHorizontal(lipgloss.Left,
+			lipgloss.NewStyle().Foreground(func() lipgloss.Color {
+				if m.modalActiveSection == "info" {
+					return ColorGreen
+				}
+				return ColorGray
+			}()).Render(infoTab),
+			strings.Repeat(" ", contentWidth-len(infoTab)-len(chatTab)),
+			lipgloss.NewStyle().Foreground(func() lipgloss.Color {
+				if m.modalActiveSection == "chat" {
+					return ColorGreen
+				}
+				return ColorGray
+			}()).Render(chatTab),
+		)
+	}
 
 	// Status bar
 	statusBar := m.renderModalStatusBar()
 
 	// Combine all parts
-	modal := lipgloss.JoinVertical(lipgloss.Left, header, tabs, content, statusBar)
+	var modal string
+	if m.chatPaneVisible {
+		modal = lipgloss.JoinVertical(lipgloss.Left, header, tabs, content, statusBar)
+	} else {
+		modal = lipgloss.JoinVertical(lipgloss.Left, header, content, statusBar)
+	}
 
 	// Add outer border and center
 	finalModal := lipgloss.NewStyle().

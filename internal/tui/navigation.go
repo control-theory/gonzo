@@ -1076,8 +1076,20 @@ func (m *DashboardModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.currentLogEntry != nil {
 			// Handle split modal navigation and scrolling
 			switch msg.String() {
+			case "x":
+				// Toggle chat pane visibility
+				m.chatPaneVisible = !m.chatPaneVisible
+				if !m.chatPaneVisible && m.modalActiveSection == "chat" {
+					m.chatActive = false
+					m.chatInput.Blur()
+					m.modalActiveSection = "info"
+				}
+				return m, nil
 			case "tab":
-				// Always allow tab navigation between panes
+				// Tab navigation between panes (only when chat pane is visible)
+				if !m.chatPaneVisible {
+					return m, nil
+				}
 				// Switch between info and chat sections in modal
 				if m.modalActiveSection == "info" {
 					m.modalActiveSection = "chat"

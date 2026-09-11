@@ -55,6 +55,7 @@ type Config struct {
 	DisableVersionCheck  bool          `mapstructure:"disable-version-check"`
 	ReverseScrollWheel   bool          `mapstructure:"reverse-scroll-wheel"`
 	UseLogTime           bool          `mapstructure:"use-log-time"`
+	HideChatPane         bool          `mapstructure:"hide-chat-pane"`
 
 	// Web dashboard (Dstl8 Lite)
 	WebPort     int  `mapstructure:"web-port"`
@@ -189,6 +190,7 @@ func init() {
 	rootCmd.Flags().Bool("disable-version-check", false, "Disable automatic version checking on startup")
 	rootCmd.Flags().Bool("reverse-scroll-wheel", false, "Reverse scroll wheel direction (natural scrolling)")
 	rootCmd.Flags().Bool("use-log-time", false, "Use original log timestamps instead of receive time for heatmap and display (falls back to receive time if log has no timestamp)")
+	rootCmd.Flags().Bool("hide-chat-pane", false, "Hide the AI chat pane in the log detail modal (press 'x' in modal to toggle)")
 
 	// Dstl8 Lite web dashboard flags
 	rootCmd.Flags().Int("web-port", 5718, "Port for the Dstl8 Lite web dashboard")
@@ -223,6 +225,7 @@ func init() {
 	viper.BindPFlag("disable-version-check", rootCmd.Flags().Lookup("disable-version-check"))
 	viper.BindPFlag("reverse-scroll-wheel", rootCmd.Flags().Lookup("reverse-scroll-wheel"))
 	viper.BindPFlag("use-log-time", rootCmd.Flags().Lookup("use-log-time"))
+	viper.BindPFlag("hide-chat-pane", rootCmd.Flags().Lookup("hide-chat-pane"))
 	viper.BindPFlag("web-port", rootCmd.Flags().Lookup("web-port"))
 	viper.BindPFlag("web-disabled", rootCmd.Flags().Lookup("web-disabled"))
 	// Add version command

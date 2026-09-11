@@ -147,6 +147,9 @@ cat test.log | ./build/gonzo
     --web-port=5718              # Port for the web dashboard
     --web-disabled               # Disable the web dashboard
 
+# UI behavior
+    --hide-chat-pane             # Hide AI chat pane in log detail modal (press 'x' to toggle)
+
 # Version and help
 -v, --version                    # Show version information
 -h, --help                       # Show help message
@@ -276,6 +279,38 @@ This affects all scrollable areas:
 - **MacOS users**: Match trackpad natural scrolling behavior
 - **Consistency**: Keep same scroll direction across all applications
 - **Personal preference**: Use whichever feels more intuitive to you
+
+## Hide Chat Pane
+
+By default, the log detail modal shows a split layout with log details on the left and an AI chat pane on the right (70/30 split). You can hide the chat pane to give the full width to log details.
+
+### Enabling
+
+#### Via Command Line
+```bash
+./build/gonzo -f app.log --hide-chat-pane
+cat logs.json | ./build/gonzo --hide-chat-pane
+```
+
+#### Via Configuration File
+```yaml
+# ~/.config/gonzo/config.yml
+hide-chat-pane: true
+```
+
+#### Via Environment Variable
+```bash
+export GONZO_HIDE_CHAT_PANE=true
+./build/gonzo -f app.log
+```
+
+### Runtime Toggle
+
+Even when the chat pane is hidden by default, you can bring it back at any time while viewing a log detail modal:
+
+- Press `x` to toggle the chat pane visible/hidden
+- The setting persists for the current session
+- Tab navigation between Details and Chat panes is disabled when the chat pane is hidden
 
 ## Web Dashboard (Dstl8 Lite)
 

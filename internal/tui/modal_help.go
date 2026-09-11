@@ -92,6 +92,15 @@ ACTIONS:
   ? or h         - Toggle this help
   q/Ctrl+C       - Quit
 
+LOG DETAIL MODAL:
+  Tab            - Switch between Details and Chat panes (when chat is visible)
+  x              - Toggle chat pane visibility
+  m              - Switch AI model
+  y              - Copy log message
+  Ctrl+y         - Copy full log entry
+  w              - Toggle attribute wrapping
+  Escape         - Close modal
+
 LOG VIEWER NAVIGATION:
   Home           - Jump to top of log buffer (stops auto-scroll)
   End            - Jump to latest logs (resumes auto-scroll)
