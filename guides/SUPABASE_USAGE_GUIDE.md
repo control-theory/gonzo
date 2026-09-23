@@ -4,7 +4,7 @@ Stream logs from all Supabase services into Gonzo for real-time analysis, filter
 
 ## Overview
 
-Supabase doesn't offer a streaming log API, but the [Management API](https://supabase.com/docs/reference/api/introduction) exposes a SQL-based query endpoint for log data across all services. The included poller script (`scripts/supabase-log-poller.sh`) polls this endpoint, normalizes the deeply nested metadata from each service into flat JSONL, and pipes the result into Gonzo.
+Supabase doesn't offer a streaming log API, but the [Management API](https://supabase.com/docs/reference/api/introduction) exposes a SQL-based query endpoint for log data across all services. The included poller script (`scripts/supabase-log-poller.sh`) polls the unified `logs` endpoint, normalizes ClickHouse rows and their `log_attributes` map into JSONL, and pipes the result into Gonzo.
 
 A single poller covers 9 log sources:
 
@@ -150,13 +150,17 @@ Press `Esc` to clear the filter.
 The poller queries a single Supabase Management API endpoint with different SQL per source:
 
 ```
-GET https://api.supabase.com/v1/projects/{ref}/analytics/endpoints/logs.all
-  ?sql=SELECT id, timestamp, event_message, metadata FROM {source} ...
+GET https://api.supabase.com/v1/projects/{ref}/analytics/endpoints/logs
+  ?sql=SELECT id, timestamp, event_message, source, severity_text, log_attributes
+       FROM logs
+       WHERE source = '{source}'
+       ORDER BY timestamp DESC
+       LIMIT 200
   &iso_timestamp_start=...
   &iso_timestamp_end=...
 ```
 
-Each source returns deeply nested metadata arrays with different structures. The poller runs the response through a source-specific `jq` normalizer that flattens it into a common JSONL format:
+All sources now come from Supabase's unified ClickHouse `logs` table. Source-specific fields are returned in the `log_attributes` map. The poller converts those rows into a common JSONL format:
 
 ```json
 {
@@ -166,40 +170,32 @@ Each source returns deeply nested metadata arrays with different structures. The
   "source": "edge_logs",
   "service": "api-gateway",
   "attributes": {
-    "method": "POST",
-    "path": "/functions/v1/my-func",
-    "status": 200,
-    "ip": "71.42.201.2",
-    "cf_city": "Austin"
+    "request.method": "POST",
+    "request.path": "/functions/v1/my-func",
+    "response.status_code": 200,
+    "request.headers.cf_connecting_ip": "71.42.201.2",
+    "request.cf.city": "Austin"
   }
 }
 ```
 
 Gonzo auto-detects this JSON format with no additional configuration needed.
 
-Severity is derived from HTTP status codes for edge and function logs (5xx → ERROR, 4xx → WARN), or from the source's native level field for auth, postgres, storage, and realtime logs.
+Severity is derived from HTTP status codes for edge and function request logs (5xx → ERROR, 4xx → WARN), or from `severity_text` / the source's `level` attribute for the remaining sources.
 
 ## Normalized Attributes per Source
 
-Each source extracts the most operationally useful fields:
+Each emitted event includes the raw Supabase `log_attributes` map under `attributes`. The available keys depend on the source, for example:
 
-**edge_logs** — method, path, status, origin_time_ms, ip, country, user_agent, host, Cloudflare geo (city, region, continent, timezone), ASN/org, TLS version, HTTP protocol, bot score, cache status, Kong latency, request ID
+- `edge_logs` — request/response method, path, status, headers, Cloudflare metadata, latency and request IDs
+- `postgres_logs` — parsed PostgreSQL fields such as severity, user, database, query, SQL state and backend type
+- `auth_logs` — level, status, path, user/provider/action fields and auth errors
+- `storage_logs` — request, response, object, tenant, owner, region and trace fields
+- `realtime_logs` — project/tenant, region, request, trace and error fields
+- `function_logs` / `function_edge_logs` — function, execution, deployment, request/response and runtime fields
+- `postgrest_logs` / `supavisor_logs` — service-specific attributes exposed by Supabase
 
-**postgres_logs** — user, database, query, detail, hint, context, sql_state, backend_type, command_tag, application_name, connection_from, session_id, process_id, query_id
-
-**auth_logs** — status, method, path, component, remote_addr, grant_type, user_id, provider, action, login_method, error, duration, request_id, referer, mail_type, SSO provider, factor_id
-
-**storage_logs** — method, url, status, response_time_ms, execution_time_ms, tenant_id, operation, object_path, owner, role, region, user_agent, remote_address, etag, trace_id
-
-**realtime_logs** — project, region, cluster, request_id, external_id, tenant, OTel trace/span IDs, error code/string, Phoenix module/function/file/line/pid/node
-
-**function_logs** — function_id, execution_id, deployment_id, event_type, region, served_by, version, boot_time, cpu_time_used, reason
-
-**function_edge_logs** — function_id, execution_id, execution_time_ms, method, pathname, status, user_agent, host, JWT role/issuer, auth_user, edge_region, request ID, served_by, content_type, deployment_id
-
-**postgrest_logs** — host
-
-**supavisor_logs** — host
+Keeping the raw `log_attributes` map avoids coupling the poller to Supabase's removed BigQuery-style nested `metadata` schema while preserving all structured fields returned by the new endpoint.
 
 ## API Rate Limits
 

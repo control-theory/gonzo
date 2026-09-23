@@ -153,7 +153,7 @@ syntax or normalizer details. Do not improvise from memory.
 | Platform | Guide file | Key notes |
 |----------|-----------|-----------|
 | Vercel | `guides/VERCEL_USAGE_GUIDE.md` | Double-encoded JSON in `message` field with `[function-name]` prefix. jq normalizer unwraps inner JSON and merges Vercel envelope. **Must use `--unbuffered` on jq.** |
-| Supabase | `guides/SUPABASE_USAGE_GUIDE.md` | Custom polling script. 9 log sources with per-source jq normalizers. Ask which source(s) to set up. |
+| Supabase | `guides/SUPABASE_USAGE_GUIDE.md` | Custom polling script queries the unified ClickHouse `logs` endpoint for 9 sources and normalizes `log_attributes` into JSONL. Set a project ref and access token. |
 | Netlify | `guides/NETLIFY_USAGE_GUIDE.md` | Netlify CLI log streaming. |
 | Railway | `guides/RAILWAY_USAGE_GUIDE.md` | Zero-config JSONL pipe. Simplest integration. |
 | Cloudflare Workers | `guides/CLOUDFLARE_USAGE_GUIDE.md` | `wrangler tail` envelope flattening. |
