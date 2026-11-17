@@ -1,0 +1,29 @@
+version: 2
+
+updates:
+  # Go bumps must also regenerate gomod2nix.toml or the Nix build check fails:
+  #   go run github.com/nix-community/gomod2nix@<rev in flake.lock> generate
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      go-deps:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+    groups:
+      web-deps:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
