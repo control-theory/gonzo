@@ -1007,6 +1007,11 @@ func (e *Engine) QueryInsightsParams(_ context.Context, _ InsightsFilters) (*Ins
 func (e *Engine) filterEntries(filters InsightsFilters) []tui.LogEntry {
 	result := make([]tui.LogEntry, 0, len(e.allLogEntries))
 
+	var severities []string
+	if filters.Severity != nil && *filters.Severity != "" {
+		severities = parseSeverityFilter(*filters.Severity)
+	}
+
 	for _, entry := range e.allLogEntries {
 		ts := entry.Timestamp
 		if e.useLogTime && !entry.OrigTimestamp.IsZero() {
@@ -1022,8 +1027,8 @@ func (e *Engine) filterEntries(filters InsightsFilters) []tui.LogEntry {
 		}
 
 		// Severity filter
-		if filters.Severity != nil && *filters.Severity != "" {
-			if !strings.EqualFold(entry.Severity, *filters.Severity) {
+		if len(severities) > 0 {
+			if !containsString(severities, entry.Severity) {
 				continue
 			}
 		}
@@ -1378,3 +1383,13 @@ func containsString(slice []string, s string) bool {
 	return false
 }
 
+func parseSeverityFilter(raw string) []string {
+	parts := strings.Split(raw, ",")
+	severities := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if s := strings.TrimSpace(part); s != "" {
+			severities = append(severities, s)
+		}
+	}
+	return severities
+}

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/control-theory/gonzo/internal/engine"
@@ -209,8 +210,10 @@ func parseFilters(r *http.Request) engine.InsightsFilters {
 	if v := q.Get("search"); v != "" {
 		filters.Search = &v
 	}
-	if v := q.Get("severity"); v != "" {
-		filters.Severity = &v
+	if vals := q["severity"]; len(vals) > 0 {
+		if v := strings.Join(vals, ","); v != "" {
+			filters.Severity = &v
+		}
 	}
 	if v := q.Get("limit"); v != "" {
 		if limit, err := strconv.Atoi(v); err == nil {
