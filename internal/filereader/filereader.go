@@ -137,7 +137,7 @@ func (fr *FileReader) startReadMode() {
 func (fr *FileReader) startFollowMode() {
 	fr.wg.Go(func() {
 		defer close(fr.lineChan)
-		defer fr.closeAllWatchers()
+		var followWorkers sync.WaitGroup
 
 		// First, read existing content of all files
 		for _, filePath := range fr.filePaths {
@@ -149,13 +149,17 @@ func (fr *FileReader) startFollowMode() {
 
 		// Then set up watchers for follow mode
 		for _, filePath := range fr.filePaths {
-			if err := fr.setupFileWatcher(filePath); err != nil {
+			if fr.ctx.Err() != nil {
+				break
+			}
+			if err := fr.setupFileWatcher(filePath, &followWorkers); err != nil {
 				log.Printf("Error setting up watcher for %s: %v", filePath, err)
 			}
 		}
 
-		// Keep running until context is cancelled
 		<-fr.ctx.Done()
+		// A watcher can still be sending a line when cancellation arrives.
+		followWorkers.Wait()
 	})
 }
 
@@ -185,7 +189,7 @@ func (fr *FileReader) readFile(filePath string) error {
 }
 
 // setupFileWatcher sets up a file system watcher for follow mode
-func (fr *FileReader) setupFileWatcher(filePath string) error {
+func (fr *FileReader) setupFileWatcher(filePath string, followWorkers *sync.WaitGroup) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err
@@ -230,7 +234,8 @@ func (fr *FileReader) setupFileWatcher(filePath string) error {
 	}
 
 	// Start watching for changes
-	fr.wg.Go(func() {
+	followWorkers.Go(func() {
+		defer fr.cleanupFile(filePath)
 		fr.watchFile(filePath, watcher)
 	})
 
@@ -360,17 +365,7 @@ func (fr *FileReader) cleanupFile(filePath string) {
 	}
 }
 
-// closeAllWatchers closes all file watchers
-func (fr *FileReader) closeAllWatchers() {
-	fr.mu.Lock()
-	defer fr.mu.Unlock()
-
-	for filePath := range fr.watchers {
-		fr.cleanupFile(filePath)
-	}
-}
-
-// Stop stops the file reader and closes all resources
+// Stop requests cancellation. Wait returns once the reader has released its resources.
 func (fr *FileReader) Stop() {
 	fr.cancel()
 }

@@ -492,18 +492,22 @@ func (m *simpleTuiModel) readOTLPAsync() {
 func (m *simpleTuiModel) readFilesAsync() {
 	defer close(m.inputChan)
 
-	if m.fileReader == nil {
+	fileReader := m.fileReader
+	if fileReader == nil {
 		return
 	}
+	defer func() {
+		fileReader.Stop()
+		fileReader.Wait()
+	}()
 
 	// Start the file reader and get the channel
-	fileLineChan := m.fileReader.Start()
+	fileLineChan := fileReader.Start()
 
 	// Forward lines from file reader to input channel
 	for {
 		select {
 		case <-m.ctx.Done():
-			m.fileReader.Stop()
 			return
 		case line, ok := <-fileLineChan:
 			if !ok {
